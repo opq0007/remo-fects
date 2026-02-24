@@ -254,7 +254,7 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
       />
 
       {/* 默认金钱入账音效 */}
-      {audioEnabled && (
+      {false && (
         <Audio
           src={staticFile(audioSrc)}
           volume={audioVolume}
