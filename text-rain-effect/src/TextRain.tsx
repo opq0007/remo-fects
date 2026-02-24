@@ -211,6 +211,7 @@ const generateTextStyle = (fontSize: number, style: TextStyleConfig): React.CSSP
   const effect = style.effect ?? "gold3d";
   
   const baseStyle: React.CSSProperties = {
+    fontSize: fontSize,  // 关键：设置字体大小
     fontFamily: style.fontFamily ?? "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
     fontWeight: style.fontWeight ?? 700,
     letterSpacing: style.letterSpacing ?? 2,
