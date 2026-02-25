@@ -27,7 +27,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRain"
           component={TextRainComposition}
-          durationInFrames={192}
+          durationInFrames={720}
           fps={24}
           width={720}
           height={1280}
@@ -52,8 +52,8 @@ export const RemotionRoot: React.FC = () => {
               fontWeight: 1000,
               letterSpacing: 2,
             },
-            backgroundType: "video",
-            backgroundSource: "马宝宝.mp4",
+            backgroundType: "image",
+            backgroundSource: "熊猫.png",
             backgroundColor: "#1a1a2e",
             overlayColor: "#000000",
             overlayOpacity: 0.2,

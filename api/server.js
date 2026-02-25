@@ -1,0 +1,296 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const { renderVideo } = require('./render');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// 项目配置：定义每个特效项目的路径和配置
+const projects = {
+  'text-rain-effect': {
+    path: path.join(__dirname, '../text-rain-effect'),
+    compositionId: 'TextRain',
+    name: '文字雨特效'
+  }
+  // 未来可以添加更多项目，例如：
+  // 'particle-effect': {
+  //   path: path.join(__dirname, '../particle-effect'),
+  //   compositionId: 'Particle',
+  //   name: '粒子特效'
+  // }
+};
+
+// 中间件
+app.use(cors());
+app.use(express.json());
+app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 文件上传配置
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const now = Date.now();
+    const ext = path.extname(file.originalname);
+    cb(null, 'bg-' + now + ext);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB 限制
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/webm'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('只支持 JPG/PNG/GIF/MP4/WEBM 格式的文件'));
+    }
+  }
+});
+
+// 渲染任务存储
+const renderJobs = new Map();
+
+// 生成易识别的 jobId：yyyyMMdd-时间戳格式
+function generateJobId() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const MM = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const timestamp = Date.now();
+  return `${yyyy}${MM}${dd}-${timestamp}`;
+}
+
+// API: 获取所有可用项目
+app.get('/api/projects', (req, res) => {
+  const projectList = Object.entries(projects).map(([id, config]) => ({
+    id,
+    name: config.name,
+    compositionId: config.compositionId
+  }));
+  res.json(projectList);
+});
+
+// API: 创建渲染任务（通用接口，支持多项目）
+app.post('/api/render/:projectId', upload.single('background'), async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    // 验证项目是否存在
+    if (!projects[projectId]) {
+      return res.status(404).json({ error: `项目不存在: ${projectId}。可用项目: ${Object.keys(projects).join(', ')}` });
+    }
+
+    const projectConfig = projects[projectId];
+    const jobId = generateJobId();
+    const backgroundFile = req.file ? req.file.filename : null;
+
+    // 解析参数 - 支持表单和 JSON 两种方式
+    let words = [];
+    if (req.body.words) {
+      try {
+        words = typeof req.body.words === 'string' ? JSON.parse(req.body.words) : req.body.words;
+      } catch (e) {
+        words = req.body.words.split(',').map(w => w.trim()).filter(w => w);
+      }
+    }
+
+    const params = {
+      projectId,
+      projectPath: projectConfig.path,
+      compositionId: projectConfig.compositionId,
+      words: words,
+      textDirection: req.body.textDirection || 'horizontal',
+      fontSizeRange: typeof req.body.fontSizeRange === 'string'
+        ? JSON.parse(req.body.fontSizeRange)
+        : (req.body.fontSizeRange || [80, 160]),
+      fallSpeed: parseFloat(req.body.fallSpeed) || 0.15,
+      density: parseFloat(req.body.density) || 2,
+      opacityRange: typeof req.body.opacityRange === 'string'
+        ? JSON.parse(req.body.opacityRange)
+        : (req.body.opacityRange || [0.6, 1]),
+      rotationRange: typeof req.body.rotationRange === 'string'
+        ? JSON.parse(req.body.rotationRange)
+        : (req.body.rotationRange || [-10, 10]),
+      laneCount: parseInt(req.body.laneCount) || 6,
+      minVerticalGap: parseInt(req.body.minVerticalGap) || 100,
+      duration: parseInt(req.body.duration) || 10,
+      fps: parseInt(req.body.fps) || 24,
+      width: parseInt(req.body.width) || 720,
+      height: parseInt(req.body.height) || 1280,
+      backgroundColor: req.body.backgroundColor || '#1a1a2e',
+      overlayOpacity: parseFloat(req.body.overlayOpacity) || 0.2,
+      audioEnabled: req.body.audioEnabled !== 'false',
+      audioVolume: parseFloat(req.body.audioVolume) || 0.5,
+      textStyle: typeof req.body.textStyle === 'string'
+        ? JSON.parse(req.body.textStyle)
+        : (req.body.textStyle || {}),
+      backgroundFile,
+      backgroundType: req.body.backgroundType || (backgroundFile ? 'image' : 'color')
+    };
+
+    // 验证文字（如果是文字特效）
+    if (projectId === 'text-rain-effect' && (!params.words || params.words.length === 0)) {
+      return res.status(400).json({ error: '请提供文字列表' });
+    }
+
+    // 创建任务记录
+    renderJobs.set(jobId, {
+      id: jobId,
+      projectId,
+      status: 'pending',
+      params,
+      createdAt: new Date(),
+      progress: 0
+    });
+
+    // 异步执行渲染
+    renderJobAsync(jobId, params).catch(err => {
+      console.error('渲染失败:', err);
+      const job = renderJobs.get(jobId);
+      if (job) {
+        job.status = 'failed';
+        job.error = err.message;
+      }
+    });
+
+    res.json({
+      success: true,
+      jobId,
+      projectId,
+      projectName: projectConfig.name,
+      message: '渲染任务已创建',
+      statusUrl: '/api/jobs/' + jobId
+    });
+
+  } catch (error) {
+    console.error('创建任务失败:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API: 查询任务状态（统一接口）
+app.get('/api/jobs/:jobId', (req, res) => {
+  const job = renderJobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: '任务不存在' });
+  }
+
+  const projectName = job.projectId ? projects[job.projectId]?.name : '未知项目';
+
+  res.json({
+    id: job.id,
+    projectId: job.projectId,
+    projectName,
+    status: job.status,
+    progress: job.progress,
+    createdAt: job.createdAt,
+    completedAt: job.completedAt,
+    error: job.error,
+    downloadUrl: job.status === 'completed' ? '/outputs/' + job.outputFile : null
+  });
+});
+
+// API: 下载视频（统一接口）
+app.get('/api/download/:jobId', (req, res) => {
+  const job = renderJobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: '任务不存在' });
+  }
+
+  if (job.status !== 'completed') {
+    return res.status(400).json({ error: '任务尚未完成' });
+  }
+
+  const filePath = path.join(__dirname, 'outputs', job.outputFile);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: '文件不存在' });
+  }
+
+  const projectName = job.projectId ? projects[job.projectId]?.name : 'video';
+  res.download(filePath, `${projectName}-${job.id}.mp4`);
+});
+
+// API: 获取所有任务（统一接口）
+app.get('/api/jobs', (req, res) => {
+  const jobs = Array.from(renderJobs.values()).map(job => ({
+    id: job.id,
+    projectId: job.projectId,
+    projectName: job.projectId ? projects[job.projectId]?.name : '未知项目',
+    status: job.status,
+    progress: job.progress,
+    createdAt: job.createdAt
+  }));
+  res.json(jobs);
+});
+
+// 异步渲染任务
+async function renderJobAsync(jobId, params) {
+  const job = renderJobs.get(jobId);
+  if (!job) return;
+
+  job.status = 'rendering';
+  job.progress = 0;
+
+  try {
+    const outputFile = await renderVideo(params, jobId, (progress) => {
+      job.progress = Math.round(progress * 100);
+    });
+
+    job.status = 'completed';
+    job.progress = 100;
+    job.outputFile = outputFile;
+    job.completedAt = new Date();
+
+    console.log(`渲染完成 [${params.projectId}]:`, jobId, outputFile);
+  } catch (error) {
+    job.status = 'failed';
+    job.error = error.message;
+    throw error;
+  }
+}
+
+// 清理过期任务（每30分钟）
+setInterval(() => {
+  const now = Date.now();
+  const expireTime = 30 * 60 * 1000; // 30分钟
+
+  for (const [id, job] of renderJobs) {
+    if (job.status === 'completed' && job.completedAt) {
+      if (now - job.completedAt.getTime() > expireTime) {
+        // 删除输出文件
+        if (job.outputFile) {
+          const filePath = path.join(__dirname, 'outputs', job.outputFile);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }
+        renderJobs.delete(id);
+        console.log('清理过期任务:', id);
+      }
+    }
+  }
+}, 30 * 60 * 1000);
+
+app.listen(PORT, () => {
+  console.log('========================================');
+  console.log('Remotion Effects API 服务已启动');
+  console.log('端口:', PORT);
+  console.log('API 文档: http://localhost:' + PORT + '/api');
+  console.log('可用项目:');
+  Object.entries(projects).forEach(([id, config]) => {
+    console.log(`  - ${id}: ${config.name}`);
+    console.log(`    POST /api/render/${id}`);
+  });
+  console.log('========================================');
+});
