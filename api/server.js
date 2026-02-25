@@ -19,6 +19,11 @@ const projects = {
     path: path.join(__dirname, '../effects/gold-text-ring-effect'),
     compositionId: 'TextRing',
     name: '金色发光立体字环绕特效'
+  },
+  'text-firework-effect': {
+    path: path.join(__dirname, '../effects/text-firework-effect'),
+    compositionId: 'TextFirework',
+    name: '文字烟花特效'
   }
   // 未来可以添加更多项目，例如：
   // 'particle-effect': {
@@ -164,11 +169,39 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
       params.mode = req.body.mode || 'vertical';
     }
 
+    // text-firework-effect 特有参数
+    if (projectId === 'text-firework-effect') {
+      params.fontSize = parseInt(req.body.fontSize) || 60;
+      params.textColor = req.body.textColor || '#ffd700';
+      params.glowColor = req.body.glowColor || '#ffaa00';
+      params.glowIntensity = parseFloat(req.body.glowIntensity) || 1;
+      params.launchHeight = parseFloat(req.body.launchHeight) || 0.2;
+      params.particleCount = parseInt(req.body.particleCount) || 80;
+      params.textDuration = parseInt(req.body.textDuration) || 60;
+      params.rainDuration = parseInt(req.body.rainDuration) || 120;
+      params.gravity = parseFloat(req.body.gravity) || 0.15;
+      params.wind = parseFloat(req.body.wind) || 0;
+      params.rainParticleSize = parseFloat(req.body.rainParticleSize) || 3;
+      params.interval = parseInt(req.body.interval) || 40;
+      
+      // 如果没有指定 duration，根据文字数量自动计算合理的时长
+      // 计算公式：最后一个烟花的发射帧 + 发射时间 + 文字显示时间 + 粒子下雨时间 + 缓冲时间
+      // duration = (words.length - 1) * interval + 30 + textDuration + rainDuration + 30
+      if (!req.body.duration && params.words && params.words.length > 0) {
+        const lastLaunchFrame = (params.words.length - 1) * params.interval;
+        const totalFrames = lastLaunchFrame + 30 + params.textDuration + params.rainDuration + 30;
+        params.duration = Math.ceil(totalFrames / params.fps);
+      }
+    }
+
     // 验证文字（如果是文字特效）
     if (projectId === 'text-rain-effect' && (!params.words || params.words.length === 0)) {
       return res.status(400).json({ error: '请提供文字列表' });
     }
     if (projectId === 'gold-text-ring-effect' && (!params.words || params.words.length === 0)) {
+      return res.status(400).json({ error: '请提供文字列表' });
+    }
+    if (projectId === 'text-firework-effect' && (!params.words || params.words.length === 0)) {
       return res.status(400).json({ error: '请提供文字列表' });
     }
 

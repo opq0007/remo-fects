@@ -67,6 +67,22 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.mode = params.mode || 'vertical';
   }
 
+  // text-firework-effect 特有参数
+  if (params.projectId === 'text-firework-effect') {
+    defaultProps.fontSize = params.fontSize || 60;
+    defaultProps.textColor = params.textColor || '#ffd700';
+    defaultProps.glowColor = params.glowColor || '#ffaa00';
+    defaultProps.glowIntensity = params.glowIntensity || 1;
+    defaultProps.launchHeight = params.launchHeight || 0.2;
+    defaultProps.particleCount = params.particleCount || 80;
+    defaultProps.textDuration = params.textDuration || 60;
+    defaultProps.rainDuration = params.rainDuration || 120;
+    defaultProps.gravity = params.gravity || 0.15;
+    defaultProps.wind = params.wind || 0;
+    defaultProps.rainParticleSize = params.rainParticleSize || 3;
+    defaultProps.interval = params.interval || 40;
+  }
+
   // 如果有背景文件，复制到项目 public 目录
   if (params.backgroundFile) {
     defaultProps.backgroundSource = params.backgroundFile;
