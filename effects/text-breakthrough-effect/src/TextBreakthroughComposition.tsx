@@ -65,6 +65,11 @@ export const TextBreakthroughCompositionSchema = z.object({
   // 遮罩效果
   overlayColor: zColor().optional().meta({ description: "遮罩颜色" }),
   overlayOpacity: z.number().min(0).max(1).optional().meta({ description: "遮罩透明度" }),
+
+  // 下落消失效果
+  enableFallDown: z.boolean().optional().meta({ description: "是否启用文字下落消失效果（停留结束后自然下落）" }),
+  fallDownDuration: z.number().min(10).max(120).optional().meta({ description: "下落动画时长（帧）" }),
+  fallDownEndY: z.number().min(0.1).max(0.5).optional().meta({ description: "下落结束位置（距底部百分比，0.2表示距底部20%）" }),
 });
 
 export type TextBreakthroughCompositionProps = z.infer<typeof TextBreakthroughCompositionSchema>;
@@ -350,6 +355,9 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   backgroundVideoMuted = true,
   overlayColor = "#000000",
   overlayOpacity = 0.1,
+  enableFallDown = false,
+  fallDownDuration = 40,
+  fallDownEndY = 0.2,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -507,6 +515,9 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
               impactScale={impactScale}
               impactRotation={impactRotation}
               shakeIntensity={shakeIntensity}
+              enableFallDown={enableFallDown}
+              fallDownDuration={fallDownDuration}
+              fallDownEndY={fallDownEndY}
             />
           );
         });

@@ -22,11 +22,11 @@ export const RemotionRoot: React.FC = () => {
             },
             {
               texts: ["健康成长"],
-              groupDelay: 60,
+              groupDelay: 48,
             },
             {
               texts: ["一马平川"],
-              groupDelay: 60,
+              groupDelay: 48,
             },
             {
               texts: ["福禄寿喜"],
@@ -65,6 +65,7 @@ export const RemotionRoot: React.FC = () => {
 
           // 运动方向：bottom-up 从下往上（默认），top-down 从上往下
           direction: "top-down", // 取消注释可切换为从上往下
+          enableFallDown: true,
 
           // 背景
           backgroundType: "image",
