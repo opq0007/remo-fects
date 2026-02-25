@@ -1,0 +1,12 @@
+{
+  "name": "text-breakthrough-effect",
+  "version": "1.0.0",
+  "description": "文字破屏而出特效 - 3D透视效果视频生成器",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render src/index.ts TextBreakthrough out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextBreakthrough out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TextBreakthrough out/preview.mp4 --frames=0-60 --chromium-flags=\"--headless=new\""
+  }
+}
