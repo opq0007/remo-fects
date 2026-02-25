@@ -74,19 +74,7 @@ function getPlatform() {
 }
 
 function getChromeGlobalPath() {
-  const platform = getPlatform();
-  return path.join(CHROME_GLOBAL_DIR, platform);
-}
-
-function getChromeExecutablePath() {
-  const platform = getPlatform();
-  const chromeDir = getChromeGlobalPath();
-  
-  if (platform === 'win32') {
-    return path.join(chromeDir, `chrome-headless-shell-${platform}`, 'chrome-headless-shell.exe');
-  } else {
-    return path.join(chromeDir, `chrome-headless-shell-${platform}`, 'chrome-headless-shell');
-  }
+  return CHROME_GLOBAL_DIR;
 }
 
 // ==================== 主要功能 ====================
@@ -127,77 +115,41 @@ function createSymlink(source, target) {
       fs.mkdirSync(targetParent, { recursive: true });
     }
     
-    // Windows 使用复制，Linux/macOS 使用软链接
+    // Windows 尝试多种方式创建链接
     if (platform === 'win32') {
-      // Windows: 复制整个平台目录（包括 VERSION 文件）
-      // 注意：Remotion 期望的路径是 chrome-headless-shell/win64/{files}
-      // 所以直接复制 win64 目录的内容到目标
-      copyPlatformDirectory(source, target);
-      return true;
+      // Windows: 优先尝试 Junction（无需管理员权限）
+      try {
+        execCommandSync('cmd', ['/c', 'mklink', '/J', target, source]);
+        log(`使用 Junction 创建链接`, 'info');
+        return true;
+      } catch (junctionError) {
+        // Junction 失败，尝试符号链接（需要管理员权限）
+        try {
+          execCommandSync('cmd', ['/c', 'mklink', '/D', target, source]);
+          log(`使用符号链接创建链接（需要管理员权限）`, 'info');
+          return true;
+        } catch (symlinkError) {
+          // 符号链接也失败，尝试 PowerShell
+          try {
+            execCommandSync('powershell', ['-Command', `New-Item -ItemType SymbolicLink -Path "${target}" -Target "${source}"`]);
+            log(`使用 PowerShell 创建链接（需要管理员权限）`, 'info');
+            return true;
+          } catch (psError) {
+            // 所有链接方式都失败
+            log(`所有链接方式都失败: ${psError.message}`, 'error');
+            return false;
+          }
+        }
+      }
     } else {
       // Linux/macOS: 使用符号链接
       fs.symlinkSync(source, target, 'dir');
+      log(`使用符号链接创建链接`, 'info');
       return true;
     }
   } catch (error) {
     log(`创建链接失败 (${source} -> ${target}): ${error.message}`, 'warn');
     return false;
-  }
-}
-
-function copyDirectory(source, target) {
-  // 创建目标目录
-  if (!fs.existsSync(target)) {
-    fs.mkdirSync(target, { recursive: true });
-  }
-  
-  // 递归复制所有文件和目录
-  const items = fs.readdirSync(source);
-  
-  for (const item of items) {
-    const sourcePath = path.join(source, item);
-    const targetPath = path.join(target, item);
-    const stats = fs.lstatSync(sourcePath);
-    
-    if (stats.isDirectory()) {
-      copyDirectory(sourcePath, targetPath);
-    } else if (stats.isFile()) {
-      // 复制文件
-      fs.copyFileSync(sourcePath, targetPath);
-    }
-  }
-}
-
-// 复制整个平台目录（包括 VERSION 文件）
-function copyPlatformDirectory(source, target) {
-  // Windows: source 是 win64 目录，需要复制其内容
-  // Remotion 期望的路径: chrome-headless-shell/win64/{files}
-  // Chrome 目录结构: chrome-headless-shell/{VERSION, win64/}
-  
-  log(`复制 ${path.basename(source)} 目录内容到 ${target}`, 'info');
-  
-  // 复制 win64 目录下的所有文件和子目录
-  const items = fs.readdirSync(source);
-  
-  for (const item of items) {
-    const sourcePath = path.join(source, item);
-    const targetPath = path.join(target, item);
-    const stats = fs.lstatSync(sourcePath);
-    
-    if (stats.isDirectory()) {
-      copyDirectory(sourcePath, targetPath);
-    } else if (stats.isFile()) {
-      fs.copyFileSync(sourcePath, targetPath);
-    }
-  }
-  
-  // 复制 VERSION 文件（应该和 win64 在同一层，即 target 的父目录）
-  const parentTarget = path.dirname(target);
-  const versionFile = path.join(path.dirname(source), 'VERSION');
-  if (fs.existsSync(versionFile)) {
-    const targetVersionFile = path.join(parentTarget, 'VERSION');
-    fs.copyFileSync(versionFile, targetVersionFile);
-    log(`复制 VERSION 文件到 ${targetVersionFile}`, 'info');
   }
 }
 
@@ -216,8 +168,22 @@ function execCommandSync(command, args) {
   return result.stdout.toString();
 }
 
+function execCommandSync(command, args) {
+  const { spawnSync } = require('child_process');
+  const result = spawnSync(command, args, {
+    stdio: 'pipe',
+    shell: true,
+    cwd: ROOT_DIR
+  });
+  
+  if (result.status !== 0) {
+    throw new Error(`Command failed: ${result.stderr.toString() || result.stdout.toString()}`);
+  }
+  
+  return result.stdout.toString();
+}
+
 async function linkChromeToProjects() {
-  const platform = getPlatform();
   const chromeGlobalPath = getChromeGlobalPath();
   
   log(`Chrome 全局路径: ${chromeGlobalPath}`, 'info');
@@ -248,7 +214,6 @@ async function linkChromeToProjects() {
     const projectNodeModules = path.join(projectPath, 'node_modules');
     const projectRemotionDir = path.join(projectNodeModules, '.remotion');
     const projectChromeDir = path.join(projectRemotionDir, 'chrome-headless-shell');
-    const targetPath = path.join(projectChromeDir, platform);
     
     // 创建必要的目录
     if (!fs.existsSync(projectNodeModules)) {
@@ -258,10 +223,10 @@ async function linkChromeToProjects() {
       fs.mkdirSync(projectRemotionDir, { recursive: true });
     }
     
-    // 创建软链接
+    // 直接链接整个 chrome-headless-shell 目录
     log(`为项目 ${project} 创建软链接...`, 'info');
     
-    const success = createSymlink(chromeGlobalPath, targetPath);
+    const success = createSymlink(chromeGlobalPath, projectChromeDir);
     
     if (success) {
       log(`✓ ${project} 软链接创建成功`, 'success');
@@ -287,36 +252,25 @@ function verifyLinks() {
   log('验证链接...', 'info');
   
   for (const project of projects) {
-    const targetPath = path.join(EFFECTS_DIR, project, 'node_modules', '.remotion', 'chrome-headless-shell', platform);
+    const targetPath = path.join(EFFECTS_DIR, project, 'node_modules', '.remotion', 'chrome-headless-shell');
     
     if (fs.existsSync(targetPath)) {
-      if (platform === 'win32') {
-        // Windows: 检查是否有文件（复制）
-        const stats = fs.statSync(targetPath);
-        if (stats.isDirectory()) {
-          // 检查是否有文件
-          const items = fs.readdirSync(targetPath);
-          const hasFiles = items.some(item => {
-            const itemPath = path.join(targetPath, item);
-            return fs.statSync(itemPath).isFile();
-          });
-          
-          if (hasFiles) {
-            log(`✓ ${project} Chrome 已安装（复制）`, 'success');
-          } else {
-            log(`✗ ${project} Chrome 目录为空`, 'error');
-          }
+      const stats = fs.lstatSync(targetPath);
+      
+      if (stats.isDirectory() || stats.isSymbolicLink()) {
+        // 检查是否包含 VERSION 文件和平台目录
+        const items = fs.readdirSync(targetPath);
+        const platformDir = getPlatform();
+        const hasVersion = items.includes('VERSION');
+        const hasPlatformDir = items.includes(platformDir);
+        
+        if (hasVersion && hasPlatformDir) {
+          log(`✓ ${project} Chrome 已安装`, 'success');
         } else {
-          log(`✗ ${project} 不是目录`, 'error');
+          log(`✗ ${project} Chrome 目录不完整（缺少 ${!hasVersion ? 'VERSION' : ''}${!hasPlatformDir ? platformDir : ''}）`, 'error');
         }
       } else {
-        // Linux/macOS: 检查是否为符号链接
-        const stats = fs.lstatSync(targetPath);
-        if (stats.isSymbolicLink()) {
-          log(`✓ ${project} 软链接正常`, 'success');
-        } else {
-          log(`⚠ ${project} 不是软链接`, 'warn');
-        }
+        log(`✗ ${project} 不是目录或链接`, 'error');
       }
     } else {
       log(`✗ ${project} Chrome 不存在`, 'error');
@@ -325,7 +279,6 @@ function verifyLinks() {
 }
 
 async function cleanProjectsChrome() {
-  const platform = getPlatform();
   const projects = fs.readdirSync(EFFECTS_DIR, { withFileTypes: true })
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
@@ -339,8 +292,8 @@ async function cleanProjectsChrome() {
       const stats = fs.lstatSync(projectChromeDir);
       let size = 0;
       
-      if (platform === 'win32' || !stats.isSymbolicLink()) {
-        // Windows 或实际目录：删除整个目录
+      if (!stats.isSymbolicLink()) {
+        // 实际目录：删除整个目录
         try {
           size = getDirSize(projectChromeDir);
           fs.rmSync(projectChromeDir, { recursive: true, force: true });
@@ -349,7 +302,7 @@ async function cleanProjectsChrome() {
           log(`⚠ ${project} 清理失败: ${error.message}`, 'warn');
         }
       } else {
-        // Linux/macOS 符号链接：只删除链接
+        // 符号链接：只删除链接
         fs.unlinkSync(projectChromeDir);
         log(`✓ ${project} 符号链接已删除`, 'success');
       }
@@ -387,11 +340,7 @@ async function main() {
   log('========================================', 'info');
   log('Chrome Headless Shell 管理工具', 'info');
   log(`平台: ${os.platform()} (${getPlatform()})`, 'info');
-  if (os.platform() === 'win32') {
-    log('Windows 平台使用复制方式', 'info');
-  } else {
-    log('Linux/macOS 平台使用软链接', 'info');
-  }
+  log('所有平台使用符号链接（节省空间）', 'info');
   log('========================================\n', 'info');
   
   try {
