@@ -202,8 +202,8 @@ export const RemotionRoot: React.FC = () => {
           component={TextRingComposition}
           durationInFrames={300}
           fps={24}
-          width={1080}
-          height={1920}
+          width={720}
+          height={1280}
           schema={TextRingCompositionSchema}
           defaultProps={{
             words: positionWords,

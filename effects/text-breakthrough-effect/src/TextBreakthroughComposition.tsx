@@ -51,6 +51,9 @@ export const TextBreakthroughCompositionSchema = z.object({
   // 组间延迟
   groupInterval: z.number().min(10).max(120).meta({ description: "文字组之间的间隔帧数" }),
 
+  // 运动方向配置
+  direction: z.enum(["bottom-up", "top-down"]).optional().meta({ description: "文字运动方向：bottom-up 从下往上（默认），top-down 从上往下" }),
+
   // 背景配置
   backgroundType: z.enum(["image", "video", "color", "gradient"]).meta({ description: "背景类型" }),
   backgroundSource: z.string().optional().meta({ description: "背景文件路径" }),
@@ -338,6 +341,7 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   impactRotation = 10,
   shakeIntensity = 8,
   groupInterval = 30,
+  direction = "bottom-up",
   backgroundType = "gradient",
   backgroundSource,
   backgroundColor = "#0a0a20",
@@ -475,6 +479,9 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
         return timing.texts.map((text, textIndex) => {
           const pos = textPositions[positionOffset + textIndex];
           
+          // 根据 direction 决定起始 Y 位置
+          const startYOffset = direction === "top-down" ? -0.8 : 0.8;
+          
           return (
             <TextBreakthrough
               key={`${groupIndex}-${textIndex}`}
@@ -483,7 +490,7 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
               startZ={startZ}
               endZ={endZ}
               startX={pos.x * 0.3} // 从侧面飞入
-              startY={pos.y + 0.8} // 从下方飞入
+              startY={pos.y + startYOffset} // 根据 direction 从上方或下方飞入
               endX={pos.x}
               endY={pos.y}
               fontSize={fontSize}

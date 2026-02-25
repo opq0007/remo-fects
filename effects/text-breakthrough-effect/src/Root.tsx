@@ -63,6 +63,9 @@ export const RemotionRoot: React.FC = () => {
           // 组间延迟
           groupInterval: 50,
 
+          // 运动方向：bottom-up 从下往上（默认），top-down 从上往下
+          direction: "top-down", // 取消注释可切换为从上往下
+
           // 背景
           backgroundType: "gradient",
           backgroundGradient: "radial-gradient(ellipse at center, #1a1030 0%, #0d0820 50%, #050510 100%)",
