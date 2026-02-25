@@ -4,9 +4,10 @@
   "description": "文字雨特效视频生成器 - Remotion 项目",
   "scripts": {
     "start": "remotion studio",
-    "build": "remotion render TextRain out/video.mp4",
-    "render": "remotion render TextRain out/video.mp4",
-    "render-preview": "remotion render TextRain out/preview.mp4 --frames=0-90"
+    "build": "remotion render src/index.ts TextRain out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextRain out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TextRain out/preview.mp4 --frames=0-90 --chromium-flags=\"--headless=new\"",
+    "render-edge": "remotion render src/index.ts TextRain out/video.mp4 --chromium-flags=\"--headless\""
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

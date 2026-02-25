@@ -6,11 +6,9 @@ import {
 
 // 默认文字列表
 const defaultWords = [
-  "一马平川",
   "平安喜乐",
   "万事如意",
-  "健康成长",
-  "马到成功",
+  "健康成长"
 ];
 
 // 默认图片列表 (PNG透明图片)
@@ -25,13 +23,14 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Folder name="TextRain">
         {/* 主要的文字雨组合 - 烫金3D效果 (横排) */}
+        {/* 【性能提示】此预设使用视频背景，渲染较慢。如需快速渲染，请使用 TextRainFast 预设 */}
         <Composition
           id="TextRain"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
-          width={1080}
-          height={1920}
+          durationInFrames={192}
+          fps={24}
+          width={720}
+          height={1280}
           schema={TextRainCompositionSchema}
           defaultProps={{
             words: defaultWords,
@@ -39,12 +38,12 @@ export const RemotionRoot: React.FC = () => {
             textDirection: "vertical",
             density: 2,
             fallSpeed: 0.15,
-            fontSizeRange: [60,100],
+            fontSizeRange: [60,60],
             imageSizeRange: [80, 150],
             opacityRange: [0.5, 0.95],
             rotationRange: [-10, 10],
             seed: 42,
-            laneCount: 6,
+            laneCount: 4,
             minVerticalGap: 100,
             textStyle: {
               color: "#ffd700",
@@ -53,8 +52,44 @@ export const RemotionRoot: React.FC = () => {
               fontWeight: 1000,
               letterSpacing: 2,
             },
-            backgroundType: "image",
-            backgroundSource: "熊猫.png",
+            backgroundType: "video",
+            backgroundSource: "马宝宝.mp4",
+            backgroundColor: "#1a1a2e",
+            overlayColor: "#000000",
+            overlayOpacity: 0.2,
+          }}
+        />
+
+        {/* 【优化预设】快速渲染版本 - 适合测试和快速出片 */}
+        <Composition
+          id="TextRainFast"
+          component={TextRainComposition}
+          durationInFrames={180}  // 缩短时长到 6 秒
+          fps={24}                // 保持 24fps
+          width={720}
+          height={1280}
+          schema={TextRainCompositionSchema}
+          defaultProps={{
+            words: defaultWords,
+            contentType: "text",
+            textDirection: "vertical",
+            density: 1.5,           // 降低密度
+            fallSpeed: 0.2,
+            fontSizeRange: [60, 60],
+            imageSizeRange: [80, 120],
+            opacityRange: [0.5, 0.95],
+            rotationRange: [-5, 5], // 减小旋转范围
+            seed: 42,
+            laneCount: 4,           // 减少列道数
+            minVerticalGap: 120,
+            textStyle: {
+              color: "#ffd700",
+              effect: "shadow",     // 使用简单效果替代 gold3d
+              effectIntensity: 0.8,
+              fontWeight: 800,
+              letterSpacing: 2,
+            },
+            backgroundType: "color", // 使用纯色背景替代视频
             backgroundColor: "#1a1a2e",
             overlayColor: "#000000",
             overlayOpacity: 0.2,
@@ -65,8 +100,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRainVertical"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1080}
           height={1920}
           schema={TextRainCompositionSchema}
@@ -74,7 +109,7 @@ export const RemotionRoot: React.FC = () => {
             words: defaultWords,
             contentType: "text",
             textDirection: "vertical",
-            density: 1.5,
+            density: 1.2,  // 降低密度以提高渲染速度
             fallSpeed: 0.12,
             fontSizeRange: [60, 100],
             imageSizeRange: [80, 150],
@@ -102,8 +137,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="ImageRainGold"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1080}
           height={1920}
           schema={TextRainCompositionSchema}
@@ -111,7 +146,7 @@ export const RemotionRoot: React.FC = () => {
             images: ["gold-ingot.png", "gold-coin.png"],
             contentType: "image",
             textDirection: "horizontal",
-            density: 2,
+            density: 1.5,  // 降低密度
             fallSpeed: 0.2,
             fontSizeRange: [60, 120],
             imageSizeRange: [80, 160],
@@ -143,8 +178,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="ImageRainCoins"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1080}
           height={1920}
           schema={TextRainCompositionSchema}
@@ -152,7 +187,7 @@ export const RemotionRoot: React.FC = () => {
             images: ["ancient-coin.png", "copper-coin.png"],
             contentType: "image",
             textDirection: "horizontal",
-            density: 3,
+            density: 2,  // 降低密度
             fallSpeed: 0.15,
             fontSizeRange: [50, 100],
             imageSizeRange: [60, 120],
@@ -184,8 +219,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="MixedRain"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1080}
           height={1920}
           schema={TextRainCompositionSchema}
@@ -195,7 +230,7 @@ export const RemotionRoot: React.FC = () => {
             contentType: "mixed",
             imageWeight: 0.4,
             textDirection: "horizontal",
-            density: 2,
+            density: 1.5,  // 降低密度
             fallSpeed: 0.18,
             fontSizeRange: [60, 120],
             imageSizeRange: [70, 140],
@@ -231,8 +266,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRainSimple"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1080}
           height={1920}
           schema={TextRainCompositionSchema}
@@ -240,7 +275,7 @@ export const RemotionRoot: React.FC = () => {
             words: ["平安喜乐", "万事如意", "心想事成"],
             contentType: "text",
             textDirection: "horizontal",
-            density: 2,
+            density: 1.2,  // 降低密度
             fallSpeed: 0.27,
             fontSizeRange: [60, 140],
             imageSizeRange: [60, 120],
@@ -266,8 +301,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRainNeon"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1920}
           height={1080}
           schema={TextRainCompositionSchema}
@@ -275,7 +310,7 @@ export const RemotionRoot: React.FC = () => {
             words: ["精彩", "冲刺", "闪耀", "星光", "美好", "温暖"],
             contentType: "text",
             textDirection: "horizontal",
-            density: 2,
+            density: 1.5,  // 降低密度
             fallSpeed: 0.4,
             fontSizeRange: [72, 150],
             imageSizeRange: [80, 150],
@@ -302,8 +337,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRainGradient"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1920}
           height={1080}
           schema={TextRainCompositionSchema}
@@ -311,7 +346,7 @@ export const RemotionRoot: React.FC = () => {
             words: ["前程似锦", "步步高升", "飞黄腾达", "鹏程万里", "大展宏图"],
             contentType: "text",
             textDirection: "horizontal",
-            density: 2,
+            density: 1.2,  // 降低密度
             fallSpeed: 0.2,
             fontSizeRange: [64, 140],
             imageSizeRange: [80, 150],
@@ -342,8 +377,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRainRetro"
           component={TextRainComposition}
-          durationInFrames={300}
-          fps={30}
+          durationInFrames={240}
+          fps={24}
           width={1920}
           height={1080}
           schema={TextRainCompositionSchema}
@@ -351,7 +386,7 @@ export const RemotionRoot: React.FC = () => {
             words: ["岁月静好", "时光荏苒", "岁月如歌", "初心不改"],
             contentType: "text",
             textDirection: "horizontal",
-            density: 2,
+            density: 1.2,  // 降低密度
             fallSpeed: 0.13,
             fontSizeRange: [60, 130],
             imageSizeRange: [70, 130],

@@ -305,6 +305,35 @@ const getHueRotate = (color: string): number => {
   return colorMap[color.toLowerCase()] ?? 0;
 };
 
+// ==================== 性能优化说明 ====================
+/**
+ * 【为什么预览快但渲染慢？】
+ * 
+ * 1. 预览模式：只渲染当前显示的1帧，浏览器实时计算
+ * 2. 渲染模式：需要逐帧生成图片（如 240帧 × 720×1280像素），再编码成视频
+ * 
+ * 【主要性能瓶颈】
+ * 
+ * 1. 雨滴数量 = duration(秒) × density × 15
+ *    例如：10秒 × 2 × 15 = 300个雨滴，每个雨滴都要计算位置和动画
+ * 
+ * 2. 复杂的文字效果（如 gold3d）有多层 textShadow，渲染开销大
+ * 
+ * 3. 背景视频需要逐帧解码（如果使用了视频背景）
+ * 
+ * 【优化建议】
+ * 
+ * 1. 降低 fps（从30降到24）
+ * 2. 减少 density（从3降到1-2）
+ * 3. 缩短视频时长
+ * 4. 使用图片背景代替视频背景
+ * 5. 使用简单的文字效果（如 shadow 比 gold3d 快）
+ * 6. 减少 laneCount 和总雨滴数量
+ * 
+ * 【并发渲染】
+ * 已在 remotion.config.ts 中配置并发渲染，利用多核 CPU 加速
+ */
+
 // ==================== 雨滴生成逻辑 ====================
 
 const generateNonOverlappingDrops = (
@@ -327,12 +356,27 @@ const generateNonOverlappingDrops = (
   minVerticalGap: number
 ): RainDrop[] => {
   const drops: RainDrop[] = [];
+  
+  // 【优化】如果 count 为 0，直接返回空数组
+  if (count <= 0) return drops;
+  
   const laneOccupancy: { startY: number; endY: number; startTime: number; endTime: number }[][] = 
     Array.from({ length: laneCount }, () => []);
   const laneWidth = width / laneCount;
 
   const hasText = words.length > 0;
   const hasImages = images.length > 0;
+  
+  // 【优化】预先计算常量，避免在循环中重复计算
+  const opacityDelta = opacityRange[1] - opacityRange[0];
+  const rotationDelta = rotationRange[1] - rotationRange[0];
+  const fontSizeDelta = fontSizeRange[1] - fontSizeRange[0];
+  const imageSizeDelta = imageSizeRange[1] - imageSizeRange[0];
+  const fpsValue = typeof fps === 'number' ? fps : 30;
+
+  // 【修复】使用独立计数器来跟踪成功添加的文字/图片数量，确保轮询顺序正确
+  let textIndex = 0;   // 文字计数器
+  let imageIndex = 0;  // 图片计数器
 
   for (let i = 0; i < count; i++) {
     const seedValue = seed + i * 1000;
@@ -347,17 +391,24 @@ const generateNonOverlappingDrops = (
       dropType = "image";
     }
     
-    const opacity = opacityRange[0] + random(`opacity-${seedValue}`) * (opacityRange[1] - opacityRange[0]);
-    const rotation = rotationRange[0] + random(`rotation-${seedValue}`) * (rotationRange[1] - rotationRange[0]);
+    // 【优化】使用预计算的 delta 值，减少重复计算
+    const opacity = opacityRange[0] + random(`opacity-${seedValue}`) * opacityDelta;
+    const rotation = rotationRange[0] + random(`rotation-${seedValue}`) * rotationDelta;
     
     let itemWidth: number;
     let itemHeight: number;
     let text = "";
     let imageSrc = "";
+    let currentTextIndex = -1;   // 记录当前文字索引
+    let currentImageIndex = -1;  // 记录当前图片索引
     
     if (dropType === "text" && hasText) {
-      text = words[Math.floor(random(`word-${seedValue}`) * words.length)];
-      const fontSize = fontSizeRange[0] + random(`fontSize-${seedValue}`) * (fontSizeRange[1] - fontSizeRange[0]);
+      // 【修复】使用独立计数器确保文字按顺序轮询
+      currentTextIndex = textIndex;
+      text = words[textIndex % words.length];
+      textIndex++;
+      // 【优化】使用预计算的 delta 值
+      const fontSize = fontSizeRange[0] + random(`fontSize-${seedValue}`) * fontSizeDelta;
       
       // 根据文字方向计算宽高
       if (textDirection === "vertical") {
@@ -382,8 +433,12 @@ const generateNonOverlappingDrops = (
         textHeight: itemHeight,
       });
     } else if (dropType === "image" && hasImages) {
-      imageSrc = images[Math.floor(random(`image-${seedValue}`) * images.length)];
-      const itemSize = imageSizeRange[0] + random(`imageSize-${seedValue}`) * (imageSizeRange[1] - imageSizeRange[0]);
+      // 【修复】使用独立计数器确保图片按顺序轮询
+      currentImageIndex = imageIndex;
+      imageSrc = images[imageIndex % images.length];
+      imageIndex++;
+      // 【优化】使用预计算的 delta 值
+      const itemSize = imageSizeRange[0] + random(`imageSize-${seedValue}`) * imageSizeDelta;
       itemWidth = itemSize;
       itemHeight = itemSize;
       
@@ -400,14 +455,22 @@ const generateNonOverlappingDrops = (
     
     // 计算碰撞和位置
     const lastDrop = drops[drops.length - 1];
-    const shuffledLanes = Array.from({ length: laneCount }, (_, idx) => idx)
-      .sort(() => random(`lane-shuffle-${seedValue}-${i}`) - 0.5);
+    
+    // 【优化】使用 Fisher-Yates 洗牌算法的简化版，减少随机调用
+    const shuffledLanes: number[] = [];
+    const availableLanes = Array.from({ length: laneCount }, (_, idx) => idx);
+    for (let j = laneCount - 1; j >= 0; j--) {
+      const randIdx = Math.floor(random(`lane-${seedValue}-${j}`) * (j + 1));
+      shuffledLanes.push(availableLanes[randIdx]);
+      availableLanes[randIdx] = availableLanes[j];
+    }
     
     let selectedLane = -1;
     let bestDelay = 0;
     let bestDuration = 0;
     
-    const baseDuration = Math.floor(fps * 3 + random(`duration-${seedValue}`) * fps * 2);
+    // 【优化】使用预计算的 fps 值
+    const baseDuration = Math.floor(fpsValue * 3 + random(`duration-${seedValue}`) * fpsValue * 2);
     const baseDelay = Math.floor(random(`delay-${seedValue}`) * durationInFrames * 0.9);
     const fallDistance = height + itemHeight * 2;
     const fallPixelsPerFrame = fallDistance / baseDuration;
@@ -440,6 +503,13 @@ const generateNonOverlappingDrops = (
     
     if (selectedLane === -1) {
       drops.pop();
+      // 【修复】碰撞检测失败时，回滚计数器，确保轮询顺序不乱
+      if (currentTextIndex >= 0) {
+        textIndex--;
+      }
+      if (currentImageIndex >= 0) {
+        imageIndex--;
+      }
       continue;
     }
     
@@ -637,19 +707,48 @@ export const TextRain: React.FC<TextRainProps> = ({
     ...imageStyle,
   };
 
+  // 【性能关键】计算总雨滴数量
+  // 公式：duration(秒) × density × 15
+  // 例如：10秒 × 2 × 15 = 300个雨滴
+  // 雨滴数量直接影响渲染性能，建议控制总数量在 200 以内
   const totalDrops = useMemo(() => {
     const durationInSeconds = durationInFrames / fps;
-    return Math.floor(durationInSeconds * density * 15);
+    const count = Math.floor(durationInSeconds * density * 15);
+    // 【优化】限制最大雨滴数量，避免内存溢出
+    return Math.min(count, 300);
   }, [durationInFrames, fps, density]);
 
+  // 【优化】使用 JSON 序列化作为依赖，确保数组内容变化时才重新计算
+  // 这是 React 推荐的方式，用于处理数组/对象类型的依赖
   const drops = useMemo(() => {
+    // 【性能提示】这是渲染的主要瓶颈，雨滴数量越多计算越慢
     return generateNonOverlappingDrops(
       words, images, contentType, imageWeight, textDirection, totalDrops, durationInFrames, fps / fallSpeed, seed,
       fontSizeRange, imageSizeRange, opacityRange, rotationRange, width, height,
       laneCount, minVerticalGap,
     );
-  }, [words, images, contentType, imageWeight, textDirection, totalDrops, durationInFrames, fps, fallSpeed, seed,
-      fontSizeRange, imageSizeRange, opacityRange, rotationRange, width, height, laneCount, minVerticalGap]);
+    // 使用 JSON 序列化处理数组依赖，避免引用比较问题
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    JSON.stringify(words),
+    JSON.stringify(images),
+    contentType,
+    imageWeight,
+    textDirection,
+    totalDrops,
+    durationInFrames,
+    fps,
+    fallSpeed,
+    seed,
+    JSON.stringify(fontSizeRange),
+    JSON.stringify(imageSizeRange),
+    JSON.stringify(opacityRange),
+    JSON.stringify(rotationRange),
+    width,
+    height,
+    laneCount,
+    minVerticalGap,
+  ]);
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
