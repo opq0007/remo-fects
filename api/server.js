@@ -14,6 +14,11 @@ const projects = {
     path: path.join(__dirname, '../effects/text-rain-effect'),
     compositionId: 'TextRain',
     name: '文字雨特效'
+  },
+  'gold-text-ring-effect': {
+    path: path.join(__dirname, '../effects/gold-text-ring-effect'),
+    compositionId: 'TextRing',
+    name: '金色发光立体字环绕特效'
   }
   // 未来可以添加更多项目，例如：
   // 'particle-effect': {
@@ -105,42 +110,65 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
       }
     }
 
-    const params = {
+    // 根据项目类型构建参数
+    let params = {
       projectId,
       projectPath: projectConfig.path,
       compositionId: projectConfig.compositionId,
       words: words,
-      textDirection: req.body.textDirection || 'horizontal',
-      fontSizeRange: typeof req.body.fontSizeRange === 'string'
-        ? JSON.parse(req.body.fontSizeRange)
-        : (req.body.fontSizeRange || [80, 160]),
-      fallSpeed: parseFloat(req.body.fallSpeed) || 0.15,
-      density: parseFloat(req.body.density) || 2,
-      opacityRange: typeof req.body.opacityRange === 'string'
-        ? JSON.parse(req.body.opacityRange)
-        : (req.body.opacityRange || [0.6, 1]),
-      rotationRange: typeof req.body.rotationRange === 'string'
-        ? JSON.parse(req.body.rotationRange)
-        : (req.body.rotationRange || [-10, 10]),
-      laneCount: parseInt(req.body.laneCount) || 6,
-      minVerticalGap: parseInt(req.body.minVerticalGap) || 100,
       duration: parseInt(req.body.duration) || 10,
       fps: parseInt(req.body.fps) || 24,
       width: parseInt(req.body.width) || 720,
       height: parseInt(req.body.height) || 1280,
+      backgroundFile,
+      backgroundType: req.body.backgroundType || (backgroundFile ? 'image' : 'color'),
       backgroundColor: req.body.backgroundColor || '#1a1a2e',
       overlayOpacity: parseFloat(req.body.overlayOpacity) || 0.2,
-      audioEnabled: req.body.audioEnabled !== 'false',
-      audioVolume: parseFloat(req.body.audioVolume) || 0.5,
-      textStyle: typeof req.body.textStyle === 'string'
-        ? JSON.parse(req.body.textStyle)
-        : (req.body.textStyle || {}),
-      backgroundFile,
-      backgroundType: req.body.backgroundType || (backgroundFile ? 'image' : 'color')
+      overlayColor: req.body.overlayColor || '#000000'
     };
+
+    // text-rain-effect 特有参数
+    if (projectId === 'text-rain-effect') {
+      params.textDirection = req.body.textDirection || 'horizontal';
+      params.fontSizeRange = typeof req.body.fontSizeRange === 'string'
+        ? JSON.parse(req.body.fontSizeRange)
+        : (req.body.fontSizeRange || [80, 160]);
+      params.fallSpeed = parseFloat(req.body.fallSpeed) || 0.15;
+      params.density = parseFloat(req.body.density) || 2;
+      params.opacityRange = typeof req.body.opacityRange === 'string'
+        ? JSON.parse(req.body.opacityRange)
+        : (req.body.opacityRange || [0.6, 1]);
+      params.rotationRange = typeof req.body.rotationRange === 'string'
+        ? JSON.parse(req.body.rotationRange)
+        : (req.body.rotationRange || [-10, 10]);
+      params.laneCount = parseInt(req.body.laneCount) || 6;
+      params.minVerticalGap = parseInt(req.body.minVerticalGap) || 100;
+      params.audioEnabled = req.body.audioEnabled !== 'false';
+      params.audioVolume = parseFloat(req.body.audioVolume) || 0.5;
+      params.textStyle = typeof req.body.textStyle === 'string'
+        ? JSON.parse(req.body.textStyle)
+        : (req.body.textStyle || {});
+    }
+
+    // gold-text-ring-effect 特有参数
+    if (projectId === 'gold-text-ring-effect') {
+      params.fontSize = parseInt(req.body.fontSize) || 70;
+      params.opacity = parseFloat(req.body.opacity) || 1;
+      params.ringRadius = parseFloat(req.body.ringRadius) || 250;
+      params.rotationSpeed = parseFloat(req.body.rotationSpeed) || 0.8;
+      params.seed = parseInt(req.body.seed) || 42;
+      params.glowIntensity = parseFloat(req.body.glowIntensity) || 0.9;
+      params.depth3d = parseInt(req.body.depth3d) || 8;
+      params.cylinderHeight = parseFloat(req.body.cylinderHeight) || 400;
+      params.perspective = parseInt(req.body.perspective) || 1000;
+      params.mode = req.body.mode || 'vertical';
+    }
 
     // 验证文字（如果是文字特效）
     if (projectId === 'text-rain-effect' && (!params.words || params.words.length === 0)) {
+      return res.status(400).json({ error: '请提供文字列表' });
+    }
+    if (projectId === 'gold-text-ring-effect' && (!params.words || params.words.length === 0)) {
       return res.status(400).json({ error: '请提供文字列表' });
     }
 

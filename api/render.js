@@ -20,34 +20,52 @@ async function renderVideo(params, jobId, onProgress) {
   // 构建 defaultProps
   const defaultProps = {
     words: params.words,
-    contentType: 'text',
-    textDirection: params.textDirection || 'horizontal',
-    fontSizeRange: params.fontSizeRange,
-    fallSpeed: params.fallSpeed,
-    density: params.density,
-    opacityRange: params.opacityRange,
-    rotationRange: params.rotationRange,
-    laneCount: params.laneCount,
-    minVerticalGap: params.minVerticalGap,
     seed: Math.floor(Math.random() * 10000),
-    imageSizeRange: [80, 150],
-    textStyle: {
+    backgroundType: params.backgroundType || 'color',
+    backgroundColor: params.backgroundColor || '#1a1a2e',
+    overlayOpacity: params.overlayOpacity ?? 0.2,
+    overlayColor: params.overlayColor || '#000000'
+  };
+
+  // text-rain-effect 特有参数
+  if (params.projectId === 'text-rain-effect') {
+    defaultProps.contentType = 'text';
+    defaultProps.textDirection = params.textDirection || 'horizontal';
+    defaultProps.fontSizeRange = params.fontSizeRange;
+    defaultProps.fallSpeed = params.fallSpeed;
+    defaultProps.density = params.density;
+    defaultProps.opacityRange = params.opacityRange;
+    defaultProps.rotationRange = params.rotationRange;
+    defaultProps.laneCount = params.laneCount;
+    defaultProps.minVerticalGap = params.minVerticalGap;
+    defaultProps.imageSizeRange = [80, 150];
+    defaultProps.textStyle = {
       color: params.textStyle?.color || '#ffd700',
       effect: params.textStyle?.effect || 'gold3d',
       effectIntensity: params.textStyle?.effectIntensity ?? 0.9,
       fontWeight: params.textStyle?.fontWeight || 700,
       letterSpacing: params.textStyle?.letterSpacing ?? 4,
-    },
-    backgroundType: params.backgroundType || 'color',
-    backgroundColor: params.backgroundColor || '#1a1a2e',
-    overlayOpacity: params.overlayOpacity ?? 0.2,
-    audio: {
+    };
+    defaultProps.audio = {
       enabled: params.audioEnabled !== false,
       src: 'coin-sound.mp3',
       volume: params.audioVolume || 0.5,
       loop: true
-    }
-  };
+    };
+  }
+
+  // gold-text-ring-effect 特有参数
+  if (params.projectId === 'gold-text-ring-effect') {
+    defaultProps.fontSize = params.fontSize;
+    defaultProps.opacity = params.opacity;
+    defaultProps.ringRadius = params.ringRadius;
+    defaultProps.rotationSpeed = params.rotationSpeed;
+    defaultProps.glowIntensity = params.glowIntensity;
+    defaultProps.depth3d = params.depth3d;
+    defaultProps.cylinderHeight = params.cylinderHeight;
+    defaultProps.perspective = params.perspective;
+    defaultProps.mode = params.mode || 'vertical';
+  }
 
   // 如果有背景文件，复制到项目 public 目录
   if (params.backgroundFile) {
