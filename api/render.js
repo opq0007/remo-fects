@@ -108,7 +108,11 @@ async function renderVideo(params, jobId, onProgress) {
     const child = spawn('npx', args, {
       cwd: projectPath,
       shell: true,
-      env: { ...process.env, NODE_ENV: 'production' }
+      env: {
+        ...process.env,
+        NODE_ENV: 'production',
+        REMOTION_BROWSER_EXECUTABLE: path.join(__dirname, '../node_modules/.remotion/chrome-headless-shell/win64/chrome-headless-shell-win64/chrome-headless-shell.exe')
+      }
     });
 
     let lastProgress = 0;

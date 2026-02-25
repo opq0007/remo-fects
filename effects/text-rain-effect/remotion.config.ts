@@ -2,18 +2,15 @@ import { Config } from "@remotion/cli/config";
 import os from "os";
 
 // ==================== 浏览器配置说明 ====================
-// 
-// 【重要】Remotion 4.0.247+ 已内置 Chrome Headless Shell
-// 
-// - 不要设置 setBrowserExecutable()，让 Remotion 使用内置的 Chrome Headless Shell
-// - Chrome Headless Shell 专门为视频渲染优化，比系统 Chrome 更稳定
-// - 系统 Chrome 132+ 已移除旧的 headless 模式，会导致渲染失败
-// 
-// 如果确实需要使用自定义浏览器：
-// 1. 设置环境变量: REMOTION_BROWSER_EXECUTABLE=/path/to/chrome
-// 2. 或使用 --browser-executable 命令行参数
-// 
-// 注意：使用系统 Chrome 可能会遇到 headless 模式兼容性问题
+//
+// 【重要】使用全局 Chrome Headless Shell
+//
+// - 所有特效项目共享根目录的 Chrome Headless Shell
+// - 避免每个子项目重复下载 255 MB 的 Chrome
+// - 通过环境变量 REMOTION_BROWSER_EXECUTABLE 指定全局路径
+//
+// 环境变量设置（在 api/render.js 中）：
+// REMOTION_BROWSER_EXECUTABLE=<root>/node_modules/.remotion/chrome-headless-shell/win64/chrome-headless-shell-win64/chrome-headless-shell.exe
 
 // ==================== 性能优化配置 ====================
 // 

@@ -11,13 +11,13 @@ const PORT = process.env.PORT || 3001;
 // 项目配置：定义每个特效项目的路径和配置
 const projects = {
   'text-rain-effect': {
-    path: path.join(__dirname, '../text-rain-effect'),
+    path: path.join(__dirname, '../effects/text-rain-effect'),
     compositionId: 'TextRain',
     name: '文字雨特效'
   }
   // 未来可以添加更多项目，例如：
   // 'particle-effect': {
-  //   path: path.join(__dirname, '../particle-effect'),
+  //   path: path.join(__dirname, '../effects/particle-effect'),
   //   compositionId: 'Particle',
   //   name: '粒子特效'
   // }
