@@ -67,8 +67,8 @@ export const RemotionRoot: React.FC = () => {
           direction: "top-down", // 取消注释可切换为从上往下
 
           // 背景
-          backgroundType: "gradient",
-          backgroundGradient: "radial-gradient(ellipse at center, #1a1030 0%, #0d0820 50%, #050510 100%)",
+          backgroundType: "image",
+          backgroundSource: "佛陀1.png",
 
           // 遮罩
           overlayColor: "#000000",

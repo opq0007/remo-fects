@@ -480,7 +480,7 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
           const pos = textPositions[positionOffset + textIndex];
           
           // 根据 direction 决定起始 Y 位置
-          const startYOffset = direction === "top-down" ? -0.8 : 0.8;
+          const startYOffset = direction === "top-down" ? -0.3 : 0.8;
           
           return (
             <TextBreakthrough
