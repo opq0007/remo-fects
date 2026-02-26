@@ -1,0 +1,12 @@
+{
+  "name": "tai-chi-bagua-effect",
+  "version": "1.0.0",
+  "description": "太极八卦图动态特效 - Remotion 项目",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render src/index.ts TaiChiBagua out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TaiChiBagua out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TaiChiBagua out/preview.mp4 --frames=0-90 --chromium-flags=\"--headless=new\""
+  }
+}

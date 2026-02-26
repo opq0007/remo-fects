@@ -29,6 +29,11 @@ const projects = {
     path: path.join(__dirname, '../effects/text-breakthrough-effect'),
     compositionId: 'TextBreakthrough',
     name: '文字破屏特效'
+  },
+  'tai-chi-bagua-effect': {
+    path: path.join(__dirname, '../effects/tai-chi-bagua-effect'),
+    compositionId: 'TaiChiBagua',
+    name: '太极八卦图特效'
   }
   // 未来可以添加更多项目，例如：
   // 'particle-effect': {
@@ -258,6 +263,41 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
         const lastGroupStart = (params.words.length - 1) * groupInterval;
         const totalFrames = lastGroupStart + totalAnimation + (params.enableFallDown ? params.fallDownDuration : 0) + 20;
         params.duration = Math.ceil(totalFrames / params.fps);
+      }
+    }
+
+    // tai-chi-bagua-effect 特有参数
+    if (projectId === 'tai-chi-bagua-effect') {
+      // 颜色配置
+      params.yangColor = req.body.yangColor || '#FFD700';
+      params.yinColor = req.body.yinColor || '#1a1a1a';
+      params.backgroundColor = req.body.backgroundColor || '#FFFFFF';
+      
+      // 发光效果
+      params.glowIntensity = parseFloat(req.body.glowIntensity) || 0.9;
+      
+      // 动画速度
+      params.taichiRotationSpeed = parseFloat(req.body.taichiRotationSpeed) || 1;
+      params.baguaRotationSpeed = parseFloat(req.body.baguaRotationSpeed) || 0.5;
+      
+      // 尺寸
+      params.taichiSize = parseInt(req.body.taichiSize) || 200;
+      params.baguaRadius = parseInt(req.body.baguaRadius) || 280;
+      
+      // 显示选项
+      params.showLabels = req.body.showLabels !== 'false';
+      params.showParticles = req.body.showParticles !== 'false';
+      params.showEnergyField = req.body.showEnergyField !== 'false';
+      params.labelOffset = parseInt(req.body.labelOffset) || 45;
+      
+      // 粒子效果
+      params.particleCount = parseInt(req.body.particleCount) || 40;
+      params.particleSpeed = parseFloat(req.body.particleSpeed) || 1;
+      
+      // 默认尺寸为正方形
+      if (!req.body.width && !req.body.height) {
+        params.width = 720;
+        params.height = 720;
       }
     }
 

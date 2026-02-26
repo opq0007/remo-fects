@@ -138,6 +138,24 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.audioVolume = params.audioVolume || 0.5;
   }
 
+  // tai-chi-bagua-effect 特有参数
+  if (params.projectId === 'tai-chi-bagua-effect') {
+    defaultProps.yangColor = params.yangColor || '#FFD700';
+    defaultProps.yinColor = params.yinColor || '#1a1a1a';
+    defaultProps.backgroundColor = params.backgroundColor || '#FFFFFF';
+    defaultProps.glowIntensity = params.glowIntensity || 0.9;
+    defaultProps.taichiRotationSpeed = params.taichiRotationSpeed || 1;
+    defaultProps.baguaRotationSpeed = params.baguaRotationSpeed || 0.5;
+    defaultProps.taichiSize = params.taichiSize || 200;
+    defaultProps.baguaRadius = params.baguaRadius || 280;
+    defaultProps.showLabels = params.showLabels !== false;
+    defaultProps.showParticles = params.showParticles !== false;
+    defaultProps.showEnergyField = params.showEnergyField !== false;
+    defaultProps.labelOffset = params.labelOffset || 45;
+    defaultProps.particleCount = params.particleCount || 40;
+    defaultProps.particleSpeed = params.particleSpeed || 1;
+  }
+
   // 如果有背景文件，复制到项目 public 目录
   if (params.backgroundFile) {
     defaultProps.backgroundSource = params.backgroundFile;
