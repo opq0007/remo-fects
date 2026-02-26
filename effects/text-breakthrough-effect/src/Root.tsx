@@ -22,17 +22,34 @@ export const RemotionRoot: React.FC = () => {
             },
             {
               texts: ["健康成长"],
-              groupDelay: 60,
+              groupDelay: 48,
             },
             {
-              texts: ["一马平川"],
-              groupDelay: 60,
+              texts: ["财源滚滚"],
+              groupDelay: 48,
             },
             {
-              texts: ["福禄寿喜"],
+              texts: ["马上有钱"],
               groupDelay: 60,
             },
           ],
+
+          // 文字最终定格位置配置
+          finalPosition: {
+            // 默认位置（画面中心为 0,0，x 范围 -0.5 到 0.5，y 范围 -0.5 到 0.5）
+            defaultX: 0,    // 水平居中
+            defaultY: 0,    // 垂直居中
+            // 每个文字组的独立位置（可选，覆盖默认位置）
+            groupPositions: [
+              { x: 0, y: -0.3, arrangement: "circular" },      // 第一组：上方居中，圆形排列
+              { x: -0.15, y: -0.1, arrangement: "horizontal" }, // 第二组：左上，水平排列
+              { x: 0.15, y: 0.1, arrangement: "horizontal" },   // 第三组：右下，水平排列
+              { x: 0, y: 0.3, arrangement: "circular" },        // 第四组：下方居中，圆形排列
+            ],
+            // 自动排列方式（当组内未指定时使用）
+            autoArrangement: "circular",  // horizontal / vertical / circular / stacked
+            autoArrangementSpacing: 0.25, // 排列间距
+          },
 
           // 字体配置
           fontSize: 120,
@@ -63,13 +80,22 @@ export const RemotionRoot: React.FC = () => {
           // 组间延迟
           groupInterval: 50,
 
+          // 运动方向：bottom-up 从下往上（默认），top-down 从上往下
+          direction: "top-down", // 取消注释可切换为从上往下
+          enableFallDown: true,
+
           // 背景
-          backgroundType: "gradient",
-          backgroundGradient: "radial-gradient(ellipse at center, #1a1030 0%, #0d0820 50%, #050510 100%)",
+          backgroundType: "image",
+          backgroundSource: "财神2.png",
 
           // 遮罩
           overlayColor: "#000000",
           overlayOpacity: 0.1,
+
+          // 音效配置
+          audioEnabled: true,              // 是否启用背景音效
+          audioSource: "coin-sound.mp3",    // 音效文件路径
+          audioVolume: 0.5,                 // 音量（0-2，1为正常音量）
         }}
       />
     </>

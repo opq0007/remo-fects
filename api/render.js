@@ -83,6 +83,61 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.interval = params.interval || 40;
   }
 
+  // text-breakthrough-effect 特有参数
+  if (params.projectId === 'text-breakthrough-effect') {
+    // 文字组配置
+    defaultProps.textGroups = params.textGroups || params.words.map(w => ({ texts: [w], groupDelay: params.groupInterval || 50 }));
+    
+    // 定格位置配置
+    if (params.finalPosition) {
+      defaultProps.finalPosition = typeof params.finalPosition === 'string' 
+        ? JSON.parse(params.finalPosition) 
+        : params.finalPosition;
+    }
+    
+    // 字体配置
+    defaultProps.fontSize = params.fontSize || 120;
+    defaultProps.fontFamily = params.fontFamily || 'PingFang SC, Microsoft YaHei, SimHei, sans-serif';
+    defaultProps.fontWeight = params.fontWeight || 900;
+    
+    // 3D金色效果
+    defaultProps.textColor = params.textColor || '#ffd700';
+    defaultProps.glowColor = params.glowColor || '#ffaa00';
+    defaultProps.secondaryGlowColor = params.secondaryGlowColor || '#ff6600';
+    defaultProps.glowIntensity = params.glowIntensity || 1.5;
+    defaultProps.bevelDepth = params.bevelDepth || 3;
+    
+    // 3D透视参数
+    defaultProps.startZ = params.startZ || 2000;
+    defaultProps.endZ = params.endZ || -100;
+    
+    // 动画时长
+    defaultProps.approachDuration = params.approachDuration || 45;
+    defaultProps.breakthroughDuration = params.breakthroughDuration || 20;
+    defaultProps.holdDuration = params.holdDuration || 40;
+    
+    // 冲击效果
+    defaultProps.impactScale = params.impactScale || 1.4;
+    defaultProps.impactRotation = params.impactRotation || 12;
+    defaultProps.shakeIntensity = params.shakeIntensity || 10;
+    
+    // 组间延迟
+    defaultProps.groupInterval = params.groupInterval || 50;
+    
+    // 运动方向
+    defaultProps.direction = params.direction || 'top-down';
+    
+    // 下落消失效果
+    defaultProps.enableFallDown = params.enableFallDown !== false;
+    defaultProps.fallDownDuration = params.fallDownDuration || 40;
+    defaultProps.fallDownEndY = params.fallDownEndY || 0.2;
+    
+    // 音效配置
+    defaultProps.audioEnabled = params.audioEnabled || false;
+    defaultProps.audioSource = params.audioSource || 'coin-sound.mp3';
+    defaultProps.audioVolume = params.audioVolume || 0.5;
+  }
+
   // 如果有背景文件，复制到项目 public 目录
   if (params.backgroundFile) {
     defaultProps.backgroundSource = params.backgroundFile;

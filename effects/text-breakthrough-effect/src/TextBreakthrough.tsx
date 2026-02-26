@@ -37,6 +37,10 @@ export interface TextBreakthroughProps {
   speedLinesEnabled?: boolean; // 是否启用速度线
   flashEnabled?: boolean; // 是否启用闪光效果
   afterimageEnabled?: boolean; // 是否启用残影效果
+  // 下落消失效果参数
+  enableFallDown?: boolean; // 是否启用下落消失效果
+  fallDownDuration?: number; // 下落动画时长（帧）
+  fallDownEndY?: number; // 下落结束位置（距底部百分比）
 }
 
 // 碎片粒子接口
@@ -564,6 +568,9 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
   speedLinesEnabled = true,
   flashEnabled = true,
   afterimageEnabled = true,
+  enableFallDown = true,
+  fallDownDuration = 40,
+  fallDownEndY = 0.2,
 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
@@ -572,11 +579,13 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
   const approachEnd = startFrame + approachDuration;
   const breakthroughEnd = approachEnd + breakthroughDuration;
   const holdEnd = breakthroughEnd + holdDuration;
+  const fallDownEnd = holdEnd + fallDownDuration;
 
   // 当前阶段
   const isApproaching = frame >= startFrame && frame < approachEnd;
   const isBreakingThrough = frame >= approachEnd && frame < breakthroughEnd;
   const isHolding = frame >= breakthroughEnd && frame < holdEnd;
+  const isFallingDown = enableFallDown && frame >= holdEnd && frame < fallDownEnd;
 
   // 计算文本哈希（用于确定性随机）
   const textHash = text.split('').reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0);
@@ -619,6 +628,19 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
       )
     : frame >= holdEnd ? 1 : 0;
 
+  // 下落阶段：自由落体效果
+  const fallDownProgress = isFallingDown
+    ? interpolate(
+        frame,
+        [holdEnd, fallDownEnd],
+        [0, 1],
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+      )
+    : frame >= fallDownEnd ? 1 : 0;
+
+  // 使用加速缓动模拟重力效果
+  const fallDownEased = Easing.bezier(0.55, 0.055, 0.675, 0.19)(fallDownProgress);
+
   // ==================== 位置和缩放计算 ====================
 
   // Z轴位置（直接线性插值，避免 interpolate 的单调递增限制）
@@ -654,6 +676,16 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
   const rotation = isBreakingThrough
     ? Math.sin(breakthroughEased * Math.PI) * impactRotation
     : 0;
+
+  // 下落时的位置偏移（从当前位置下落到距底部 fallDownEndY 处）
+  const fallDownYOffset = isFallingDown
+    ? fallDownEased * (1 - endY - fallDownEndY)
+    : 0;
+
+  // 下落时的透明度（接近终点时逐渐消失）
+  const fallDownOpacity = isFallingDown
+    ? Math.max(0, 1 - Math.pow(fallDownProgress, 1.5))
+    : 1;
 
   // ==================== 样式计算 ====================
 
@@ -849,18 +881,18 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
       ))}
 
       {/* 主文字 */}
-      {(isApproaching || isBreakingThrough || isHolding) && (
+      {(isApproaching || isBreakingThrough || isHolding || isFallingDown) && (
         <div
           style={{
             position: "absolute",
             left: screenX + shakeX,
-            top: screenY + shakeY,
+            top: screenY + shakeY + (isFallingDown ? fallDownYOffset * height : 0),
             transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
             fontSize: scaledFontSize,
             fontFamily,
             fontWeight,
             color: textColor,
-            opacity: textOpacity,
+            opacity: textOpacity * fallDownOpacity,
             whiteSpace: "nowrap",
             letterSpacing: `${4 * finalScale}px`,
             textShadow: `
@@ -904,19 +936,19 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
       )}
 
       {/* 外发光层 */}
-      {(isApproaching || isBreakingThrough || isHolding) && (
+      {(isApproaching || isBreakingThrough || isHolding || isFallingDown) && (
         <div
           style={{
             position: "absolute",
             left: screenX + shakeX,
-            top: screenY + shakeY,
+            top: screenY + shakeY + (isFallingDown ? fallDownYOffset * height : 0),
             transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
             fontSize: scaledFontSize,
             fontFamily,
             fontWeight,
             color: "transparent",
             WebkitTextStroke: `${2 * finalScale}px ${glowColor}`,
-            opacity: textOpacity * 0.5,
+            opacity: textOpacity * 0.5 * fallDownOpacity,
             whiteSpace: "nowrap",
             letterSpacing: `${4 * finalScale}px`,
             filter: `blur(${3 * finalScale}px)`,
