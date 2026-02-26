@@ -7,6 +7,7 @@ import {
   Sequence,
   useCurrentFrame,
   interpolate,
+  Audio,
 } from "remotion";
 import { Video } from "@remotion/media";
 import { TextBreakthrough } from "./TextBreakthrough";
@@ -15,12 +16,33 @@ import { zColor } from "@remotion/zod-types";
 
 // ==================== Schema 定义 ====================
 
+// 文字最终定格位置 Schema
+export const TextFinalPositionSchema = z.object({
+  // 全局默认位置（相对于画面中心的偏移比例，-0.5 到 0.5）
+  defaultX: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认水平位置（-0.5左 到 0.5右）" }),
+  defaultY: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认垂直位置（-0.5上 到 0.5下）" }),
+  // 每个文字组的独立位置（覆盖默认位置）
+  groupPositions: z.array(z.object({
+    x: z.number().min(-0.5).max(0.5).meta({ description: "水平位置" }),
+    y: z.number().min(-0.5).max(0.5).meta({ description: "垂直位置" }),
+    // 该组内多个文字的排列方式
+    arrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "排列方式：水平、垂直、圆形、堆叠" }),
+    arrangementSpacing: z.number().min(0).max(0.5).optional().meta({ description: "排列间距" }),
+  })).optional().meta({ description: "每个文字组的独立位置配置" }),
+  // 多个文字时的自动排列方式（当未指定 groupPositions 时生效）
+  autoArrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "自动排列方式" }),
+  autoArrangementSpacing: z.number().min(0).max(0.5).optional().meta({ description: "自动排列间距" }),
+});
+
 export const TextBreakthroughCompositionSchema = z.object({
   // 文字配置（支持数组，每组元素为一个整体）
   textGroups: z.array(z.object({
     texts: z.array(z.string()).min(1).meta({ description: "一组文字（同时出现）" }),
     groupDelay: z.number().optional().meta({ description: "该组相对于上一组的延迟帧数" }),
   })).min(1).meta({ description: "文字组列表" }),
+
+  // 文字最终定格位置配置
+  finalPosition: TextFinalPositionSchema.optional().meta({ description: "文字最终定格位置配置" }),
 
   // 字体配置
   fontSize: z.number().min(20).max(300).meta({ description: "基础字体大小" }),
@@ -70,6 +92,11 @@ export const TextBreakthroughCompositionSchema = z.object({
   enableFallDown: z.boolean().optional().meta({ description: "是否启用文字下落消失效果（停留结束后自然下落）" }),
   fallDownDuration: z.number().min(10).max(120).optional().meta({ description: "下落动画时长（帧）" }),
   fallDownEndY: z.number().min(0.1).max(0.5).optional().meta({ description: "下落结束位置（距底部百分比，0.2表示距底部20%）" }),
+
+  // 音效配置
+  audioEnabled: z.boolean().optional().meta({ description: "是否启用背景音效" }),
+  audioSource: z.string().optional().meta({ description: "音效文件路径（默认 coin-sound.mp3）" }),
+  audioVolume: z.number().min(0).max(2).optional().meta({ description: "音量（0-2，1为正常音量）" }),
 });
 
 export type TextBreakthroughCompositionProps = z.infer<typeof TextBreakthroughCompositionSchema>;
@@ -329,6 +356,7 @@ const BorderBreakEffect: React.FC<{
 
 export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionProps> = ({
   textGroups,
+  finalPosition,
   fontSize = 80,
   fontFamily = "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
   fontWeight = 900,
@@ -358,6 +386,9 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   enableFallDown = false,
   fallDownDuration = 40,
   fallDownEndY = 0.2,
+  audioEnabled = false,
+  audioSource = "coin-sound.mp3",
+  audioVolume = 0.5,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -402,35 +433,68 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
     return maxProgress;
   }, [groupTimings, frame, approachDuration, breakthroughDuration]);
 
-  // 为每组文字生成位置（避免重叠）
+  // 为每组文字生成位置（支持自定义最终位置）
   const textPositions = React.useMemo(() => {
     const positions: { x: number; y: number }[] = [];
+    const defaultX = finalPosition?.defaultX ?? 0;
+    const defaultY = finalPosition?.defaultY ?? 0;
+    const autoArrangement = finalPosition?.autoArrangement ?? "circular";
+    const autoArrangementSpacing = finalPosition?.autoArrangementSpacing ?? 0.25;
     
-    groupTimings.forEach((timing) => {
+    groupTimings.forEach((timing, groupIndex) => {
+      // 获取该组的自定义位置配置
+      const groupPosition = finalPosition?.groupPositions?.[groupIndex];
+      const groupBaseX = groupPosition?.x ?? defaultX;
+      const groupBaseY = groupPosition?.y ?? defaultY;
+      const arrangement = groupPosition?.arrangement ?? autoArrangement;
+      const spacing = groupPosition?.arrangementSpacing ?? autoArrangementSpacing;
+      
       timing.texts.forEach((_, textIndex) => {
-        // 根据文字数量计算位置
         const totalTexts = timing.texts.length;
-        const spacing = 0.25; // 文字间距
+        let offsetX = 0;
+        let offsetY = 0;
         
         if (totalTexts === 1) {
-          positions.push({ x: 0, y: 0 });
-        } else if (totalTexts === 2) {
-          positions.push({ x: -spacing, y: 0 });
-          positions.push({ x: spacing, y: 0 });
+          // 单个文字：直接使用基础位置
+          offsetX = 0;
+          offsetY = 0;
         } else {
-          // 多个文字：圆形排列
-          const angle = (textIndex / totalTexts) * Math.PI * 2 - Math.PI / 2;
-          const radius = spacing;
-          positions.push({
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius * 0.5, // 椭圆形排列
-          });
+          // 多个文字：根据排列方式计算偏移
+          switch (arrangement) {
+            case "horizontal":
+              // 水平排列
+              offsetX = (textIndex - (totalTexts - 1) / 2) * spacing;
+              offsetY = 0;
+              break;
+            case "vertical":
+              // 垂直排列
+              offsetX = 0;
+              offsetY = (textIndex - (totalTexts - 1) / 2) * spacing;
+              break;
+            case "stacked":
+              // 堆叠排列（轻微错位）
+              offsetX = textIndex * spacing * 0.3;
+              offsetY = textIndex * spacing * 0.2;
+              break;
+            case "circular":
+            default:
+              // 圆形/椭圆排列
+              const angle = (textIndex / totalTexts) * Math.PI * 2 - Math.PI / 2;
+              offsetX = Math.cos(angle) * spacing;
+              offsetY = Math.sin(angle) * spacing * 0.5; // 椭圆形
+              break;
+          }
         }
+        
+        positions.push({
+          x: groupBaseX + offsetX,
+          y: groupBaseY + offsetY,
+        });
       });
     });
 
     return positions;
-  }, [groupTimings]);
+  }, [groupTimings, finalPosition]);
 
   return (
     <AbsoluteFill>
@@ -534,6 +598,15 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
             bottom: 0,
             transform: `translate(${Math.sin(frame * 1.5) * shakeIntensity * 0.3}px, ${Math.cos(frame * 1.8) * shakeIntensity * 0.3}px)`,
           }}
+        />
+      )}
+
+      {/* 背景音效 */}
+      {audioEnabled && (
+        <Audio
+          src={staticFile(audioSource)}
+          volume={audioVolume}
+          loop
         />
       )}
     </AbsoluteFill>

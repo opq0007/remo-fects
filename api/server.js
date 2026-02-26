@@ -24,6 +24,11 @@ const projects = {
     path: path.join(__dirname, '../effects/text-firework-effect'),
     compositionId: 'TextFirework',
     name: '文字烟花特效'
+  },
+  'text-breakthrough-effect': {
+    path: path.join(__dirname, '../effects/text-breakthrough-effect'),
+    compositionId: 'TextBreakthrough',
+    name: '文字破屏特效'
   }
   // 未来可以添加更多项目，例如：
   // 'particle-effect': {
@@ -194,6 +199,68 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
       }
     }
 
+    // text-breakthrough-effect 特有参数
+    if (projectId === 'text-breakthrough-effect') {
+      // 文字组配置（支持复杂配置或简单 words 数组）
+      params.textGroups = typeof req.body.textGroups === 'string'
+        ? JSON.parse(req.body.textGroups)
+        : req.body.textGroups;
+      
+      // 定格位置配置
+      params.finalPosition = typeof req.body.finalPosition === 'string'
+        ? JSON.parse(req.body.finalPosition)
+        : req.body.finalPosition;
+      
+      // 字体配置
+      params.fontSize = parseInt(req.body.fontSize) || 120;
+      params.fontFamily = req.body.fontFamily || 'PingFang SC, Microsoft YaHei, SimHei, sans-serif';
+      params.fontWeight = parseInt(req.body.fontWeight) || 900;
+      
+      // 3D金色效果
+      params.textColor = req.body.textColor || '#ffd700';
+      params.glowColor = req.body.glowColor || '#ffaa00';
+      params.secondaryGlowColor = req.body.secondaryGlowColor || '#ff6600';
+      params.glowIntensity = parseFloat(req.body.glowIntensity) || 1.5;
+      params.bevelDepth = parseFloat(req.body.bevelDepth) || 3;
+      
+      // 3D透视参数
+      params.startZ = parseInt(req.body.startZ) || 2000;
+      params.endZ = parseInt(req.body.endZ) || -100;
+      
+      // 动画时长
+      params.approachDuration = parseInt(req.body.approachDuration) || 45;
+      params.breakthroughDuration = parseInt(req.body.breakthroughDuration) || 20;
+      params.holdDuration = parseInt(req.body.holdDuration) || 40;
+      
+      // 冲击效果
+      params.impactScale = parseFloat(req.body.impactScale) || 1.4;
+      params.impactRotation = parseFloat(req.body.impactRotation) || 12;
+      params.shakeIntensity = parseFloat(req.body.shakeIntensity) || 10;
+      
+      // 组间延迟和运动方向
+      params.groupInterval = parseInt(req.body.groupInterval) || 50;
+      params.direction = req.body.direction || 'top-down';
+      
+      // 下落消失效果
+      params.enableFallDown = req.body.enableFallDown !== 'false';
+      params.fallDownDuration = parseInt(req.body.fallDownDuration) || 40;
+      params.fallDownEndY = parseFloat(req.body.fallDownEndY) || 0.2;
+      
+      // 音效配置
+      params.audioEnabled = req.body.audioEnabled === 'true' || req.body.audioEnabled === true;
+      params.audioSource = req.body.audioSource || 'coin-sound.mp3';
+      params.audioVolume = parseFloat(req.body.audioVolume) || 0.5;
+      
+      // 如果没有指定 duration，根据文字组数量自动计算
+      if (!req.body.duration && params.words && params.words.length > 0) {
+        const groupInterval = params.groupInterval || 50;
+        const totalAnimation = params.approachDuration + params.breakthroughDuration + params.holdDuration;
+        const lastGroupStart = (params.words.length - 1) * groupInterval;
+        const totalFrames = lastGroupStart + totalAnimation + (params.enableFallDown ? params.fallDownDuration : 0) + 20;
+        params.duration = Math.ceil(totalFrames / params.fps);
+      }
+    }
+
     // 验证文字（如果是文字特效）
     if (projectId === 'text-rain-effect' && (!params.words || params.words.length === 0)) {
       return res.status(400).json({ error: '请提供文字列表' });
@@ -203,6 +270,9 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
     }
     if (projectId === 'text-firework-effect' && (!params.words || params.words.length === 0)) {
       return res.status(400).json({ error: '请提供文字列表' });
+    }
+    if (projectId === 'text-breakthrough-effect' && (!params.words || params.words.length === 0) && (!params.textGroups || params.textGroups.length === 0)) {
+      return res.status(400).json({ error: '请提供文字列表 (words) 或文字组配置 (textGroups)' });
     }
 
     // 创建任务记录
