@@ -48,8 +48,11 @@ export const TaiChiBaguaSchema = z.object({
 
   // ===== 新增参数 =====
   
-  // 垂直位置：0=顶部, 0.5=中心, 1=底部
-  verticalPosition: z.number().min(0).max(1).default(0.5),
+  // 垂直位置：0=顶部, 0.5=中心, 1=底部（step 设为 0.01 支持小数输入）
+  verticalPosition: z.number().min(0).max(1).step(0.01).default(0.5),
+  
+  // 垂直边距：太极八卦图距离画面上下边缘的最小距离（像素）
+  verticalMargin: z.number().min(0).max(300).step(1).default(50),
   
   // 3D立体效果开关
   enable3D: z.boolean().default(false),
@@ -432,6 +435,7 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   perspectiveDistance = 800,
   // 新参数
   verticalPosition = 0.5,
+  verticalMargin = 50,
   enable3D = false,
   depth3D = 15,
   enableGoldenSparkle = true,
@@ -444,7 +448,11 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   
   const centerX = width / 2;
   // 根据垂直位置参数计算 centerY
-  const centerY = interpolate(verticalPosition, [0, 1], [baguaRadius + 50, height - baguaRadius - 50]);
+  // verticalMargin 控制太极图距离画面边缘的最小距离
+  // 注意：还需要考虑 baguaRadius，确保八卦图不会超出画面
+  const minTop = verticalMargin + baguaRadius;
+  const minBottom = height - verticalMargin - baguaRadius;
+  const centerY = interpolate(verticalPosition, [0, 1], [minTop, minBottom]);
 
   // 整体入场动画
   const entranceProgress = spring({
@@ -472,18 +480,19 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   const rotateX = 90 - viewAngle;
   const isPerspective = viewAngle < 90;
   
-  // 3D变换样式
+  // 3D变换样式 - 注意：transformOrigin 需要基于实际的 centerY，否则 verticalPosition 不生效
   const perspective3D = isPerspective ? {
     perspective: `${perspectiveDistance}px`,
-    perspectiveOrigin: "center center",
+    perspectiveOrigin: `${centerX}px ${centerY}px`,
   } : {};
 
   const transform3D = isPerspective ? {
     transform: `rotateX(${rotateX}deg) scale(${entranceProgress})`,
     transformStyle: "preserve-3d" as const,
-    transformOrigin: "center center",
+    transformOrigin: `${centerX}px ${centerY}px`,
   } : {
     transform: `scale(${entranceProgress})`,
+    transformOrigin: `${centerX}px ${centerY}px`,
   };
 
   // 3D层数
@@ -500,7 +509,7 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
         <rect width={width} height={height} fill={backgroundColor} />
       </svg>
 
-      {/* 3D透视容器 */}
+      {/* 3D透视容器 - 不使用 flexbox 居中，让 SVG 内的 centerY 生效 */}
       <div
         style={{
           position: "absolute",
@@ -508,9 +517,6 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
           left: 0,
           width: "100%",
           height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           ...perspective3D,
         }}
       >

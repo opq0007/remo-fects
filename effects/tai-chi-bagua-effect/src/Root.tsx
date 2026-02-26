@@ -10,7 +10,7 @@ export const RemotionRoot: React.FC = () => {
         durationInFrames={480}
         fps={24}
         width={720}
-        height={720}
+        height={1280}
         schema={TaiChiBaguaSchema}
         defaultProps={{
           yangColor: "#FFD700",
@@ -29,7 +29,8 @@ export const RemotionRoot: React.FC = () => {
           particleSpeed: 1,
           viewAngle: 30,
           perspectiveDistance: 800,
-          verticalPosition: 0.8,
+          verticalPosition: 0.5,
+          verticalMargin: 50,
           enable3D: false,
           depth3D: 15,
           enableGoldenSparkle: true,
