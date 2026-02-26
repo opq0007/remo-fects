@@ -1,0 +1,12 @@
+{
+  "name": "text-grow-explode-effect",
+  "version": "1.0.0",
+  "description": "姓名生长爆炸特效 - 文字像大树一样生长形成图片轮廓，然后爆炸散落",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render src/index.ts TextGrowExplode out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextGrowExplode out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TextGrowExplode out/preview.mp4 --frames=0-89 --chromium-flags=\"--headless=new\""
+  }
+}
