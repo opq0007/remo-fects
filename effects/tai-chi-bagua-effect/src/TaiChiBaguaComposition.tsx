@@ -6,6 +6,7 @@ import {
   interpolate,
   Easing,
   spring,
+  random,
 } from "remotion";
 import { z } from "zod";
 import { TaiChi } from "./TaiChi";
@@ -23,7 +24,7 @@ export const TaiChiBaguaSchema = z.object({
   
   // 动画速度
   taichiRotationSpeed: z.number().min(0.1).max(5).default(1),
-  baguaRotationSpeed: z.number().min(0.1).max(5).default(0.5),
+  baguaRotationSpeed: z.number().min(0.1).max(5).default(0.8),
   
   // 尺寸
   taichiSize: z.number().min(50).max(500).default(200),
@@ -38,9 +39,209 @@ export const TaiChiBaguaSchema = z.object({
   // 粒子效果
   particleCount: z.number().min(0).max(100).default(40),
   particleSpeed: z.number().min(0.1).max(3).default(1),
+  
+  // 3D视角（度数：0=水平视角，90=正上方俯视）
+  viewAngle: z.number().min(0).max(90).default(30),
+  
+  // 透视距离（像素，值越大透视效果越平缓）
+  perspectiveDistance: z.number().min(200).max(2000).default(800),
+
+  // ===== 新增参数 =====
+  
+  // 垂直位置：0=顶部, 0.5=中心, 1=底部
+  verticalPosition: z.number().min(0).max(1).default(0.5),
+  
+  // 3D立体效果开关
+  enable3D: z.boolean().default(false),
+  
+  // 3D立体厚度（当enable3D为true时生效）
+  depth3D: z.number().min(5).max(50).default(15),
+  
+  // 金光闪闪效果开关
+  enableGoldenSparkle: z.boolean().default(true),
+  
+  // 金光闪烁密度
+  sparkleDensity: z.number().min(10).max(100).default(30),
+  
+  // 神秘氛围效果开关
+  enableMysticalAura: z.boolean().default(true),
+  
+  // 神秘氛围强度
+  auraIntensity: z.number().min(0).max(1).default(0.6),
 });
 
 export type TaiChiBaguaProps = z.infer<typeof TaiChiBaguaSchema>;
+
+// 金光闪闪粒子
+interface SparkleProps {
+  index: number;
+  centerX: number;
+  centerY: number;
+  maxRadius: number;
+  color: string;
+  frame: number;
+}
+
+const GoldenSparkle: React.FC<SparkleProps> = ({
+  index,
+  centerX,
+  centerY,
+  maxRadius,
+  color,
+  frame,
+}) => {
+  // 使用 random 创建稳定的位置
+  const seed = index * 137.5;
+  const angleRad = (seed % 360) * (Math.PI / 180);
+  const radiusOffset = (seed % 100) / 100;
+  const baseRadius = maxRadius * 0.3 + maxRadius * 0.7 * radiusOffset;
+  
+  const x = centerX + Math.cos(angleRad) * baseRadius;
+  const y = centerY + Math.sin(angleRad) * baseRadius;
+  
+  // 闪烁效果 - 不同粒子有不同频率
+  const frequency = 15 + (index % 10) * 2;
+  const phase = index * 13;
+  const twinkle = interpolate(
+    (frame + phase) % frequency,
+    [0, frequency / 2, frequency],
+    [0, 1, 0],
+    { extrapolateRight: "extend" }
+  );
+  
+  // 大小变化
+  const size = interpolate(twinkle, [0, 1], [1, 4]);
+  
+  // 透明度
+  const opacity = interpolate(twinkle, [0, 1], [0, 0.9]);
+
+  return (
+    <g>
+      {/* 主星光 */}
+      <circle
+        cx={x}
+        cy={y}
+        r={size}
+        fill={color}
+        opacity={opacity}
+      />
+      {/* 光芒射线 */}
+      {twinkle > 0.5 && (
+        <>
+          <line
+            x1={x - size * 3}
+            y1={y}
+            x2={x + size * 3}
+            y2={y}
+            stroke={color}
+            strokeWidth={0.5}
+            opacity={opacity * 0.5}
+          />
+          <line
+            x1={x}
+            y1={y - size * 3}
+            x2={x}
+            y2={y + size * 3}
+            stroke={color}
+            strokeWidth={0.5}
+            opacity={opacity * 0.5}
+          />
+        </>
+      )}
+    </g>
+  );
+};
+
+// 神秘氛围效果 - 光晕和光束
+const MysticalAura: React.FC<{
+  centerX: number;
+  centerY: number;
+  color: string;
+  frame: number;
+  intensity: number;
+  size: number;
+}> = ({ centerX, centerY, color, frame, intensity, size }) => {
+  // 动态光晕
+  const haloPulse = interpolate(
+    frame,
+    [0, 60, 120],
+    [0.8, 1, 0.8],
+    { extrapolateRight: "extend", easing: Easing.inOut(Easing.sin) }
+  );
+  
+  // 光束旋转
+  const beamRotation = interpolate(frame, [0, 180], [0, 360], {
+    extrapolateRight: "extend",
+  });
+
+  return (
+    <g>
+      {/* 外层大光晕 */}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={size * 2.5 * haloPulse}
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        opacity={0.15 * intensity}
+        filter="blur(8px)"
+      />
+      
+      {/* 内层光晕 */}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={size * 1.8 * haloPulse}
+        fill="none"
+        stroke={color}
+        strokeWidth={3}
+        opacity={0.25 * intensity}
+        filter="blur(4px)"
+      />
+      
+      {/* 核心光晕 */}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={size * 1.2}
+        fill={color}
+        opacity={0.08 * intensity}
+        filter="blur(20px)"
+      />
+      
+      {/* 放射状光束 */}
+      <g transform={`rotate(${beamRotation}, ${centerX}, ${centerY})`}>
+        {[0, 45, 90, 135].map((angle, i) => (
+          <line
+            key={i}
+            x1={centerX}
+            y1={centerY}
+            x2={centerX + Math.cos((angle * Math.PI) / 180) * size * 3}
+            y2={centerY + Math.sin((angle * Math.PI) / 180) * size * 3}
+            stroke={color}
+            strokeWidth={1}
+            opacity={0.2 * intensity}
+            filter="blur(2px)"
+          />
+        ))}
+      </g>
+      
+      {/* 神秘符文光环 */}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={size * 2}
+        fill="none"
+        stroke={color}
+        strokeWidth={0.5}
+        opacity={0.3 * intensity}
+        strokeDasharray="15 10 5 10"
+        transform={`rotate(${-beamRotation * 0.5}, ${centerX}, ${centerY})`}
+      />
+    </g>
+  );
+};
 
 // 能量场粒子
 interface ParticleProps {
@@ -151,6 +352,66 @@ const EnergyField: React.FC<{
   );
 };
 
+// 3D 立体效果层
+const Depth3DLayer: React.FC<{
+  centerX: number;
+  centerY: number;
+  size: number;
+  yangColor: string;
+  yinColor: string;
+  depth: number;
+  rotation: number;
+  layerIndex: number;
+  totalLayers: number;
+}> = ({ centerX, centerY, size, yangColor, yinColor, depth, rotation, layerIndex, totalLayers }) => {
+  const R = size / 2;
+  const r = R / 2;
+  const eyeR = R / 8;
+  
+  // 层的颜色渐变（越深越暗）
+  const colorMultiplier = 1 - (layerIndex / totalLayers) * 0.3;
+  
+  // 调整颜色亮度
+  const adjustColor = (color: string, factor: number): string => {
+    // 简单的颜色调整：假设颜色是 hex 格式
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const newR = Math.floor(r * factor);
+    const newG = Math.floor(g * factor);
+    const newB = Math.floor(b * factor);
+    return `rgb(${newR}, ${newG}, ${newB})`;
+  };
+  
+  const layerYangColor = adjustColor(yangColor, colorMultiplier);
+  const layerYinColor = adjustColor(yinColor, Math.max(0.3, colorMultiplier - 0.2));
+  
+  // 层的偏移（模拟厚度）
+  const zOffset = (layerIndex + 1) * depth;
+  const scale = 1 - layerIndex * 0.01; // 轻微缩放模拟透视
+  
+  return (
+    <g 
+      transform={`translate(${centerX}, ${centerY - zOffset}) scale(${scale})`}
+      opacity={0.7 - layerIndex * 0.1}
+    >
+      <g transform={`rotate(${rotation})`}>
+        {/* 太极图层 */}
+        <circle cx={0} cy={0} r={R} fill={layerYinColor} />
+        <path
+          d={`M 0 ${-R} A ${R} ${R} 0 0 1 0 ${R} L 0 0 Z`}
+          fill={layerYangColor}
+        />
+        <circle cx={0} cy={-r} r={r} fill={layerYangColor} />
+        <circle cx={0} cy={r} r={r} fill={layerYinColor} />
+        <circle cx={0} cy={-r} r={eyeR} fill={layerYinColor} />
+        <circle cx={0} cy={r} r={eyeR} fill={layerYangColor} />
+      </g>
+    </g>
+  );
+};
+
 // 主组合组件
 export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   yangColor = "#FFD700",
@@ -167,12 +428,23 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   labelOffset = 45,
   particleCount = 40,
   particleSpeed = 1,
+  viewAngle = 90,
+  perspectiveDistance = 800,
+  // 新参数
+  verticalPosition = 0.5,
+  enable3D = false,
+  depth3D = 15,
+  enableGoldenSparkle = true,
+  sparkleDensity = 30,
+  enableMysticalAura = true,
+  auraIntensity = 0.6,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
   
   const centerX = width / 2;
-  const centerY = height / 2;
+  // 根据垂直位置参数计算 centerY
+  const centerY = interpolate(verticalPosition, [0, 1], [baguaRadius + 50, height - baguaRadius - 50]);
 
   // 整体入场动画
   const entranceProgress = spring({
@@ -185,13 +457,37 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
     },
   });
 
-  // 背景渐变动画
-  const bgGradientAngle = interpolate(frame, [0, 360], [0, 360], {
+  // 太极图旋转
+  const taichiRotation = interpolate(frame, [0, 360 / taichiRotationSpeed], [0, 360], {
     extrapolateRight: "extend",
+    easing: Easing.linear,
   });
 
   // 八卦卦象大小
   const trigramSize = Math.min(60, taichiSize * 0.35);
+
+  // 计算3D透视变换
+  // viewAngle: 90 = 正上方俯视（无旋转），0 = 水平视角（旋转90度）
+  // rotateX 值 = 90 - viewAngle
+  const rotateX = 90 - viewAngle;
+  const isPerspective = viewAngle < 90;
+  
+  // 3D变换样式
+  const perspective3D = isPerspective ? {
+    perspective: `${perspectiveDistance}px`,
+    perspectiveOrigin: "center center",
+  } : {};
+
+  const transform3D = isPerspective ? {
+    transform: `rotateX(${rotateX}deg) scale(${entranceProgress})`,
+    transformStyle: "preserve-3d" as const,
+    transformOrigin: "center center",
+  } : {
+    transform: `scale(${entranceProgress})`,
+  };
+
+  // 3D层数
+  const depthLayers = enable3D ? 5 : 0;
 
   return (
     <AbsoluteFill style={{ backgroundColor }}>
@@ -204,18 +500,32 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
         <rect width={width} height={height} fill={backgroundColor} />
       </svg>
 
-      {/* 主 SVG 画布 */}
-      <svg
-        width={width}
-        height={height}
+      {/* 3D透视容器 */}
+      <div
         style={{
           position: "absolute",
           top: 0,
           left: 0,
-          transform: `scale(${entranceProgress})`,
-          opacity: entranceProgress,
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          ...perspective3D,
         }}
       >
+        {/* 主 SVG 画布 - 应用3D变换 */}
+        <svg
+          width={width}
+          height={height}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            ...transform3D,
+            opacity: entranceProgress,
+          }}
+        >
         <defs>
           {/* 全局滤镜 */}
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -225,7 +535,24 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          
+          {/* 3D阴影滤镜 */}
+          <filter id="depth-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
+          </filter>
         </defs>
+
+        {/* 神秘氛围效果 - 最底层 */}
+        {enableMysticalAura && (
+          <MysticalAura
+            centerX={centerX}
+            centerY={centerY}
+            color={yangColor}
+            frame={frame}
+            intensity={auraIntensity}
+            size={taichiSize}
+          />
+        )}
 
         {/* 能量场 */}
         {showEnergyField && (
@@ -256,6 +583,26 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
           </g>
         )}
 
+        {/* 3D立体效果层 - 在主图下方 */}
+        {enable3D && depthLayers > 0 && (
+          <g filter="url(#depth-shadow)">
+            {Array.from({ length: depthLayers }).map((_, i) => (
+              <Depth3DLayer
+                key={`depth-${i}`}
+                centerX={centerX}
+                centerY={centerY}
+                size={taichiSize}
+                yangColor={yangColor}
+                yinColor={yinColor}
+                depth={depth3D / depthLayers}
+                rotation={taichiRotation}
+                layerIndex={i}
+                totalLayers={depthLayers}
+              />
+            ))}
+          </g>
+        )}
+
         {/* 八卦 */}
         <g transform={`translate(${centerX}, ${centerY})`}>
           <Bagua
@@ -281,9 +628,27 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
             pulseSpeed={1.5}
           />
         </g>
-      </svg>
 
-      {/* 四角装饰符文 */}
+        {/* 金光闪闪效果 - 最顶层 */}
+        {enableGoldenSparkle && (
+          <g>
+            {Array.from({ length: sparkleDensity }).map((_, i) => (
+              <GoldenSparkle
+                key={`sparkle-${i}`}
+                index={i}
+                centerX={centerX}
+                centerY={centerY}
+                maxRadius={baguaRadius + 50}
+                color={yangColor}
+                frame={frame}
+              />
+            ))}
+          </g>
+        )}
+      </svg>
+      </div>
+
+      {/* 四角装饰符文 - 不应用3D变换，保持原位 */}
       <svg
         width={width}
         height={height}

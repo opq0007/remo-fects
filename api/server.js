@@ -278,7 +278,7 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
       
       // 动画速度
       params.taichiRotationSpeed = parseFloat(req.body.taichiRotationSpeed) || 1;
-      params.baguaRotationSpeed = parseFloat(req.body.baguaRotationSpeed) || 0.5;
+      params.baguaRotationSpeed = parseFloat(req.body.baguaRotationSpeed) || 0.8;
       
       // 尺寸
       params.taichiSize = parseInt(req.body.taichiSize) || 200;
@@ -293,6 +293,26 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
       // 粒子效果
       params.particleCount = parseInt(req.body.particleCount) || 40;
       params.particleSpeed = parseFloat(req.body.particleSpeed) || 1;
+      
+      // 3D视角
+      params.viewAngle = parseFloat(req.body.viewAngle) || 30;
+      params.perspectiveDistance = parseInt(req.body.perspectiveDistance) || 800;
+      
+      // ===== 新增参数 =====
+      // 垂直位置：0=顶部, 0.5=中心, 1=底部
+      params.verticalPosition = parseFloat(req.body.verticalPosition) || 0.5;
+      
+      // 3D立体效果
+      params.enable3D = req.body.enable3D === 'true' || req.body.enable3D === true;
+      params.depth3D = parseInt(req.body.depth3D) || 15;
+      
+      // 金光闪闪效果
+      params.enableGoldenSparkle = req.body.enableGoldenSparkle !== 'false';
+      params.sparkleDensity = parseInt(req.body.sparkleDensity) || 30;
+      
+      // 神秘氛围效果
+      params.enableMysticalAura = req.body.enableMysticalAura !== 'false';
+      params.auraIntensity = parseFloat(req.body.auraIntensity) || 0.6;
       
       // 默认尺寸为正方形
       if (!req.body.width && !req.body.height) {

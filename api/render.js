@@ -145,7 +145,7 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.backgroundColor = params.backgroundColor || '#FFFFFF';
     defaultProps.glowIntensity = params.glowIntensity || 0.9;
     defaultProps.taichiRotationSpeed = params.taichiRotationSpeed || 1;
-    defaultProps.baguaRotationSpeed = params.baguaRotationSpeed || 0.5;
+    defaultProps.baguaRotationSpeed = params.baguaRotationSpeed || 0.8;
     defaultProps.taichiSize = params.taichiSize || 200;
     defaultProps.baguaRadius = params.baguaRadius || 280;
     defaultProps.showLabels = params.showLabels !== false;
@@ -154,6 +154,16 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.labelOffset = params.labelOffset || 45;
     defaultProps.particleCount = params.particleCount || 40;
     defaultProps.particleSpeed = params.particleSpeed || 1;
+    defaultProps.viewAngle = params.viewAngle || 30;
+    defaultProps.perspectiveDistance = params.perspectiveDistance || 800;
+    // 新增参数
+    defaultProps.verticalPosition = params.verticalPosition || 0.5;
+    defaultProps.enable3D = params.enable3D || false;
+    defaultProps.depth3D = params.depth3D || 15;
+    defaultProps.enableGoldenSparkle = params.enableGoldenSparkle !== false;
+    defaultProps.sparkleDensity = params.sparkleDensity || 30;
+    defaultProps.enableMysticalAura = params.enableMysticalAura !== false;
+    defaultProps.auraIntensity = params.auraIntensity || 0.6;
   }
 
   // 如果有背景文件，复制到项目 public 目录
