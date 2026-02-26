@@ -20,6 +20,7 @@ export interface TextRingProps {
   cylinderHeight: number;
   perspective: number;
   mode: "vertical" | "positions"; // vertical: 垂直排列模式, positions: 方位模式
+  verticalPosition?: number; // 垂直位置偏移：0=顶部, 0.5=中心, 1=底部
 }
 
 interface CylinderRowItem {
@@ -95,6 +96,7 @@ const VerticalMode: React.FC<{
   glowIntensity: number;
   depth3d: number;
   perspective: number;
+  centerY?: number;
 }> = ({
   items,
   frame,
@@ -105,9 +107,10 @@ const VerticalMode: React.FC<{
   glowIntensity,
   depth3d,
   perspective,
+  centerY,
 }) => {
   const centerX = width / 2;
-  const centerY = height / 2;
+  const actualCenterY = centerY ?? height / 2;
 
   const rotationAngle = (frame * rotationSpeed * 0.02) % (Math.PI * 2);
 
@@ -150,7 +153,7 @@ const VerticalMode: React.FC<{
             style={{
               position: "absolute",
               left: centerX,
-              top: centerY + item.rowY,
+              top: actualCenterY + item.rowY,
               transform: `translateX(${x}px) translateZ(${z}px) scale(${scale})`,
               fontSize: item.fontSize,
               fontWeight: 800,
@@ -183,6 +186,7 @@ const PositionsMode: React.FC<{
   glowIntensity: number;
   depth3d: number;
   perspective: number;
+  centerY?: number;
 }> = ({
   items,
   frame,
@@ -193,9 +197,10 @@ const PositionsMode: React.FC<{
   glowIntensity,
   depth3d,
   perspective,
+  centerY,
 }) => {
   const centerX = width / 2;
-  const centerY = height / 2;
+  const actualCenterY = centerY ?? height / 2;
 
   const rotationAngle = (frame * rotationSpeed * 0.02) % (Math.PI * 2);
 
@@ -238,7 +243,7 @@ const PositionsMode: React.FC<{
             style={{
               position: "absolute",
               left: centerX + x,
-              top: centerY,
+              top: actualCenterY,
               transform: `translate(-50%, -50%) translateZ(${z}px) scale(${scale})`,
               fontSize: item.fontSize,
               fontWeight: 800,
@@ -274,9 +279,17 @@ export const TextRing: React.FC<TextRingProps> = ({
   cylinderHeight = 400,
   perspective = 1000,
   mode = "vertical",
+  verticalPosition = 0.5,
 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
+
+  // 计算垂直偏移位置
+  const centerY = interpolate(
+    verticalPosition,
+    [0, 1],
+    [ringRadius + fontSize, height - ringRadius - fontSize]
+  );
 
   const cylinderRows = useMemo(() => {
     return generateCylinderRows(words, fontSize, seed);
@@ -299,6 +312,7 @@ export const TextRing: React.FC<TextRingProps> = ({
           glowIntensity={glowIntensity}
           depth3d={depth3d}
           perspective={perspective}
+          centerY={centerY}
         />
       ) : (
         <PositionsMode
@@ -311,6 +325,7 @@ export const TextRing: React.FC<TextRingProps> = ({
           glowIntensity={glowIntensity}
           depth3d={depth3d}
           perspective={perspective}
+          centerY={centerY}
         />
       )}
     </AbsoluteFill>

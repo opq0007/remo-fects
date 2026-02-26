@@ -8,7 +8,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="TextFirework"
         component={TextFireworkComposition}
-        durationInFrames={300}
+        durationInFrames={480}
         fps={24}
         width={720}
         height={1280}

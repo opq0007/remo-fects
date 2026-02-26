@@ -8,7 +8,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="TextBreakthrough"
         component={TextBreakthroughComposition}
-        durationInFrames={240}
+        durationInFrames={480}
         fps={24}
         width={1080}
         height={1920}

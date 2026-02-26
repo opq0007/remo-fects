@@ -22,6 +22,7 @@ export const TextRingCompositionSchema = z.object({
   cylinderHeight: z.number().min(100).max(1000).meta({ description: "圆柱体高度" }),
   perspective: z.number().min(500).max(2000).meta({ description: "透视距离" }),
   mode: z.enum(["vertical", "positions"]).meta({ description: "显示模式: vertical-垂直排列模式, positions-方位模式" }),
+  verticalPosition: z.number().min(0).max(1).optional().meta({ description: "垂直位置: 0=顶部, 0.5=中心, 1=底部" }),
   backgroundType: z.enum(["image", "video", "color"]).meta({ description: "背景类型" }),
   backgroundSource: z.string().optional().meta({ description: "背景文件路径" }),
   backgroundColor: zColor().optional().meta({ description: "背景颜色" }),
@@ -106,6 +107,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   cylinderHeight = 400,
   perspective = 1000,
   mode = "vertical",
+  verticalPosition = 0.5,
   backgroundType = "color",
   backgroundSource,
   backgroundColor = "#1a0a00",
@@ -142,6 +144,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
         cylinderHeight={cylinderHeight}
         perspective={perspective}
         mode={mode}
+        verticalPosition={verticalPosition}
       />
     </AbsoluteFill>
   );

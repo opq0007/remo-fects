@@ -28,7 +28,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRing"
           component={TextRingComposition}
-          durationInFrames={300}
+          durationInFrames={480}
           fps={24}
           width={720}
           height={1280}
@@ -45,6 +45,7 @@ export const RemotionRoot: React.FC = () => {
             cylinderHeight: 400,
             perspective: 1000,
             mode: "vertical",
+            verticalPosition: 0.5,
             backgroundType: "color",
             backgroundColor: "#1a0a00",
             overlayColor: "#000000",
@@ -55,7 +56,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRingFast"
           component={TextRingComposition}
-          durationInFrames={180}
+          durationInFrames={480}
           fps={24}
           width={720}
           height={1280}
@@ -72,6 +73,7 @@ export const RemotionRoot: React.FC = () => {
             cylinderHeight: 350,
             perspective: 900,
             mode: "vertical",
+            verticalPosition: 0.5,
             backgroundType: "color",
             backgroundColor: "#1a0a00",
             overlayColor: "#000000",
@@ -82,7 +84,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRingVertical"
           component={TextRingComposition}
-          durationInFrames={300}
+          durationInFrames={480}
           fps={24}
           width={1080}
           height={1920}
@@ -99,6 +101,7 @@ export const RemotionRoot: React.FC = () => {
             cylinderHeight: 600,
             perspective: 1500,
             mode: "vertical",
+            verticalPosition: 0.5,
             backgroundType: "color",
             backgroundColor: "#1a0a00",
             overlayColor: "#000000",
@@ -109,7 +112,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRingHorizontal"
           component={TextRingComposition}
-          durationInFrames={300}
+          durationInFrames={480}
           fps={24}
           width={1920}
           height={1080}
@@ -126,6 +129,7 @@ export const RemotionRoot: React.FC = () => {
             cylinderHeight: 400,
             perspective: 1200,
             mode: "vertical",
+            verticalPosition: 0.5,
             backgroundType: "color",
             backgroundColor: "#1a0a00",
             overlayColor: "#000000",
@@ -136,7 +140,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRingBlessing"
           component={TextRingComposition}
-          durationInFrames={300}
+          durationInFrames={480}
           fps={24}
           width={1080}
           height={1920}
@@ -162,6 +166,7 @@ export const RemotionRoot: React.FC = () => {
             cylinderHeight: 800,
             perspective: 1200,
             mode: "vertical",
+            verticalPosition: 0.5,
             backgroundType: "color",
             backgroundColor: "#1a0a00",
             overlayColor: "#000000",
@@ -173,7 +178,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRingPositions4"
           component={TextRingComposition}
-          durationInFrames={300}
+          durationInFrames={480}
           fps={24}
           width={720}
           height={1280}
@@ -190,6 +195,7 @@ export const RemotionRoot: React.FC = () => {
             cylinderHeight: 400,
             perspective: 1000,
             mode: "positions",
+            verticalPosition: 0.5,
             backgroundType: "color",
             backgroundColor: "#1a0a00",
             overlayColor: "#000000",
@@ -200,7 +206,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRingPositions8"
           component={TextRingComposition}
-          durationInFrames={300}
+          durationInFrames={480}
           fps={24}
           width={720}
           height={1280}
@@ -217,6 +223,7 @@ export const RemotionRoot: React.FC = () => {
             cylinderHeight: 600,
             perspective: 1500,
             mode: "positions",
+            verticalPosition: 0.5,
             backgroundType: "color",
             backgroundColor: "#1a0a00",
             overlayColor: "#000000",

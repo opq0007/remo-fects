@@ -8,8 +8,9 @@
 
 1. **依赖共享（npm workspaces）**：所有 Remotion 相关依赖安装在根目录，子项目自动共享，大幅节省磁盘空间
 2. **统一 API 管理**：通过 Express 服务器提供统一的渲染接口，支持动态添加新特效项目
-3. **独立开发**：每个特效项目可以独立运行和调试
-4. **Chrome Headless Shell 共享**：所有项目共享一个 Chrome Headless Shell，避免重复下载
+3. **组合特效**：支持将多个特效按顺序拼接、叠加或转场合并成一个最终视频
+4. **独立开发**：每个特效项目可以独立运行和调试
+5. **Chrome Headless Shell 共享**：所有项目共享一个 Chrome Headless Shell，避免重复下载
 
 ### 技术栈
 
@@ -25,7 +26,7 @@
 remo-fects/
 ├── api/                          # 统一 API 服务器
 │   ├── server.js                 # Express 服务器主文件
-│   ├── render.js                 # 渲染逻辑
+│   ├── render.js                 # 渲染逻辑（包含视频合并功能）
 │   ├── outputs/                  # 输出视频目录
 │   ├── uploads/                  # 上传文件目录
 │   └── package.json              # API 项目配置
@@ -41,8 +42,10 @@ remo-fects/
 │   │   ├── remotion.config.ts          # Remotion 配置
 │   │   ├── tsconfig.json               # TypeScript 配置
 │   │   └── package.json                # 子项目配置（无依赖）
-│   └── gold-text-ring-effect/      # 金色文字环绕特效
-│       └── [结构同上]
+│   ├── gold-text-ring-effect/      # 金色文字环绕特效
+│   ├── text-firework-effect/       # 文字烟花特效
+│   ├── text-breakthrough-effect/   # 文字破屏特效
+│   └── tai-chi-bagua-effect/       # 太极八卦图特效
 ├── scripts/                      # 工具脚本
 │   └── install-chrome.js         # Chrome 管理工具
 ├── node_modules/                 # 共享依赖包
@@ -217,6 +220,174 @@ GET http://localhost:3001/api/download/:jobId
 **请求：**
 ```bash
 GET http://localhost:3001/api/jobs
+```
+
+### 6. 创建组合特效渲染任务（新功能）
+
+组合特效允许将多个特效按顺序拼接或叠加合并成一个最终视频。
+
+**请求：**
+```bash
+POST http://localhost:3001/api/compose
+Content-Type: application/json
+```
+
+**请求体参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `effects` | Array | 是 | 特效配置数组（至少 1 个） |
+| `mergeMode` | string | 否 | 合并模式：`sequence`（顺序拼接）、`overlay`（叠加）、`transition`（转场），默认 `sequence` |
+| `transition` | string | 否 | 转场效果（仅 mergeMode=transition 时生效）：`fade`、`fadeblack`、`slideleft`、`slideright` 等 |
+| `transitionDuration` | number | 否 | 转场时长（秒），默认 0.5 |
+| `width` | number | 否 | 全局视频宽度，默认 720 |
+| `height` | number | 否 | 全局视频高度，默认 1280 |
+| `fps` | number | 否 | 全局帧率，默认 30 |
+
+**effects 数组中每个特效的配置：**
+
+每个特效需要包含 `projectId` 和该特效特有的参数。所有参数都是可选的（使用默认值）：
+
+```json
+{
+  "projectId": "text-rain-effect",  // 必填：特效项目 ID
+  "words": ["文字1", "文字2"],       // 部分特效必填
+  "duration": 5,                    // 该特效时长（秒）
+  "fps": 30,
+  "width": 720,
+  "height": 1280,
+  "backgroundColor": "#1a1a2e",
+  // ... 其他特效特有参数
+}
+```
+
+**示例 1：顺序拼接多个特效**
+
+```bash
+curl -X POST http://localhost:3001/api/compose \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mergeMode": "sequence",
+    "effects": [
+      {
+        "projectId": "tai-chi-bagua-effect",
+        "duration": 5,
+        "yangColor": "#FFD700",
+        "enable3D": true
+      },
+      {
+        "projectId": "text-firework-effect",
+        "words": ["新年快乐", "万事如意"],
+        "duration": 8
+      },
+      {
+        "projectId": "gold-text-ring-effect",
+        "words": ["恭喜发财"],
+        "duration": 5
+      }
+    ]
+  }'
+```
+
+**示例 2：叠加两个特效**
+
+```bash
+curl -X POST http://localhost:3001/api/compose \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mergeMode": "overlay",
+    "width": 720,
+    "height": 720,
+    "effects": [
+      {
+        "projectId": "tai-chi-bagua-effect",
+        "duration": 10,
+        "opacity": 0.8
+      },
+      {
+        "projectId": "text-rain-effect",
+        "words": ["福", "禄", "寿", "喜"],
+        "duration": 10,
+        "opacity": 0.5
+      }
+    ]
+  }'
+```
+
+**示例 3：带转场效果拼接**
+
+```bash
+curl -X POST http://localhost:3001/api/compose \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mergeMode": "transition",
+    "transition": "fade",
+    "transitionDuration": 1,
+    "effects": [
+      {
+        "projectId": "tai-chi-bagua-effect",
+        "duration": 6
+      },
+      {
+        "projectId": "text-breakthrough-effect",
+        "words": ["震撼登场"],
+        "duration": 5
+      }
+    ]
+  }'
+```
+
+**响应：**
+```json
+{
+  "success": true,
+  "jobId": "20260226-1234567890",
+  "projectId": "composite",
+  "projectName": "组合特效",
+  "message": "组合渲染任务已创建",
+  "effectsCount": 3,
+  "mergeMode": "sequence",
+  "statusUrl": "/api/jobs/20260226-1234567890"
+}
+```
+
+**合并模式说明：**
+
+| 模式 | 说明 | 适用场景 |
+|------|------|----------|
+| `sequence` | 按顺序拼接视频，一个接一个播放 | 创建多段特效视频合集 |
+| `overlay` | 多个视频叠加混合，透明度均分 | 同时展示多个特效效果 |
+| `transition` | 带转场效果的拼接（目前仅支持2个视频） | 创建平滑过渡的特效切换 |
+
+**JavaScript 调用示例：**
+
+```javascript
+async function renderCompositeEffect() {
+  const response = await fetch('http://localhost:3001/api/compose', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mergeMode: 'sequence',
+      effects: [
+        {
+          projectId: 'tai-chi-bagua-effect',
+          duration: 5,
+          yangColor: '#FFD700',
+          enable3D: true
+        },
+        {
+          projectId: 'text-firework-effect',
+          words: ['新年快乐', '大吉大利'],
+          textColor: '#ff6b6b'
+        }
+      ]
+    })
+  });
+  
+  const result = await response.json();
+  console.log('任务 ID:', result.jobId);
+  return result.jobId;
+}
 ```
 
 ## 添加新特效项目

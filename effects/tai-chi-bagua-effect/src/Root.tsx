@@ -7,30 +7,29 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="TaiChiBagua"
         component={TaiChiBaguaComposition}
-        durationInFrames={240}
+        durationInFrames={480}
         fps={24}
         width={720}
-        height={1280}
+        height={720}
         schema={TaiChiBaguaSchema}
         defaultProps={{
           yangColor: "#FFD700",
           yinColor: "#1a1a1a",
-          backgroundColor: "#000000",
-          glowIntensity: 1,
+          backgroundColor: "#FFFFFF",
+          glowIntensity: 0.9,
           taichiRotationSpeed: 1,
           baguaRotationSpeed: 0.8,
-          taichiSize: 180,
-          baguaRadius: 200,
+          taichiSize: 200,
+          baguaRadius: 280,
           showLabels: true,
           showParticles: true,
           showEnergyField: true,
           labelOffset: 45,
           particleCount: 40,
-          particleSpeed: 2,
-          viewAngle: 25,
-          perspectiveDistance: 1000,
-          // 新增参数默认值
-          verticalPosition: 0.95,
+          particleSpeed: 1,
+          viewAngle: 30,
+          perspectiveDistance: 800,
+          verticalPosition: 0.8,
           enable3D: false,
           depth3D: 15,
           enableGoldenSparkle: true,

@@ -27,7 +27,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="TextRain"
           component={TextRainComposition}
-          durationInFrames={720}
+          durationInFrames={480}
           fps={24}
           width={720}
           height={1280}

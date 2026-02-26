@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { renderVideo } = require('./render');
+const { renderVideo, renderCompositeEffect } = require('./render');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -101,6 +101,251 @@ app.get('/api/projects', (req, res) => {
   res.json(projectList);
 });
 
+// API: 创建组合特效渲染任务
+// 支持将多个特效按顺序或叠加方式组合成一个视频
+app.post('/api/compose', upload.single('background'), async (req, res) => {
+  try {
+    const jobId = generateJobId();
+
+    // 解析 effects 数组
+    let effects = [];
+    if (req.body.effects) {
+      try {
+        effects = typeof req.body.effects === 'string' 
+          ? JSON.parse(req.body.effects) 
+          : req.body.effects;
+      } catch (e) {
+        return res.status(400).json({ error: 'effects 参数格式错误，应为 JSON 数组' });
+      }
+    }
+
+    if (!effects || effects.length === 0) {
+      return res.status(400).json({ error: '请提供至少一个特效配置' });
+    }
+
+    // 验证并构建每个特效的参数
+    const processedEffects = [];
+    for (let i = 0; i < effects.length; i++) {
+      const effect = effects[i];
+      
+      if (!effect.projectId) {
+        return res.status(400).json({ error: `特效 ${i + 1} 缺少 projectId` });
+      }
+
+      if (!projects[effect.projectId]) {
+        return res.status(400).json({ 
+          error: `特效 ${i + 1} 项目不存在: ${effect.projectId}。可用项目: ${Object.keys(projects).join(', ')}` 
+        });
+      }
+
+      const projectConfig = projects[effect.projectId];
+
+      // 构建特效参数
+      const effectParams = {
+        projectId: effect.projectId,
+        projectPath: projectConfig.path,
+        compositionId: projectConfig.compositionId,
+        words: effect.words || [],
+        duration: effect.duration || 5,
+        fps: effect.fps || 24,
+        width: effect.width || 720,
+        height: effect.height || 1280,
+        backgroundColor: effect.backgroundColor || '#1a1a2e',
+      };
+
+      // 复制特效特有参数
+      const projectId = effect.projectId;
+
+      if (projectId === 'text-rain-effect') {
+        effectParams.textDirection = effect.textDirection || 'horizontal';
+        effectParams.fontSizeRange = effect.fontSizeRange || [80, 160];
+        effectParams.fallSpeed = effect.fallSpeed || 0.15;
+        effectParams.density = effect.density || 2;
+        effectParams.opacityRange = effect.opacityRange || [0.6, 1];
+        effectParams.rotationRange = effect.rotationRange || [-10, 10];
+        effectParams.laneCount = effect.laneCount || 6;
+        effectParams.minVerticalGap = effect.minVerticalGap || 100;
+        effectParams.audioEnabled = effect.audioEnabled !== false;
+        effectParams.audioVolume = effect.audioVolume || 0.5;
+        effectParams.textStyle = effect.textStyle || {};
+
+        if (!effectParams.words || effectParams.words.length === 0) {
+          return res.status(400).json({ error: `特效 ${i + 1} (text-rain-effect) 需要提供文字列表` });
+        }
+      }
+
+      if (projectId === 'gold-text-ring-effect') {
+        effectParams.fontSize = effect.fontSize || 70;
+        effectParams.opacity = effect.opacity || 1;
+        effectParams.ringRadius = effect.ringRadius || 250;
+        effectParams.rotationSpeed = effect.rotationSpeed || 0.8;
+        effectParams.glowIntensity = effect.glowIntensity || 0.9;
+        effectParams.depth3d = effect.depth3d || 8;
+        effectParams.cylinderHeight = effect.cylinderHeight || 400;
+        effectParams.perspective = effect.perspective || 1000;
+        effectParams.mode = effect.mode || 'vertical';
+        effectParams.verticalPosition = effect.verticalPosition || 0.5;
+
+        if (!effectParams.words || effectParams.words.length === 0) {
+          return res.status(400).json({ error: `特效 ${i + 1} (gold-text-ring-effect) 需要提供文字列表` });
+        }
+      }
+
+      if (projectId === 'text-firework-effect') {
+        effectParams.fontSize = effect.fontSize || 60;
+        effectParams.textColor = effect.textColor || '#ffd700';
+        effectParams.glowColor = effect.glowColor || '#ffaa00';
+        effectParams.glowIntensity = effect.glowIntensity || 1;
+        effectParams.launchHeight = effect.launchHeight || 0.2;
+        effectParams.particleCount = effect.particleCount || 80;
+        effectParams.textDuration = effect.textDuration || 60;
+        effectParams.rainDuration = effect.rainDuration || 120;
+        effectParams.gravity = effect.gravity || 0.15;
+        effectParams.wind = effect.wind || 0;
+        effectParams.rainParticleSize = effect.rainParticleSize || 3;
+        effectParams.interval = effect.interval || 40;
+
+        if (!effectParams.words || effectParams.words.length === 0) {
+          return res.status(400).json({ error: `特效 ${i + 1} (text-firework-effect) 需要提供文字列表` });
+        }
+      }
+
+      if (projectId === 'text-breakthrough-effect') {
+        effectParams.textGroups = effect.textGroups;
+        effectParams.finalPosition = effect.finalPosition;
+        effectParams.fontSize = effect.fontSize || 120;
+        effectParams.fontFamily = effect.fontFamily || 'PingFang SC, Microsoft YaHei, SimHei, sans-serif';
+        effectParams.fontWeight = effect.fontWeight || 900;
+        effectParams.textColor = effect.textColor || '#ffd700';
+        effectParams.glowColor = effect.glowColor || '#ffaa00';
+        effectParams.secondaryGlowColor = effect.secondaryGlowColor || '#ff6600';
+        effectParams.glowIntensity = effect.glowIntensity || 1.5;
+        effectParams.bevelDepth = effect.bevelDepth || 3;
+        effectParams.startZ = effect.startZ || 2000;
+        effectParams.endZ = effect.endZ || -100;
+        effectParams.approachDuration = effect.approachDuration || 45;
+        effectParams.breakthroughDuration = effect.breakthroughDuration || 20;
+        effectParams.holdDuration = effect.holdDuration || 40;
+        effectParams.impactScale = effect.impactScale || 1.4;
+        effectParams.impactRotation = effect.impactRotation || 12;
+        effectParams.shakeIntensity = effect.shakeIntensity || 10;
+        effectParams.groupInterval = effect.groupInterval || 50;
+        effectParams.direction = effect.direction || 'top-down';
+        effectParams.enableFallDown = effect.enableFallDown !== false;
+        effectParams.fallDownDuration = effect.fallDownDuration || 40;
+        effectParams.fallDownEndY = effect.fallDownEndY || 0.2;
+        effectParams.audioEnabled = effect.audioEnabled || false;
+        effectParams.audioSource = effect.audioSource || 'coin-sound.mp3';
+        effectParams.audioVolume = effect.audioVolume || 0.5;
+
+        if ((!effectParams.words || effectParams.words.length === 0) && (!effectParams.textGroups || effectParams.textGroups.length === 0)) {
+          return res.status(400).json({ error: `特效 ${i + 1} (text-breakthrough-effect) 需要提供文字列表` });
+        }
+      }
+
+      if (projectId === 'tai-chi-bagua-effect') {
+        effectParams.yangColor = effect.yangColor || '#FFD700';
+        effectParams.yinColor = effect.yinColor || '#1a1a1a';
+        effectParams.backgroundColor = effect.backgroundColor || '#FFFFFF';
+        effectParams.glowIntensity = effect.glowIntensity || 0.9;
+        effectParams.taichiRotationSpeed = effect.taichiRotationSpeed || 1;
+        effectParams.baguaRotationSpeed = effect.baguaRotationSpeed || 0.8;
+        effectParams.taichiSize = effect.taichiSize || 200;
+        effectParams.baguaRadius = effect.baguaRadius || 280;
+        effectParams.showLabels = effect.showLabels !== false;
+        effectParams.showParticles = effect.showParticles !== false;
+        effectParams.showEnergyField = effect.showEnergyField !== false;
+        effectParams.labelOffset = effect.labelOffset || 45;
+        effectParams.particleCount = effect.particleCount || 40;
+        effectParams.particleSpeed = effect.particleSpeed || 1;
+        effectParams.viewAngle = effect.viewAngle || 30;
+        effectParams.perspectiveDistance = effect.perspectiveDistance || 800;
+        effectParams.verticalPosition = effect.verticalPosition || 0.5;
+        effectParams.enable3D = effect.enable3D || false;
+        effectParams.depth3D = effect.depth3D || 15;
+        effectParams.enableGoldenSparkle = effect.enableGoldenSparkle !== false;
+        effectParams.sparkleDensity = effect.sparkleDensity || 30;
+        effectParams.enableMysticalAura = effect.enableMysticalAura !== false;
+        effectParams.auraIntensity = effect.auraIntensity || 0.6;
+      }
+
+      processedEffects.push(effectParams);
+    }
+
+    // 全局参数
+    const globalParams = {
+      mergeMode: req.body.mergeMode || 'sequence', // sequence | overlay | transition
+      transition: req.body.transition || 'fade',
+      transitionDuration: parseFloat(req.body.transitionDuration) || 0.5,
+      width: parseInt(req.body.width) || 720,
+      height: parseInt(req.body.height) || 1280,
+      fps: parseInt(req.body.fps) || 24,
+    };
+
+    // 创建任务记录
+    renderJobs.set(jobId, {
+      id: jobId,
+      projectId: 'composite',
+      projectName: '组合特效',
+      status: 'pending',
+      params: { effects: processedEffects, globalParams },
+      createdAt: new Date(),
+      progress: 0
+    });
+
+    // 异步执行渲染
+    renderCompositeJobAsync(jobId, processedEffects, globalParams).catch(err => {
+      console.error('组合渲染失败:', err);
+      const job = renderJobs.get(jobId);
+      if (job) {
+        job.status = 'failed';
+        job.error = err.message;
+      }
+    });
+
+    res.json({
+      success: true,
+      jobId,
+      projectId: 'composite',
+      projectName: '组合特效',
+      message: '组合渲染任务已创建',
+      effectsCount: processedEffects.length,
+      mergeMode: globalParams.mergeMode,
+      statusUrl: '/api/jobs/' + jobId
+    });
+
+  } catch (error) {
+    console.error('创建组合任务失败:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 异步执行组合渲染任务
+async function renderCompositeJobAsync(jobId, effects, globalParams) {
+  const job = renderJobs.get(jobId);
+  if (!job) return;
+
+  job.status = 'rendering';
+  job.progress = 0;
+
+  try {
+    const outputFile = await renderCompositeEffect(effects, jobId, (progress) => {
+      job.progress = Math.round(progress * 100);
+    }, globalParams);
+
+    job.status = 'completed';
+    job.progress = 100;
+    job.outputFile = outputFile;
+    job.completedAt = new Date();
+
+    console.log(`组合渲染完成:`, jobId, outputFile);
+  } catch (error) {
+    job.status = 'failed';
+    job.error = error.message;
+    throw error;
+  }
+}
+
 // API: 创建渲染任务（通用接口，支持多项目）
 app.post('/api/render/:projectId', upload.single('background'), async (req, res) => {
   try {
@@ -177,6 +422,7 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
       params.cylinderHeight = parseFloat(req.body.cylinderHeight) || 400;
       params.perspective = parseInt(req.body.perspective) || 1000;
       params.mode = req.body.mode || 'vertical';
+      params.verticalPosition = parseFloat(req.body.verticalPosition) || 0.5;
     }
 
     // text-firework-effect 特有参数

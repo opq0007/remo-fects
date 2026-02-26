@@ -17,6 +17,8 @@ async function renderVideo(params, jobId, onProgress) {
   const projectPath = params.projectPath;
   const compositionId = params.compositionId;
 
+  console.log('[renderVideo] projectId:', params.projectId);
+
   // 构建 defaultProps
   const defaultProps = {
     words: params.words,
@@ -65,6 +67,9 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.cylinderHeight = params.cylinderHeight;
     defaultProps.perspective = params.perspective;
     defaultProps.mode = params.mode || 'vertical';
+    defaultProps.verticalPosition = params.verticalPosition || 0.5;
+    console.log('[gold-text-ring-effect] mode 参数:', params.mode, '-> defaultProps.mode:', defaultProps.mode);
+    console.log('[gold-text-ring-effect] verticalPosition 参数:', params.verticalPosition, '-> defaultProps.verticalPosition:', defaultProps.verticalPosition);
   }
 
   // text-firework-effect 特有参数
@@ -158,6 +163,7 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.perspectiveDistance = params.perspectiveDistance || 800;
     // 新增参数
     defaultProps.verticalPosition = params.verticalPosition || 0.5;
+    console.log('[tai-chi-bagua-effect] verticalPosition 参数:', params.verticalPosition, '-> defaultProps.verticalPosition:', defaultProps.verticalPosition);
     defaultProps.enable3D = params.enable3D || false;
     defaultProps.depth3D = params.depth3D || 15;
     defaultProps.enableGoldenSparkle = params.enableGoldenSparkle !== false;
@@ -201,6 +207,11 @@ async function renderVideo(params, jobId, onProgress) {
     fs.writeFileSync(propsFile, JSON.stringify(defaultProps, null, 2), 'utf8');
 
     // 构建 npx remotion render 命令
+    // 使用 --frames 参数支持自定义时长
+    // 帧数 = duration(秒) * fps
+    // 注意：帧数不能超过 Composition 的 durationInFrames (默认 480)
+    const maxFrames = 480; // 与 Root.tsx 中的 durationInFrames 保持一致
+    const frameCount = Math.min(params.duration * params.fps, maxFrames);
     const args = [
       'remotion',
       'render',
@@ -211,7 +222,9 @@ async function renderVideo(params, jobId, onProgress) {
       '--chromium-flags=--headless=new',
       '--codec', 'h264',
       '--concurrency', '1',
-      '--frames', '0-' + (params.duration * params.fps - 1)
+      '--frames', '0-' + (frameCount - 1),
+      '--width', String(params.width || 720),
+      '--height', String(params.height || 1280)
     ];
 
     console.log('========================================');
@@ -250,7 +263,11 @@ async function renderVideo(params, jobId, onProgress) {
     });
 
     child.stderr.on('data', (data) => {
-      console.error('[remotion error]', data.toString().trim());
+      const output = data.toString().trim();
+      // 过滤掉 React concurrent rendering 的警告信息
+      if (output && !output.includes('react-dom.production.min.js')) {
+        console.error('[remotion error]', output);
+      }
     });
 
     child.on('close', (code) => {
@@ -283,4 +300,334 @@ async function renderVideo(params, jobId, onProgress) {
   });
 }
 
-module.exports = { renderVideo };
+/**
+ * 使用 FFmpeg 合并多个视频
+ * @param {string[]} videoFiles - 视频文件路径数组
+ * @param {string} outputPath - 输出文件路径
+ * @param {Object} options - 合并选项
+ * @param {string} options.mode - 合并模式：'sequence'(顺序拼接) 或 'overlay'(叠加)
+ * @param {number} options.fps - 帧率
+ * @param {string} options.transition - 转场效果（可选）
+ * @param {number} options.transitionDuration - 转场时长（秒）
+ */
+async function mergeVideos(videoFiles, outputPath, options = {}) {
+  const { 
+    mode = 'sequence', 
+    fps = 30,
+    transition = 'fade',
+    transitionDuration = 0.5
+  } = options;
+
+  if (!videoFiles || videoFiles.length === 0) {
+    throw new Error('没有视频文件需要合并');
+  }
+
+  // 如果只有一个视频，直接复制
+  if (videoFiles.length === 1) {
+    fs.copyFileSync(videoFiles[0], outputPath);
+    return outputPath;
+  }
+
+  return new Promise((resolve, reject) => {
+    // FFmpeg 路径 - 确保是可执行文件路径
+    let ffmpegPath = process.env.FFMPEG_PATH || 'D:\\programs\\ffmpeg-7.1.1-full_build\\bin\\ffmpeg.exe';
+    // 如果路径指向目录而非文件，添加 ffmpeg.exe
+    if (!ffmpegPath.endsWith('ffmpeg.exe') && !ffmpegPath.endsWith('ffmpeg')) {
+      ffmpegPath = path.join(ffmpegPath, 'ffmpeg.exe');
+    }
+    const outputDir = path.dirname(outputPath);
+
+    if (mode === 'sequence') {
+      // 顺序拼接模式
+      // 创建文件列表
+      const listFile = path.join(outputDir, 'filelist-' + Date.now() + '.txt');
+      const fileListContent = videoFiles
+        .map(file => `file '${file.replace(/'/g, "'\\''")}'`)
+        .join('\n');
+      
+      fs.writeFileSync(listFile, fileListContent, 'utf8');
+
+      const args = [
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', listFile,
+        '-c', 'copy',
+        outputPath
+      ];
+
+      console.log('========================================');
+      console.log('FFmpeg 顺序拼接模式');
+      console.log('视频数量:', videoFiles.length);
+      console.log('执行命令:', ffmpegPath, args.join(' '));
+      console.log('========================================');
+
+      const child = spawn(ffmpegPath, args);
+
+      child.stdout.on('data', (data) => {
+        console.log('[ffmpeg]', data.toString().trim());
+      });
+
+      child.stderr.on('data', (data) => {
+        console.error('[ffmpeg stderr]', data.toString().trim());
+      });
+
+      child.on('close', (code) => {
+        // 清理临时文件
+        try {
+          if (fs.existsSync(listFile)) {
+            fs.unlinkSync(listFile);
+          }
+        } catch (e) {}
+
+        if (code === 0) {
+          resolve(outputPath);
+        } else {
+          reject(new Error(`视频合并失败，退出码: ${code}`));
+        }
+      });
+
+      child.on('error', reject);
+
+    } else if (mode === 'overlay') {
+      // 叠加模式 - 所有视频叠加在一起
+      // 构建 filter_complex 命令
+      const inputs = videoFiles.flatMap(file => ['-i', file]);
+      
+      // 获取视频数量
+      const n = videoFiles.length;
+      
+      // 构建 overlay 滤镜链
+      // 每个视频的透明度设为 1/n，实现均匀叠加
+      let filterComplex = '';
+      
+      if (n === 2) {
+        filterComplex = `[0:v][1:v]blend=all_mode='average':all_opacity=0.5[outv]`;
+      } else {
+        // 多个视频的叠加
+        let currentOutput = '[0:v]';
+        for (let i = 1; i < n; i++) {
+          const opacity = 1 / (i + 1);
+          const nextOutput = i === n - 1 ? '[outv]' : `[v${i}]`;
+          filterComplex += `${currentOutput}[${i}:v]blend=all_mode='average':all_opacity=${opacity.toFixed(3)}${nextOutput};`;
+          currentOutput = nextOutput.replace(';', '');
+        }
+        // 移除最后的分号
+        filterComplex = filterComplex.slice(0, -1);
+      }
+
+      const args = [
+        '-y',
+        ...inputs,
+        '-filter_complex', filterComplex,
+        '-map', '[outv]',
+        '-c:v', 'libx264',
+        '-preset', 'medium',
+        '-crf', '23',
+        '-r', String(fps),
+        outputPath
+      ];
+
+      console.log('========================================');
+      console.log('FFmpeg 叠加模式');
+      console.log('视频数量:', videoFiles.length);
+      console.log('滤镜:', filterComplex);
+      console.log('========================================');
+
+      const child = spawn(ffmpegPath, args);
+
+      child.stdout.on('data', (data) => {
+        console.log('[ffmpeg]', data.toString().trim());
+      });
+
+      child.stderr.on('data', (data) => {
+        console.error('[ffmpeg stderr]', data.toString().trim());
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          resolve(outputPath);
+        } else {
+          reject(new Error(`视频叠加失败，退出码: ${code}`));
+        }
+      });
+
+      child.on('error', reject);
+
+    } else if (mode === 'transition') {
+      // 带转场效果的拼接
+      // 获取每个视频的时长信息
+      const probePath = ffmpegPath.replace('ffmpeg.exe', 'ffprobe.exe');
+      
+      // 简化实现：使用 xfade 滤镜进行转场
+      // 先将所有视频调整为相同尺寸
+      const tempDir = path.join(outputDir, 'temp-' + Date.now());
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      // 构建滤镜链
+      let filterComplex = '';
+      const transitions = ['fade', 'fadeblack', 'fadewipe', 'slideleft', 'slideright', 'slideup', 'slidedown'];
+      const selectedTransition = transitions.includes(transition) ? transition : 'fade';
+      
+      // 简化：只处理两个视频的转场
+      if (n === 2) {
+        // 假设两个视频时长相同，转场发生在中间
+        filterComplex = `[0:v][1:v]xfade=transition=${selectedTransition}:duration=${transitionDuration}:offset=5[outv]`;
+        
+        const args = [
+          '-y',
+          '-i', videoFiles[0],
+          '-i', videoFiles[1],
+          '-filter_complex', filterComplex,
+          '-map', '[outv]',
+          '-c:v', 'libx264',
+          '-preset', 'medium',
+          '-crf', '23',
+          outputPath
+        ];
+
+        console.log('========================================');
+        console.log('FFmpeg 转场模式');
+        console.log('转场效果:', selectedTransition);
+        console.log('========================================');
+
+        const child = spawn(ffmpegPath, args);
+
+        child.stdout.on('data', (data) => {
+          console.log('[ffmpeg]', data.toString().trim());
+        });
+
+        child.stderr.on('data', (data) => {
+          console.error('[ffmpeg stderr]', data.toString().trim());
+        });
+
+        child.on('close', (code) => {
+          if (code === 0) {
+            resolve(outputPath);
+          } else {
+            reject(new Error(`转场合并失败，退出码: ${code}`));
+          }
+        });
+
+        child.on('error', reject);
+      } else {
+        // 多个视频的转场处理（逐对处理）
+        reject(new Error('转场模式目前只支持两个视频'));
+      }
+    }
+  });
+}
+
+/**
+ * 渲染组合特效
+ * @param {Object[]} effects - 特效配置数组
+ * @param {string} jobId - 任务 ID
+ * @param {Function} onProgress - 进度回调
+ * @param {Object} globalParams - 全局参数（宽度、高度、帧率等）
+ */
+async function renderCompositeEffect(effects, jobId, onProgress, globalParams = {}) {
+  const outputDir = path.join(__dirname, 'outputs');
+  const tempDir = path.join(outputDir, 'temp-' + jobId);
+  
+  // 确保目录存在
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+
+  const renderedVideos = [];
+  const totalEffects = effects.length;
+  let currentEffectIndex = 0;
+
+  try {
+    // 逐个渲染每个特效
+    for (const effect of effects) {
+      currentEffectIndex++;
+      const effectJobId = `${jobId}-effect-${currentEffectIndex}`;
+      const progressBase = (currentEffectIndex - 1) / totalEffects;
+      const progressRange = 1 / totalEffects;
+
+      console.log(`\n========================================`);
+      console.log(`渲染特效 ${currentEffectIndex}/${totalEffects}: ${effect.projectId}`);
+      console.log(`========================================\n`);
+
+      // 合并全局参数和特效参数
+      const effectParams = {
+        ...effect,
+        width: effect.width || globalParams.width || 720,
+        height: effect.height || globalParams.height || 1280,
+        fps: effect.fps || globalParams.fps || 24,
+        duration: effect.duration || globalParams.duration || 10,
+      };
+
+      // 渲染单个特效
+      const videoFile = await renderVideo(
+        effectParams,
+        effectJobId,
+        (progress) => {
+          // 计算总进度
+          const totalProgress = progressBase + progress * progressRange;
+          if (onProgress) {
+            onProgress(totalProgress);
+          }
+        }
+      );
+
+      renderedVideos.push(path.join(outputDir, videoFile));
+    }
+
+    // 合并所有视频
+    console.log(`\n========================================`);
+    console.log('合并视频中...');
+    console.log(`视频数量: ${renderedVideos.length}`);
+    console.log(`合并模式: ${globalParams.mergeMode || 'sequence'}`);
+    console.log('========================================\n');
+
+    const finalOutputFile = 'video-' + jobId + '.mp4';
+    const finalOutputPath = path.join(outputDir, finalOutputFile);
+
+    await mergeVideos(renderedVideos, finalOutputPath, {
+      mode: globalParams.mergeMode || 'sequence',
+      fps: globalParams.fps || 24,
+      transition: globalParams.transition,
+      transitionDuration: globalParams.transitionDuration || 0.5,
+    });
+
+    // 清理临时视频文件
+    for (const video of renderedVideos) {
+      try {
+        if (fs.existsSync(video)) {
+          fs.unlinkSync(video);
+        }
+      } catch (e) {
+        console.warn('清理临时视频失败:', e.message);
+      }
+    }
+
+    // 清理临时目录
+    try {
+      fs.rmdirSync(tempDir, { recursive: true });
+    } catch (e) {}
+
+    return finalOutputFile;
+
+  } catch (error) {
+    // 清理临时文件
+    for (const video of renderedVideos) {
+      try {
+        if (fs.existsSync(video)) {
+          fs.unlinkSync(video);
+        }
+      } catch (e) {}
+    }
+    try {
+      fs.rmdirSync(tempDir, { recursive: true });
+    } catch (e) {}
+
+    throw error;
+  }
+}
+
+module.exports = { renderVideo, mergeVideos, renderCompositeEffect };
