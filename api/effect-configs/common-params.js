@@ -279,11 +279,23 @@ const commonParams = {
     parser: (v) => parseInt(v) || 80,
     description: '文字间距'
   },
+  marqueeForegroundOffsetX: {
+    type: 'number',
+    defaultValue: 0,
+    parser: (v) => parseInt(v) || 0,
+    description: '前景层水平偏移'
+  },
   marqueeForegroundOffsetY: {
     type: 'number',
     defaultValue: 0,
     parser: (v) => parseInt(v) || 0,
     description: '前景层垂直偏移'
+  },
+  marqueeBackgroundOffsetX: {
+    type: 'number',
+    defaultValue: 0,
+    parser: (v) => parseInt(v) || 0,
+    description: '背景层水平偏移'
   },
   marqueeBackgroundOffsetY: {
     type: 'number',

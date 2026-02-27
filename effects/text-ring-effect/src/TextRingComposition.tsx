@@ -83,7 +83,9 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   marqueeDirection,
   marqueeSpeed,
   marqueeSpacing,
+  marqueeForegroundOffsetX,
   marqueeForegroundOffsetY,
+  marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
 }) => {
   // 构建走马灯配置
@@ -118,7 +120,9 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
         textOrientation: marqueeTextOrientation ?? "horizontal",
         direction: marqueeDirection ?? "right-to-left",
         speed: marqueeSpeed ?? 100,
+        foregroundOffsetX: marqueeForegroundOffsetX ?? 0,
         foregroundOffsetY: marqueeForegroundOffsetY ?? 0,
+        backgroundOffsetX: marqueeBackgroundOffsetX ?? 0,
         backgroundOffsetY: marqueeBackgroundOffsetY ?? 0,
       }
     : undefined;

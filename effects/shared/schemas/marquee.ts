@@ -99,7 +99,9 @@ export const MarqueeSchema = z.object({
   
   // 视觉效果
   marqueePerspectiveDepth: z.number().min(0).max(300).optional().meta({ description: "3D透视深度" }),
+  marqueeForegroundOffsetX: z.number().optional().meta({ description: "前景层 X 偏移" }),
   marqueeForegroundOffsetY: z.number().optional().meta({ description: "前景层 Y 偏移" }),
+  marqueeBackgroundOffsetX: z.number().optional().meta({ description: "后景层 X 偏移" }),
   marqueeBackgroundOffsetY: z.number().optional().meta({ description: "后景层 Y 偏移" }),
   
   // 其他配置
@@ -134,7 +136,9 @@ export interface MarqueeComponentProps {
   direction?: "left-to-right" | "right-to-left" | "top-to-bottom" | "bottom-to-top";
   speed?: number;
   perspectiveDepth?: number;
+  foregroundOffsetX?: number;
   foregroundOffsetY?: number;
+  backgroundOffsetX?: number;
   backgroundOffsetY?: number;
   zIndex?: number;
 }
@@ -152,7 +156,9 @@ export function extractMarqueeProps(props: MarqueeProps): MarqueeComponentProps 
     direction: props.marqueeDirection,
     speed: props.marqueeSpeed,
     perspectiveDepth: props.marqueePerspectiveDepth,
+    foregroundOffsetX: props.marqueeForegroundOffsetX,
     foregroundOffsetY: props.marqueeForegroundOffsetY,
+    backgroundOffsetX: props.marqueeBackgroundOffsetX,
     backgroundOffsetY: props.marqueeBackgroundOffsetY,
     zIndex: props.marqueeZIndex,
   };

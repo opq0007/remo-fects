@@ -338,7 +338,9 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   marqueeDirection,
   marqueeSpeed,
   marqueeSpacing,
+  marqueeForegroundOffsetX,
   marqueeForegroundOffsetY,
+  marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
 }) => {
   const { width, height } = useVideoConfig();
@@ -514,7 +516,9 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
           textOrientation={marqueeTextOrientation ?? "horizontal"}
           direction={marqueeDirection ?? "left-to-right"}
           speed={marqueeSpeed ?? 50}
+          foregroundOffsetX={marqueeForegroundOffsetX ?? 0}
           foregroundOffsetY={marqueeForegroundOffsetY ?? 0}
+          backgroundOffsetX={marqueeBackgroundOffsetX ?? 0}
           backgroundOffsetY={marqueeBackgroundOffsetY ?? 0}
         />
       )}
