@@ -10,7 +10,8 @@ import {
   BaseComposition,
   StarField,
   CenterGlow,
-  FullCompositionSchema,
+  CompleteCompositionSchema,
+  type WatermarkProps,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -30,7 +31,7 @@ export const TextFinalPositionSchema = z.object({
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
-export const TextBreakthroughCompositionSchema = FullCompositionSchema.extend({
+export const TextBreakthroughCompositionSchema = CompleteCompositionSchema.extend({
   // 文字配置
   textGroups: z.array(z.object({
     texts: z.array(z.string()).min(1).meta({ description: "一组文字" }),
@@ -214,6 +215,16 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   audioEnabled = false,
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
+  // 水印参数
+  watermarkEnabled = false,
+  watermarkText,
+  watermarkFontSize,
+  watermarkColor,
+  watermarkOpacity,
+  watermarkSpeed,
+  watermarkIntensity,
+  watermarkVelocityX,
+  watermarkVelocityY,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -313,6 +324,21 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
       audioSource={audioSource}
       audioVolume={audioVolume}
       extraLayers={extraLayers}
+      watermark={
+        watermarkEnabled
+          ? {
+              enabled: true,
+              text: watermarkText ?? "© Remo-Fects",
+              fontSize: watermarkFontSize ?? 24,
+              color: watermarkColor ?? "#ffffff",
+              opacity: watermarkOpacity ?? 0.35,
+              speed: watermarkSpeed ?? 1,
+              intensity: watermarkIntensity ?? 0.8,
+              velocityX: watermarkVelocityX ?? 180,
+              velocityY: watermarkVelocityY ?? 120,
+            }
+          : undefined
+      }
     >
       {groupTimings.map((timing, groupIndex) => {
         let positionOffset = 0;

@@ -57,6 +57,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#1a1a2e",
             overlayColor: "#000000",
             overlayOpacity: 0.2,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffffff",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -93,6 +104,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#1a1a2e",
             overlayColor: "#000000",
             overlayOpacity: 0.2,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffffff",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -130,6 +152,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#1a1a2e",
             overlayColor: "#000000",
             overlayOpacity: 0.2,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffffff",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -171,6 +204,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#1a0a1a",
             overlayColor: "#000000",
             overlayOpacity: 0.3,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffffff",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -212,6 +256,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#0d0d0d",
             overlayColor: "#1a0a00",
             overlayOpacity: 0.2,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffffff",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -259,6 +314,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#0a0a14",
             overlayColor: "#000000",
             overlayOpacity: 0.25,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffffff",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -294,6 +360,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundType: "color",
             backgroundColor: "#f5f5f5",
             overlayOpacity: 0,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#333333",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -330,6 +407,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundType: "color",
             backgroundColor: "#0a0a1a",
             overlayOpacity: 0,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#00ffff",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -370,6 +458,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#1a0a2e",
             overlayColor: "#000000",
             overlayOpacity: 0.3,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffd700",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
 
@@ -406,6 +505,17 @@ export const RemotionRoot: React.FC = () => {
             backgroundColor: "#2d1f14",
             overlayColor: "#1a120a",
             overlayOpacity: 0.2,
+
+            // 水印配置
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#d4a574",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
           }}
         />
       </Folder>

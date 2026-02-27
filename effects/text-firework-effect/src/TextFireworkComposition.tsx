@@ -7,13 +7,13 @@ import { zColor } from "@remotion/zod-types";
 import {
   BaseComposition,
   StarField,
-  FullCompositionSchema,
+  CompleteCompositionSchema,
   seededRandom,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
-export const TextFireworkCompositionSchema = FullCompositionSchema.extend({
+export const TextFireworkCompositionSchema = CompleteCompositionSchema.extend({
   // 文字配置
   words: z.array(z.string()).min(1).meta({ description: "要显示的文字列表（每个文字一个烟花）" }),
   
@@ -68,6 +68,16 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
   audioLoop = true,
+  // 水印参数
+  watermarkEnabled = false,
+  watermarkText,
+  watermarkFontSize,
+  watermarkColor,
+  watermarkOpacity,
+  watermarkSpeed,
+  watermarkIntensity,
+  watermarkVelocityX,
+  watermarkVelocityY,
 }) => {
   const { width, height } = useVideoConfig();
 
@@ -149,6 +159,21 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
       audioVolume={audioVolume}
       audioLoop={audioLoop}
       extraLayers={<StarField count={100} opacity={0.5} />}
+      watermark={
+        watermarkEnabled
+          ? {
+              enabled: true,
+              text: watermarkText ?? "© Remo-Fects",
+              fontSize: watermarkFontSize ?? 24,
+              color: watermarkColor ?? "#ffffff",
+              opacity: watermarkOpacity ?? 0.35,
+              speed: watermarkSpeed ?? 1,
+              intensity: watermarkIntensity ?? 0.8,
+              velocityX: watermarkVelocityX ?? 180,
+              velocityY: watermarkVelocityY ?? 120,
+            }
+          : undefined
+      }
     >
       {fireworks.map((firework, index) => (
         <Firework

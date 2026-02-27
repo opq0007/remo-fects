@@ -14,12 +14,13 @@ import { TextGrow } from "./TextGrow";
 import { ExplodeParticles, generateParticles, ShockWave } from "./ExplodeParticles";
 import { ContourPoint } from "./imageUtils";
 import {
-  Background,
-  Overlay,
-  BackgroundType,
   BackgroundSchema,
   OverlaySchema,
   AudioSchema,
+  WatermarkSchema,
+  Background,
+  Overlay,
+  Watermark,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -74,6 +75,9 @@ export const TextGrowExplodeCompositionSchema = BackgroundSchema.extend({
 
   // 音效配置（使用公共 Schema）
   ...AudioSchema.shape,
+
+  // 水印配置（使用公共 Schema）
+  ...WatermarkSchema.shape,
 });
 
 export type TextGrowExplodeCompositionProps = z.infer<typeof TextGrowExplodeCompositionSchema>;
@@ -142,6 +146,16 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
   audioLoop = true,
+  // 水印参数
+  watermarkEnabled = false,
+  watermarkText,
+  watermarkFontSize,
+  watermarkColor,
+  watermarkOpacity,
+  watermarkSpeed,
+  watermarkIntensity,
+  watermarkVelocityX,
+  watermarkVelocityY,
 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
@@ -250,6 +264,19 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
           src={staticFile(audioSource)}
           volume={audioVolume}
           loop={audioLoop}
+        />
+      )}
+
+      {watermarkEnabled && (
+        <Watermark
+          text={watermarkText ?? "© Remo-Fects"}
+          fontSize={watermarkFontSize ?? 24}
+          color={watermarkColor ?? "#ffffff"}
+          opacity={watermarkOpacity ?? 0.35}
+          speed={watermarkSpeed ?? 1}
+          intensity={watermarkIntensity ?? 0.8}
+          velocityX={watermarkVelocityX ?? 180}
+          velocityY={watermarkVelocityY ?? 120}
         />
       )}
     </AbsoluteFill>

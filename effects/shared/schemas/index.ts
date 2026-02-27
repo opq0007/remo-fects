@@ -29,6 +29,16 @@ export {
   type NestedAudioProps,
 } from "./audio";
 
+// 水印配置
+export {
+  WatermarkSchema,
+  WatermarkEffectTypeSchema,
+  type WatermarkProps,
+  type WatermarkEffectType,
+  type WatermarkComponentProps,
+  extractWatermarkProps,
+} from "./watermark";
+
 // 通用配置
 export {
   BaseVideoSchema,
@@ -41,6 +51,8 @@ export {
 import { z } from "zod";
 import { BackgroundSchema } from "./background";
 import { OverlaySchema } from "./overlay";
+import { AudioSchema } from "./audio";
+import { WatermarkSchema } from "./watermark";
 
 /**
  * 完整背景 Schema（背景 + 遮罩）
@@ -72,5 +84,17 @@ export const BaseCompositionSchema = FullBackgroundSchema;
  * });
  * ```
  */
-import { AudioSchema } from "./audio";
 export const FullCompositionSchema = FullBackgroundSchema.merge(AudioSchema);
+
+/**
+ * 全功能组合 Schema
+ * 包含背景 + 遮罩 + 音频 + 水印的完整配置
+ * 
+ * 使用方式：
+ * ```typescript
+ * export const MySchema = CompleteCompositionSchema.extend({
+ *   // 项目特有参数
+ * });
+ * ```
+ */
+export const CompleteCompositionSchema = FullCompositionSchema.merge(WatermarkSchema);

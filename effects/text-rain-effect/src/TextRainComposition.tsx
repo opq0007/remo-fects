@@ -7,6 +7,7 @@ import {
   FullBackgroundSchema,
   OverlaySchema,
   NestedAudioSchema,
+  WatermarkSchema,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -93,6 +94,9 @@ export const TextRainCompositionSchema = z.object({
   
   // 遮罩效果（使用公共 Schema）
   ...OverlaySchema.shape,
+
+  // 水印配置（使用公共 Schema）
+  ...WatermarkSchema.shape,
 });
 
 export type TextRainCompositionProps = z.infer<typeof TextRainCompositionSchema>;
@@ -124,6 +128,16 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   backgroundVideoMuted = true,
   overlayColor = "#000000",
   overlayOpacity = 0.2,
+  // 水印参数
+  watermarkEnabled = false,
+  watermarkText,
+  watermarkFontSize,
+  watermarkColor,
+  watermarkOpacity,
+  watermarkSpeed,
+  watermarkIntensity,
+  watermarkVelocityX,
+  watermarkVelocityY,
 }) => {
   const defaultTextStyle: TextStyleConfig = {
     color: "#ffd700",
@@ -166,6 +180,21 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      watermark={
+        watermarkEnabled
+          ? {
+              enabled: true,
+              text: watermarkText ?? "© Remo-Fects",
+              fontSize: watermarkFontSize ?? 24,
+              color: watermarkColor ?? "#ffffff",
+              opacity: watermarkOpacity ?? 0.35,
+              speed: watermarkSpeed ?? 1,
+              intensity: watermarkIntensity ?? 0.8,
+              velocityX: watermarkVelocityX ?? 180,
+              velocityY: watermarkVelocityY ?? 120,
+            }
+          : undefined
+      }
     >
       <TextRain
         words={words}

@@ -18,6 +18,8 @@ import {
   BackgroundSchema,
   OverlaySchema,
   AudioSchema,
+  WatermarkSchema,
+  Watermark,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -73,6 +75,9 @@ export const TaiChiBaguaSchema = BackgroundSchema.extend({
 
   // 音效配置（使用公共 Schema）
   ...AudioSchema.shape,
+
+  // 水印配置（使用公共 Schema）
+  ...WatermarkSchema.shape,
 });
 
 export type TaiChiBaguaProps = z.infer<typeof TaiChiBaguaSchema>;
@@ -301,6 +306,16 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
   audioLoop = true,
+  // 水印参数
+  watermarkEnabled = false,
+  watermarkText,
+  watermarkFontSize,
+  watermarkColor,
+  watermarkOpacity,
+  watermarkSpeed,
+  watermarkIntensity,
+  watermarkVelocityX,
+  watermarkVelocityY,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -435,6 +450,19 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
           src={staticFile(audioSource)}
           volume={audioVolume}
           loop={audioLoop}
+        />
+      )}
+
+      {watermarkEnabled && (
+        <Watermark
+          text={watermarkText ?? "© Remo-Fects"}
+          fontSize={watermarkFontSize ?? 24}
+          color={watermarkColor ?? "#ffffff"}
+          opacity={watermarkOpacity ?? 0.35}
+          speed={watermarkSpeed ?? 1}
+          intensity={watermarkIntensity ?? 0.8}
+          velocityX={watermarkVelocityX ?? 180}
+          velocityY={watermarkVelocityY ?? 120}
         />
       )}
     </AbsoluteFill>

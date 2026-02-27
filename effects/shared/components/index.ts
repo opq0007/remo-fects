@@ -17,5 +17,7 @@ export type { StarFieldProps } from "./StarField";
 export { AudioPlayer } from "./AudioPlayer";
 export type { AudioPlayerProps } from "./AudioPlayer";
 
+export { Watermark } from "./Watermark";
+
 export { BaseComposition } from "./BaseComposition";
 export type { BaseCompositionComponentProps } from "./BaseComposition";

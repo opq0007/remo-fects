@@ -42,6 +42,17 @@ export const RemotionRoot: React.FC = () => {
           auraIntensity: 0.6,
           overlayColor: "#000000",
           overlayOpacity: 0,
+
+          // 水印配置
+          watermarkEnabled: true,
+          watermarkText: "© Remo-Fects",
+          watermarkFontSize: 24,
+          watermarkColor: "#ffffff",
+          watermarkOpacity: 0.35,
+          watermarkSpeed: 1,
+          watermarkIntensity: 0.8,
+          watermarkVelocityX: 180,
+          watermarkVelocityY: 120,
         }}
       />
     </>

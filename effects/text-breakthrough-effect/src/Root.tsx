@@ -96,6 +96,17 @@ export const RemotionRoot: React.FC = () => {
           audioEnabled: true,              // 是否启用背景音效
           audioSource: "coin-sound.mp3",    // 音效文件路径
           audioVolume: 0.5,                 // 音量（0-2，1为正常音量）
+
+          // 水印配置
+          watermarkEnabled: true,           // 启用水印
+          watermarkText: "水印测试",    // 水印文字
+          watermarkFontSize: 24,            // 字体大小
+          watermarkColor: "#ffffff",        // 颜色
+          watermarkOpacity: 0.35,           // 透明度
+          watermarkSpeed: 1,                // 动画速度
+          watermarkIntensity: 0.8,          // 效果强度
+          watermarkVelocityX: 180,          // X方向速度（像素/秒）
+          watermarkVelocityY: 120,          // Y方向速度（像素/秒）
         }}
       />
     </>

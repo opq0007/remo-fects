@@ -111,6 +111,60 @@ const commonParams = {
     defaultValue: () => Math.floor(Math.random() * 10000),
     parser: (v) => parseInt(v) || Math.floor(Math.random() * 10000),
     description: '随机种子'
+  },
+
+  // ===== 水印配置 =====
+  watermarkEnabled: {
+    type: 'boolean',
+    defaultValue: false,
+    parser: (v) => v === 'true' || v === true,
+    description: '是否启用水印'
+  },
+  watermarkText: {
+    type: 'string',
+    defaultValue: '© Remo-Fects',
+    description: '水印文字'
+  },
+  watermarkFontSize: {
+    type: 'number',
+    defaultValue: 24,
+    parser: (v) => parseInt(v) || 24,
+    description: '水印字体大小'
+  },
+  watermarkColor: {
+    type: 'string',
+    defaultValue: '#ffffff',
+    description: '水印颜色'
+  },
+  watermarkOpacity: {
+    type: 'number',
+    defaultValue: 0.35,
+    parser: (v) => parseFloat(v) || 0.35,
+    description: '水印透明度（0-1）'
+  },
+  watermarkSpeed: {
+    type: 'number',
+    defaultValue: 1,
+    parser: (v) => parseFloat(v) || 1,
+    description: '水印动画速度'
+  },
+  watermarkIntensity: {
+    type: 'number',
+    defaultValue: 0.8,
+    parser: (v) => parseFloat(v) || 0.8,
+    description: '水印效果强度（0-1）'
+  },
+  watermarkVelocityX: {
+    type: 'number',
+    defaultValue: 180,
+    parser: (v) => parseFloat(v) || 180,
+    description: '水印X方向速度（像素/秒）'
+  },
+  watermarkVelocityY: {
+    type: 'number',
+    defaultValue: 120,
+    parser: (v) => parseFloat(v) || 120,
+    description: '水印Y方向速度（像素/秒）'
   }
 };
 

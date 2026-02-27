@@ -5,13 +5,12 @@ import { zColor } from "@remotion/zod-types";
 import {
   BaseComposition,
   CenterGlow,
-  FullCompositionSchema,
-  BaseCompositionProps,
+  CompleteCompositionSchema,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
-export const TextRingCompositionSchema = FullCompositionSchema.extend({
+export const TextRingCompositionSchema = CompleteCompositionSchema.extend({
   // 特有参数
   words: z.array(z.string()).meta({ description: "要显示的文字列表" }),
   fontSize: z.number().min(20).max(200).meta({ description: "字体大小" }),
@@ -56,6 +55,16 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
   audioLoop = true,
+  // 水印参数
+  watermarkEnabled = false,
+  watermarkText,
+  watermarkFontSize,
+  watermarkColor,
+  watermarkOpacity,
+  watermarkSpeed,
+  watermarkIntensity,
+  watermarkVelocityX,
+  watermarkVelocityY,
 }) => {
   return (
     <BaseComposition
@@ -71,6 +80,21 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
       audioVolume={audioVolume}
       audioLoop={audioLoop}
       extraLayers={<CenterGlow intensity={glowIntensity} />}
+      watermark={
+        watermarkEnabled
+          ? {
+              enabled: true,
+              text: watermarkText ?? "© Remo-Fects",
+              fontSize: watermarkFontSize ?? 24,
+              color: watermarkColor ?? "#ffffff",
+              opacity: watermarkOpacity ?? 0.35,
+              speed: watermarkSpeed ?? 1,
+              intensity: watermarkIntensity ?? 0.8,
+              velocityX: watermarkVelocityX ?? 180,
+              velocityY: watermarkVelocityY ?? 120,
+            }
+          : undefined
+      }
     >
       <TextRing
         words={words}
