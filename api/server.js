@@ -34,13 +34,12 @@ const projects = {
     path: path.join(__dirname, '../effects/tai-chi-bagua-effect'),
     compositionId: 'TaiChiBagua',
     name: '太极八卦图特效'
+  },
+  'text-grow-explode-effect': {
+    path: path.join(__dirname, '../effects/text-grow-explode-effect'),
+    compositionId: 'TextGrowExplode',
+    name: '姓名生长爆炸特效'
   }
-  // 未来可以添加更多项目，例如：
-  // 'particle-effect': {
-  //   path: path.join(__dirname, '../effects/particle-effect'),
-  //   compositionId: 'Particle',
-  //   name: '粒子特效'
-  // }
 };
 
 // 中间件
@@ -564,6 +563,61 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
       if (!req.body.width && !req.body.height) {
         params.width = 720;
         params.height = 720;
+      }
+    }
+
+    // text-grow-explode-effect 特有参数
+    if (projectId === 'text-grow-explode-effect') {
+      // 核心输入
+      params.name = req.body.name || '福';
+      params.words = typeof req.body.words === 'string'
+        ? JSON.parse(req.body.words)
+        : (req.body.words || ['财', '运', '亨', '通', '金', '玉', '满', '堂']);
+      
+      // 阶段时长配置
+      params.growDuration = parseInt(req.body.growDuration) || 90;
+      params.holdDuration = parseInt(req.body.holdDuration) || 30;
+      params.explodeDuration = parseInt(req.body.explodeDuration) || 30;
+      params.fallDuration = parseInt(req.body.fallDuration) || 90;
+      
+      // 文字样式
+      params.fontSize = parseInt(req.body.fontSize) || 14;
+      params.particleFontSize = parseInt(req.body.particleFontSize) || 22;
+      params.textColor = req.body.textColor || '#ffd700';
+      params.glowColor = req.body.glowColor || '#ffaa00';
+      params.glowIntensity = parseFloat(req.body.glowIntensity) || 1;
+      
+      // 粒子配置
+      params.particleCount = parseInt(req.body.particleCount) || 80;
+      params.gravity = parseFloat(req.body.gravity) || 0.15;
+      params.wind = parseFloat(req.body.wind) || 0;
+      
+      // 轮廓提取配置
+      params.threshold = parseInt(req.body.threshold) || 128;
+      params.sampleDensity = parseInt(req.body.sampleDensity) || 6;
+      
+      // 生长样式
+      params.growStyle = req.body.growStyle || 'tree';
+      
+      // 背景配置
+      params.backgroundColor = req.body.backgroundColor || '#0a0a1a';
+      params.backgroundOpacity = parseFloat(req.body.backgroundOpacity) || 0.9;
+      
+      // 随机种子
+      params.seed = parseInt(req.body.seed) || 42;
+      
+      // 如果没有指定 duration，根据各阶段时长自动计算
+      if (!req.body.duration) {
+        const totalFrames = params.growDuration + params.holdDuration + params.explodeDuration + params.fallDuration;
+        params.duration = Math.ceil(totalFrames / (params.fps || 24));
+      }
+      
+      // 验证必要参数
+      if (!params.name) {
+        return res.status(400).json({ error: '请提供姓名 (name)' });
+      }
+      if (!params.words || params.words.length === 0) {
+        return res.status(400).json({ error: '请提供文字碎片数组 (words)' });
       }
     }
 

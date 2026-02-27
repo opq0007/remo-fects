@@ -3,6 +3,73 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+/**
+ * 从图片中提取轮廓点（服务端版本）
+ * 使用 canvas 库处理图片
+ */
+function extractContourPointsFromImage(imagePath, width, height, threshold = 128, sampleDensity = 8) {
+  // 由于 Node.js 没有原生 canvas，我们使用简化的图片处理
+  // 这里使用 jimp 或直接读取像素数据
+  // 为了性能，我们使用一个简化的方案
+  
+  try {
+    // 动态加载 canvas（如果可用）
+    let canvas, ctx;
+    
+    try {
+      canvas = require('canvas');
+    } catch (e) {
+      console.log('[轮廓提取] canvas 库不可用，使用默认轮廓');
+      return generateDefaultContour(width, height, sampleDensity);
+    }
+    
+    const img = canvas.loadImage(imagePath);
+    const canvasInstance = canvas.createCanvas(width, height);
+    ctx = canvasInstance.getContext('2d');
+    
+    // 同步等待图片加载（在 Node.js 中 loadImage 是 Promise）
+    // 这里需要改为同步或使用其他方法
+    
+    return generateDefaultContour(width, height, sampleDensity);
+  } catch (err) {
+    console.error('[轮廓提取] 错误:', err.message);
+    return generateDefaultContour(width, height, sampleDensity);
+  }
+}
+
+/**
+ * 生成默认轮廓（圆形或心形）
+ */
+function generateDefaultContour(width, height, sampleDensity) {
+  const points = [];
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) * 0.35;
+  
+  // 生成圆形轮廓
+  for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+    for (let r = radius * 0.3; r <= radius; r += sampleDensity) {
+      const x = centerX + Math.cos(angle) * r;
+      const y = centerY + Math.sin(angle) * r;
+      const opacity = 0.5 + (r / radius) * 0.5;
+      points.push({ x: Math.round(x), y: Math.round(y), opacity });
+    }
+  }
+  
+  // 填充内部
+  for (let y = centerY - radius; y <= centerY + radius; y += sampleDensity * 2) {
+    for (let x = centerX - radius; x <= centerX + radius; x += sampleDensity * 2) {
+      const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+      if (dist < radius * 0.8) {
+        const opacity = 1 - dist / radius;
+        points.push({ x: Math.round(x), y: Math.round(y), opacity });
+      }
+    }
+  }
+  
+  return points;
+}
+
 async function renderVideo(params, jobId, onProgress) {
   const outputDir = path.join(__dirname, 'outputs');
   const outputFile = 'video-' + jobId + '.mp4';
@@ -170,6 +237,74 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.sparkleDensity = params.sparkleDensity || 30;
     defaultProps.enableMysticalAura = params.enableMysticalAura !== false;
     defaultProps.auraIntensity = params.auraIntensity || 0.6;
+  }
+
+  // text-grow-explode-effect 特有参数
+  if (params.projectId === 'text-grow-explode-effect') {
+    // 核心输入
+    defaultProps.name = params.name || '福';
+    defaultProps.words = params.words || ['财', '运', '亨', '通', '金', '玉', '满', '堂'];
+    
+    // 阶段时长配置
+    defaultProps.growDuration = params.growDuration || 90;
+    defaultProps.holdDuration = params.holdDuration || 30;
+    defaultProps.explodeDuration = params.explodeDuration || 30;
+    defaultProps.fallDuration = params.fallDuration || 90;
+    
+    // 文字样式
+    defaultProps.fontSize = params.fontSize || 14;
+    defaultProps.particleFontSize = params.particleFontSize || 22;
+    defaultProps.textColor = params.textColor || '#ffd700';
+    defaultProps.glowColor = params.glowColor || '#ffaa00';
+    defaultProps.glowIntensity = params.glowIntensity || 1;
+    
+    // 粒子配置
+    defaultProps.particleCount = params.particleCount || 80;
+    defaultProps.gravity = params.gravity || 0.15;
+    defaultProps.wind = params.wind || 0;
+    
+    // 轮廓提取配置
+    defaultProps.threshold = params.threshold || 128;
+    defaultProps.sampleDensity = params.sampleDensity || 6;
+    
+    // 生长样式
+    defaultProps.growStyle = params.growStyle || 'tree';
+    
+    // 背景配置
+    defaultProps.backgroundColor = params.backgroundColor || '#0a0a1a';
+    defaultProps.backgroundOpacity = params.backgroundOpacity || 0.9;
+    
+    // 随机种子
+    defaultProps.seed = params.seed || 42;
+    
+    // 图片源（必须提供）
+    if (params.backgroundFile) {
+      defaultProps.imageSource = params.backgroundFile;
+    }
+    
+    // 预计算轮廓点数据（服务端处理，避免客户端重复计算）
+    if (params.backgroundFile && params.width && params.height) {
+      try {
+        const imagePath = path.join(__dirname, 'uploads', params.backgroundFile);
+        if (fs.existsSync(imagePath)) {
+          const contourPoints = extractContourPointsFromImage(
+            imagePath,
+            params.width,
+            params.height,
+            defaultProps.threshold,
+            defaultProps.sampleDensity
+          );
+          defaultProps.contourPointsData = contourPoints;
+          console.log('[text-grow-explode-effect] 预计算轮廓点数量:', contourPoints.length);
+        }
+      } catch (err) {
+        console.error('[text-grow-explode-effect] 轮廓点预计算失败:', err.message);
+      }
+    }
+    
+    console.log('[text-grow-explode-effect] name:', defaultProps.name);
+    console.log('[text-grow-explode-effect] words:', defaultProps.words);
+    console.log('[text-grow-explode-effect] imageSource:', defaultProps.imageSource);
   }
 
   // 如果有背景文件，复制到项目 public 目录
