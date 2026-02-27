@@ -2,46 +2,48 @@ import React from "react";
 import {
   AbsoluteFill,
   useVideoConfig,
-  staticFile,
-  Img,
-  Sequence,
   useCurrentFrame,
-  interpolate,
   Audio,
+  staticFile,
 } from "remotion";
-import { Video } from "@remotion/media";
 import { TextBreakthrough } from "./TextBreakthrough";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
+import {
+  Background,
+  Overlay,
+  StarField,
+  CenterGlow,
+  BackgroundType,
+  FullBackgroundSchema,
+  OverlaySchema,
+  AudioSchema,
+} from "../../shared/index";
 
-// ==================== Schema 定义 ====================
+// ==================== 特有 Schema 定义 ====================
 
-// 文字最终定格位置 Schema
 export const TextFinalPositionSchema = z.object({
-  // 全局默认位置（相对于画面中心的偏移比例，-0.5 到 0.5）
-  defaultX: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认水平位置（-0.5左 到 0.5右）" }),
-  defaultY: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认垂直位置（-0.5上 到 0.5下）" }),
-  // 每个文字组的独立位置（覆盖默认位置）
+  defaultX: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认水平位置" }),
+  defaultY: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认垂直位置" }),
   groupPositions: z.array(z.object({
     x: z.number().min(-0.5).max(0.5).meta({ description: "水平位置" }),
     y: z.number().min(-0.5).max(0.5).meta({ description: "垂直位置" }),
-    // 该组内多个文字的排列方式
-    arrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "排列方式：水平、垂直、圆形、堆叠" }),
+    arrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "排列方式" }),
     arrangementSpacing: z.number().min(0).max(0.5).optional().meta({ description: "排列间距" }),
   })).optional().meta({ description: "每个文字组的独立位置配置" }),
-  // 多个文字时的自动排列方式（当未指定 groupPositions 时生效）
   autoArrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "自动排列方式" }),
   autoArrangementSpacing: z.number().min(0).max(0.5).optional().meta({ description: "自动排列间距" }),
 });
 
+// ==================== 主组件 Schema（使用公共 Schema）====================
+
 export const TextBreakthroughCompositionSchema = z.object({
-  // 文字配置（支持数组，每组元素为一个整体）
+  // 文字配置
   textGroups: z.array(z.object({
-    texts: z.array(z.string()).min(1).meta({ description: "一组文字（同时出现）" }),
-    groupDelay: z.number().optional().meta({ description: "该组相对于上一组的延迟帧数" }),
+    texts: z.array(z.string()).min(1).meta({ description: "一组文字" }),
+    groupDelay: z.number().optional().meta({ description: "延迟帧数" }),
   })).min(1).meta({ description: "文字组列表" }),
 
-  // 文字最终定格位置配置
   finalPosition: TextFinalPositionSchema.optional().meta({ description: "文字最终定格位置配置" }),
 
   // 字体配置
@@ -50,195 +52,51 @@ export const TextBreakthroughCompositionSchema = z.object({
   fontWeight: z.number().min(100).max(900).meta({ description: "字体粗细" }),
 
   // 3D金色效果
-  textColor: zColor().meta({ description: "文字主色（金色）" }),
+  textColor: zColor().meta({ description: "文字主色" }),
   glowColor: zColor().meta({ description: "发光颜色" }),
   secondaryGlowColor: zColor().meta({ description: "次要发光颜色" }),
   glowIntensity: z.number().min(0.1).max(3).meta({ description: "发光强度" }),
   bevelDepth: z.number().min(0).max(10).meta({ description: "3D立体深度" }),
 
   // 3D透视参数
-  startZ: z.number().min(500).max(3000).meta({ description: "起始深度（远离镜头）" }),
-  endZ: z.number().min(-500).max(500).meta({ description: "结束深度（靠近镜头，负数表示突破屏幕）" }),
+  startZ: z.number().min(500).max(3000).meta({ description: "起始深度" }),
+  endZ: z.number().min(-500).max(500).meta({ description: "结束深度" }),
 
   // 动画时长配置
-  approachDuration: z.number().min(20).max(120).meta({ description: "接近动画时长（帧）" }),
-  breakthroughDuration: z.number().min(10).max(60).meta({ description: "突破动画时长（帧）" }),
-  holdDuration: z.number().min(20).max(120).meta({ description: "停留时长（帧）" }),
+  approachDuration: z.number().min(20).max(120).meta({ description: "接近动画时长" }),
+  breakthroughDuration: z.number().min(10).max(60).meta({ description: "突破动画时长" }),
+  holdDuration: z.number().min(20).max(120).meta({ description: "停留时长" }),
 
   // 冲击效果
-  impactScale: z.number().min(1).max(2).meta({ description: "冲击时的缩放倍数" }),
-  impactRotation: z.number().min(0).max(30).meta({ description: "冲击时的最大旋转角度" }),
+  impactScale: z.number().min(1).max(2).meta({ description: "冲击缩放倍数" }),
+  impactRotation: z.number().min(0).max(30).meta({ description: "冲击旋转角度" }),
   shakeIntensity: z.number().min(0).max(20).meta({ description: "震动强度" }),
 
   // 组间延迟
-  groupInterval: z.number().min(10).max(120).meta({ description: "文字组之间的间隔帧数" }),
+  groupInterval: z.number().min(10).max(120).meta({ description: "文字组间隔帧数" }),
 
   // 运动方向配置
-  direction: z.enum(["bottom-up", "top-down"]).optional().meta({ description: "文字运动方向：bottom-up 从下往上（默认），top-down 从上往下" }),
-
-  // 背景配置
-  backgroundType: z.enum(["image", "video", "color", "gradient"]).meta({ description: "背景类型" }),
-  backgroundSource: z.string().optional().meta({ description: "背景文件路径" }),
-  backgroundColor: zColor().optional().meta({ description: "背景颜色" }),
-  backgroundGradient: z.string().optional().meta({ description: "背景渐变CSS" }),
-  backgroundVideoLoop: z.boolean().optional().meta({ description: "背景视频是否循环" }),
-  backgroundVideoMuted: z.boolean().optional().meta({ description: "背景视频是否静音" }),
-
-  // 遮罩效果
-  overlayColor: zColor().optional().meta({ description: "遮罩颜色" }),
-  overlayOpacity: z.number().min(0).max(1).optional().meta({ description: "遮罩透明度" }),
+  direction: z.enum(["bottom-up", "top-down"]).optional().meta({ description: "运动方向" }),
 
   // 下落消失效果
-  enableFallDown: z.boolean().optional().meta({ description: "是否启用文字下落消失效果（停留结束后自然下落）" }),
-  fallDownDuration: z.number().min(10).max(120).optional().meta({ description: "下落动画时长（帧）" }),
-  fallDownEndY: z.number().min(0.1).max(0.5).optional().meta({ description: "下落结束位置（距底部百分比，0.2表示距底部20%）" }),
+  enableFallDown: z.boolean().optional().meta({ description: "启用下落消失" }),
+  fallDownDuration: z.number().min(10).max(120).optional().meta({ description: "下落时长" }),
+  fallDownEndY: z.number().min(0.1).max(0.5).optional().meta({ description: "下落结束位置" }),
 
-  // 音效配置
-  audioEnabled: z.boolean().optional().meta({ description: "是否启用背景音效" }),
-  audioSource: z.string().optional().meta({ description: "音效文件路径（默认 coin-sound.mp3）" }),
-  audioVolume: z.number().min(0).max(2).optional().meta({ description: "音量（0-2，1为正常音量）" }),
+  // 背景配置（使用公共 Schema）
+  ...FullBackgroundSchema.shape,
+
+  // 遮罩效果（使用公共 Schema）
+  ...OverlaySchema.shape,
+
+  // 音效配置（使用公共 Schema）
+  ...AudioSchema.shape,
 });
 
 export type TextBreakthroughCompositionProps = z.infer<typeof TextBreakthroughCompositionSchema>;
 
-// ==================== 子组件 ====================
+// ==================== 特有子组件 ====================
 
-const Background: React.FC<{
-  type: "image" | "video" | "color" | "gradient";
-  source?: string;
-  color?: string;
-  gradient?: string;
-  videoLoop?: boolean;
-  videoMuted?: boolean;
-}> = ({ type, source, color, gradient, videoLoop = true, videoMuted = true }) => {
-  const { width, height } = useVideoConfig();
-
-  if (type === "color") {
-    return <AbsoluteFill style={{ backgroundColor: color || "#0a0a20" }} />;
-  }
-
-  if (type === "gradient") {
-    return (
-      <AbsoluteFill
-        style={{
-          background: gradient || "radial-gradient(circle at center, #1a1a40 0%, #0a0a20 50%, #000010 100%)",
-        }}
-      />
-    );
-  }
-
-  if (type === "image" && source) {
-    return (
-      <AbsoluteFill>
-        <Img src={staticFile(source)} style={{ width, height, objectFit: "cover" }} />
-      </AbsoluteFill>
-    );
-  }
-
-  if (type === "video" && source) {
-    return (
-      <AbsoluteFill>
-        <Video
-          src={staticFile(source)}
-          style={{ width, height, objectFit: "cover" }}
-          loop={videoLoop}
-          muted={videoMuted}
-        />
-      </AbsoluteFill>
-    );
-  }
-
-  return (
-    <AbsoluteFill
-      style={{
-        background: "radial-gradient(circle at center, #1a1a40 0%, #0a0a20 50%, #000010 100%)",
-      }}
-    />
-  );
-};
-
-const Overlay: React.FC<{ color?: string; opacity?: number }> = ({
-  color = "#000000",
-  opacity = 0.3,
-}) => {
-  return <AbsoluteFill style={{ backgroundColor: color, opacity }} />;
-};
-
-// 动态星空背景
-const StarField: React.FC<{ count: number; opacity: number; frame: number }> = ({ count, opacity, frame }) => {
-  const stars = React.useMemo(() => {
-    const result = [];
-    for (let i = 0; i < count; i++) {
-      result.push({
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: 0.5 + Math.random() * 2,
-        baseOpacity: 0.3 + Math.random() * 0.7,
-        twinkleSpeed: 0.5 + Math.random() * 2, // 闪烁速度
-        twinkleOffset: Math.random() * Math.PI * 2, // 闪烁相位偏移
-      });
-    }
-    return result;
-  }, [count]);
-
-  return (
-    <AbsoluteFill>
-      {stars.map((star, index) => {
-        // 动态闪烁效果
-        const twinkle = Math.sin(frame * 0.1 * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
-        const currentOpacity = star.baseOpacity * twinkle * opacity;
-        
-        return (
-          <div
-            key={index}
-            style={{
-              position: "absolute",
-              left: `${star.x}%`,
-              top: `${star.y}%`,
-              width: star.size,
-              height: star.size,
-              borderRadius: "50%",
-              backgroundColor: "#ffffff",
-              opacity: currentOpacity,
-              boxShadow: `0 0 ${star.size * 2}px rgba(255, 255, 255, ${currentOpacity * 0.5})`,
-            }}
-          />
-        );
-      })}
-    </AbsoluteFill>
-  );
-};
-
-// 中心光晕效果
-const CenterGlow: React.FC<{
-  color: string;
-  intensity: number;
-  frame: number;
-  isActive: boolean;
-}> = ({ color, intensity, frame, isActive }) => {
-  // 脉冲效果
-  const pulse = isActive 
-    ? 0.8 + Math.sin(frame * 0.15) * 0.2 
-    : 0.5 + Math.sin(frame * 0.05) * 0.1;
-  
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "100%",
-        height: "100%",
-        background: `radial-gradient(ellipse at center, ${color}40 0%, transparent 50%)`,
-        opacity: intensity * pulse,
-        pointerEvents: "none",
-      }}
-    />
-  );
-};
-
-// 能量环效果
 const EnergyRing: React.FC<{
   centerX: number;
   centerY: number;
@@ -248,11 +106,9 @@ const EnergyRing: React.FC<{
 }> = ({ centerX, centerY, frame, color, active }) => {
   if (!active) return null;
   
-  const rings = [0, 1, 2];
-  
   return (
     <>
-      {rings.map((ring) => {
+      {[0, 1, 2].map((ring) => {
         const baseRadius = 50 + ring * 40;
         const rotation = frame * (3 - ring) * (ring % 2 === 0 ? 1 : -1);
         const opacity = 0.3 - ring * 0.08;
@@ -279,7 +135,6 @@ const EnergyRing: React.FC<{
   );
 };
 
-// 边框破碎效果
 const BorderBreakEffect: React.FC<{
   active: boolean;
   progress: number;
@@ -289,9 +144,8 @@ const BorderBreakEffect: React.FC<{
 
   const shards = React.useMemo(() => {
     const result = [];
-    // 四边生成碎片
     for (let i = 0; i < 20; i++) {
-      const side = i % 4; // 0: top, 1: right, 2: bottom, 3: left
+      const side = i % 4;
       const pos = (Math.floor(i / 4) / 5) * 100;
       result.push({
         side,
@@ -313,22 +167,10 @@ const BorderBreakEffect: React.FC<{
         const rotation = progress * shard.rotationSpeed * 10;
 
         switch (shard.side) {
-          case 0: // top
-            x = `${shard.pos}%`;
-            y = -offset;
-            break;
-          case 1: // right
-            x = `calc(100% + ${offset}px)`;
-            y = `${shard.pos}%`;
-            break;
-          case 2: // bottom
-            x = `${shard.pos}%`;
-            y = `calc(100% + ${offset}px)`;
-            break;
-          default: // left
-            x = -offset;
-            y = `${shard.pos}%`;
-            break;
+          case 0: x = `${shard.pos}%`; y = -offset; break;
+          case 1: x = `calc(100% + ${offset}px)`; y = `${shard.pos}%`; break;
+          case 2: x = `${shard.pos}%`; y = `calc(100% + ${offset}px)`; break;
+          default: x = -offset; y = `${shard.pos}%`; break;
         }
 
         return (
@@ -375,10 +217,9 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   shakeIntensity = 8,
   groupInterval = 30,
   direction = "bottom-up",
-  backgroundType = "gradient",
+  backgroundType = "color",
   backgroundSource,
   backgroundColor = "#0a0a20",
-  backgroundGradient = "radial-gradient(ellipse at center, #1a1030 0%, #0d0820 50%, #050510 100%)",
   backgroundVideoLoop = true,
   backgroundVideoMuted = true,
   overlayColor = "#000000",
@@ -393,24 +234,16 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
 
-  // 计算每组文字的开始时间
   const groupTimings = React.useMemo(() => {
     const result: { startFrame: number; texts: string[] }[] = [];
     let currentFrame = 0;
-
-    textGroups.forEach((group, index) => {
-      const delay = group.groupDelay ?? groupInterval;
-      result.push({
-        startFrame: currentFrame,
-        texts: group.texts,
-      });
-      currentFrame += delay;
+    textGroups.forEach((group) => {
+      result.push({ startFrame: currentFrame, texts: group.texts });
+      currentFrame += group.groupDelay ?? groupInterval;
     });
-
     return result;
   }, [textGroups, groupInterval]);
 
-  // 检测是否有文字正在突破
   const isAnyBreakingThrough = React.useMemo(() => {
     return groupTimings.some((timing) => {
       const approachEnd = timing.startFrame + approachDuration;
@@ -419,21 +252,18 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
     });
   }, [groupTimings, frame, approachDuration, breakthroughDuration]);
 
-  // 突破进度
   const breakthroughProgress = React.useMemo(() => {
     let maxProgress = 0;
     groupTimings.forEach((timing) => {
       const approachEnd = timing.startFrame + approachDuration;
       const breakthroughEnd = approachEnd + breakthroughDuration;
       if (frame >= approachEnd && frame < breakthroughEnd) {
-        const progress = (frame - approachEnd) / breakthroughDuration;
-        maxProgress = Math.max(maxProgress, progress);
+        maxProgress = Math.max(maxProgress, (frame - approachEnd) / breakthroughDuration);
       }
     });
     return maxProgress;
   }, [groupTimings, frame, approachDuration, breakthroughDuration]);
 
-  // 为每组文字生成位置（支持自定义最终位置）
   const textPositions = React.useMemo(() => {
     const positions: { x: number; y: number }[] = [];
     const defaultX = finalPosition?.defaultX ?? 0;
@@ -442,7 +272,6 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
     const autoArrangementSpacing = finalPosition?.autoArrangementSpacing ?? 0.25;
     
     groupTimings.forEach((timing, groupIndex) => {
-      // 获取该组的自定义位置配置
       const groupPosition = finalPosition?.groupPositions?.[groupIndex];
       const groupBaseX = groupPosition?.x ?? defaultX;
       const groupBaseY = groupPosition?.y ?? defaultY;
@@ -451,98 +280,53 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
       
       timing.texts.forEach((_, textIndex) => {
         const totalTexts = timing.texts.length;
-        let offsetX = 0;
-        let offsetY = 0;
+        let offsetX = 0, offsetY = 0;
         
-        if (totalTexts === 1) {
-          // 单个文字：直接使用基础位置
-          offsetX = 0;
-          offsetY = 0;
-        } else {
-          // 多个文字：根据排列方式计算偏移
+        if (totalTexts > 1) {
           switch (arrangement) {
             case "horizontal":
-              // 水平排列
               offsetX = (textIndex - (totalTexts - 1) / 2) * spacing;
-              offsetY = 0;
               break;
             case "vertical":
-              // 垂直排列
-              offsetX = 0;
               offsetY = (textIndex - (totalTexts - 1) / 2) * spacing;
               break;
             case "stacked":
-              // 堆叠排列（轻微错位）
               offsetX = textIndex * spacing * 0.3;
               offsetY = textIndex * spacing * 0.2;
               break;
-            case "circular":
             default:
-              // 圆形/椭圆排列
               const angle = (textIndex / totalTexts) * Math.PI * 2 - Math.PI / 2;
               offsetX = Math.cos(angle) * spacing;
-              offsetY = Math.sin(angle) * spacing * 0.5; // 椭圆形
-              break;
+              offsetY = Math.sin(angle) * spacing * 0.5;
           }
         }
-        
-        positions.push({
-          x: groupBaseX + offsetX,
-          y: groupBaseY + offsetY,
-        });
+        positions.push({ x: groupBaseX + offsetX, y: groupBaseY + offsetY });
       });
     });
-
     return positions;
   }, [groupTimings, finalPosition]);
 
   return (
     <AbsoluteFill>
-      {/* 背景 */}
       <Background
-        type={backgroundType}
+        type={backgroundType as BackgroundType}
         source={backgroundSource}
         color={backgroundColor}
-        gradient={backgroundGradient}
         videoLoop={backgroundVideoLoop}
         videoMuted={backgroundVideoMuted}
       />
 
-      {/* 中心光晕 */}
-      <CenterGlow
-        color={glowColor}
-        intensity={glowIntensity * 0.5}
-        frame={frame}
-        isActive={isAnyBreakingThrough}
-      />
+      <CenterGlow color={glowColor} intensity={glowIntensity * 0.5} />
 
-      {/* 动态星空背景 */}
-      <StarField count={200} opacity={0.5} frame={frame} />
+      <StarField count={200} opacity={0.5} twinkle />
 
-      {/* 能量环效果（突破时激活） */}
-      <EnergyRing
-        centerX={width / 2}
-        centerY={height / 2}
-        frame={frame}
-        color={glowColor}
-        active={isAnyBreakingThrough}
-      />
+      <EnergyRing centerX={width / 2} centerY={height / 2} frame={frame} color={glowColor} active={isAnyBreakingThrough} />
 
-      {/* 遮罩 */}
-      {overlayOpacity > 0 && (
-        <Overlay color={overlayColor} opacity={overlayOpacity} />
-      )}
+      {overlayOpacity > 0 && <Overlay color={overlayColor} opacity={overlayOpacity} />}
 
-      {/* 边框破碎效果 */}
-      <BorderBreakEffect
-        active={isAnyBreakingThrough}
-        progress={breakthroughProgress}
-        color={glowColor}
-      />
+      <BorderBreakEffect active={isAnyBreakingThrough} progress={breakthroughProgress} color={glowColor} />
 
-      {/* 文字组 */}
       {groupTimings.map((timing, groupIndex) => {
-        // 计算该组文字在位置数组中的起始索引
         let positionOffset = 0;
         for (let i = 0; i < groupIndex; i++) {
           positionOffset += groupTimings[i].texts.length;
@@ -550,8 +334,6 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
 
         return timing.texts.map((text, textIndex) => {
           const pos = textPositions[positionOffset + textIndex];
-          
-          // 根据 direction 决定起始 Y 位置
           const startYOffset = direction === "top-down" ? -0.3 : 0.8;
           
           return (
@@ -561,8 +343,8 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
               startFrame={timing.startFrame}
               startZ={startZ}
               endZ={endZ}
-              startX={pos.x * 0.3} // 从侧面飞入
-              startY={pos.y + startYOffset} // 根据 direction 从上方或下方飞入
+              startX={pos.x * 0.3}
+              startY={pos.y + startYOffset}
               endX={pos.x}
               endY={pos.y}
               fontSize={fontSize}
@@ -587,7 +369,6 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
         });
       })}
 
-      {/* 全局震动效果（当有文字突破时） */}
       {isAnyBreakingThrough && (
         <div
           style={{
@@ -601,14 +382,7 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
         />
       )}
 
-      {/* 背景音效 */}
-      {audioEnabled && (
-        <Audio
-          src={staticFile(audioSource)}
-          volume={audioVolume}
-          loop
-        />
-      )}
+      {audioEnabled && <Audio src={staticFile(audioSource)} volume={audioVolume} loop />}
     </AbsoluteFill>
   );
 };

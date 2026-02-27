@@ -42,7 +42,7 @@ remo-fects/
 │   │   ├── remotion.config.ts          # Remotion 配置
 │   │   ├── tsconfig.json               # TypeScript 配置
 │   │   └── package.json                # 子项目配置（无依赖）
-│   ├── gold-text-ring-effect/      # 金色文字环绕特效
+│   ├── text-ring-effect/          # 金色文字环绕特效
 │   ├── text-firework-effect/       # 文字烟花特效
 │   ├── text-breakthrough-effect/   # 文字破屏特效
 │   └── tai-chi-bagua-effect/       # 太极八卦图特效
@@ -125,7 +125,7 @@ GET http://localhost:3001/api/projects
     "compositionId": "TextRain"
   },
   {
-    "id": "gold-text-ring-effect",
+    "id": "text-ring-effect",
     "name": "金色发光立体字环绕特效",
     "compositionId": "TextRing"
   }
@@ -163,7 +163,7 @@ Content-Type: multipart/form-data
 - audioVolume: 音量
 - textStyle: 文字样式配置
 
-**gold-text-ring-effect 特有参数：**
+**text-ring-effect 特有参数：**
 - fontSize: 字体大小
 - opacity: 透明度
 - ringRadius: 环绕半径
@@ -281,7 +281,7 @@ curl -X POST http://localhost:3001/api/compose \
         "duration": 8
       },
       {
-        "projectId": "gold-text-ring-effect",
+        "projectId": "text-ring-effect",
         "words": ["恭喜发财"],
         "duration": 5
       }
@@ -482,7 +482,7 @@ export const YourComposition: React.FC<YourCompositionProps> = ({ param1, param2
 ```javascript
 const projects = {
   'text-rain-effect': { /* ... */ },
-  'gold-text-ring-effect': { /* ... */ },
+  'text-ring-effect': { /* ... */ },
   'your-effect': {
     path: path.join(__dirname, '../effects/your-effect'),
     compositionId: 'YourComposition',

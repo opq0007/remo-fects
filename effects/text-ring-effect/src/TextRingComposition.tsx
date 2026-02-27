@@ -1,16 +1,21 @@
 import React from "react";
-import {
-  AbsoluteFill,
-  useVideoConfig,
-  staticFile,
-  Img,
-} from "remotion";
-import { Video } from "@remotion/media";
+import { AbsoluteFill } from "remotion";
 import { TextRing } from "./TextRing";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
+import {
+  Background,
+  Overlay,
+  CenterGlow,
+  BackgroundType,
+  FullBackgroundSchema,
+  OverlaySchema,
+} from "../../shared/index";
+
+// ==================== 主组件 Schema（使用公共 Schema）====================
 
 export const TextRingCompositionSchema = z.object({
+  // 特有参数
   words: z.array(z.string()).meta({ description: "要显示的文字列表" }),
   fontSize: z.number().min(20).max(200).meta({ description: "字体大小" }),
   opacity: z.number().min(0).max(1).meta({ description: "透明度" }),
@@ -23,77 +28,17 @@ export const TextRingCompositionSchema = z.object({
   perspective: z.number().min(500).max(2000).meta({ description: "透视距离" }),
   mode: z.enum(["vertical", "positions"]).meta({ description: "显示模式: vertical-垂直排列模式, positions-方位模式" }),
   verticalPosition: z.number().min(0).max(1).optional().meta({ description: "垂直位置: 0=顶部, 0.5=中心, 1=底部" }),
-  backgroundType: z.enum(["image", "video", "color"]).meta({ description: "背景类型" }),
-  backgroundSource: z.string().optional().meta({ description: "背景文件路径" }),
-  backgroundColor: zColor().optional().meta({ description: "背景颜色" }),
-  backgroundVideoLoop: z.boolean().optional().meta({ description: "背景视频是否循环" }),
-  backgroundVideoMuted: z.boolean().optional().meta({ description: "背景视频是否静音" }),
-  overlayColor: zColor().optional().meta({ description: "遮罩颜色" }),
-  overlayOpacity: z.number().min(0).max(1).optional().meta({ description: "遮罩透明度" }),
+
+  // 背景配置（使用公共 Schema，包含视频选项）
+  ...FullBackgroundSchema.shape,
+  
+  // 遮罩效果（使用公共 Schema）
+  ...OverlaySchema.shape,
 });
 
 export type TextRingCompositionProps = z.infer<typeof TextRingCompositionSchema>;
 
-const Background: React.FC<{
-  type: "image" | "video" | "color";
-  source?: string;
-  color?: string;
-  videoLoop?: boolean;
-  videoMuted?: boolean;
-}> = ({ type, source, color, videoLoop = true, videoMuted = true }) => {
-  const { width, height } = useVideoConfig();
-
-  if (type === "color") {
-    return <AbsoluteFill style={{ backgroundColor: color || "#1a1a2e" }} />;
-  }
-
-  if (type === "image" && source) {
-    return (
-      <AbsoluteFill>
-        <Img src={staticFile(source)} style={{ width, height, objectFit: "cover" }} />
-      </AbsoluteFill>
-    );
-  }
-
-  if (type === "video" && source) {
-    return (
-      <AbsoluteFill>
-        <Video
-          src={staticFile(source)}
-          style={{ width, height, objectFit: "cover" }}
-          loop={videoLoop}
-          muted={videoMuted}
-        />
-      </AbsoluteFill>
-    );
-  }
-
-  return (
-    <AbsoluteFill
-      style={{
-        background: "radial-gradient(circle at center, #2d1f14 0%, #1a0a00 50%, #0d0500 100%)",
-      }}
-    />
-  );
-};
-
-const Overlay: React.FC<{ color?: string; opacity?: number }> = ({
-  color = "#000000",
-  opacity = 0.3,
-}) => {
-  return <AbsoluteFill style={{ backgroundColor: color, opacity }} />;
-};
-
-const CenterGlow: React.FC<{ intensity: number }> = ({ intensity }) => {
-  return (
-    <AbsoluteFill
-      style={{
-        background: `radial-gradient(circle at center, rgba(255, 215, 0, ${intensity * 0.3}) 0%, rgba(255, 200, 50, ${intensity * 0.1}) 30%, transparent 70%)`,
-        pointerEvents: "none",
-      }}
-    />
-  );
-};
+// ==================== 主组件 ====================
 
 export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   words = [],
@@ -119,7 +64,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   return (
     <AbsoluteFill>
       <Background
-        type={backgroundType}
+        type={backgroundType as BackgroundType}
         source={backgroundSource}
         color={backgroundColor}
         videoLoop={backgroundVideoLoop}

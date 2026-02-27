@@ -15,8 +15,8 @@ const projects = {
     compositionId: 'TextRain',
     name: '文字雨特效'
   },
-  'gold-text-ring-effect': {
-    path: path.join(__dirname, '../effects/gold-text-ring-effect'),
+  'text-ring-effect': {
+    path: path.join(__dirname, '../effects/text-ring-effect'),
     compositionId: 'TextRing',
     name: '金色发光立体字环绕特效'
   },
@@ -173,7 +173,7 @@ app.post('/api/compose', upload.single('background'), async (req, res) => {
         }
       }
 
-      if (projectId === 'gold-text-ring-effect') {
+      if (projectId === 'text-ring-effect') {
         effectParams.fontSize = effect.fontSize || 70;
         effectParams.opacity = effect.opacity || 1;
         effectParams.ringRadius = effect.ringRadius || 250;
@@ -186,7 +186,7 @@ app.post('/api/compose', upload.single('background'), async (req, res) => {
         effectParams.verticalPosition = effect.verticalPosition || 0.5;
 
         if (!effectParams.words || effectParams.words.length === 0) {
-          return res.status(400).json({ error: `特效 ${i + 1} (gold-text-ring-effect) 需要提供文字列表` });
+          return res.status(400).json({ error: `特效 ${i + 1} (text-ring-effect) 需要提供文字列表` });
         }
       }
 
@@ -409,8 +409,8 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
         : (req.body.textStyle || {});
     }
 
-    // gold-text-ring-effect 特有参数
-    if (projectId === 'gold-text-ring-effect') {
+    // text-ring-effect 特有参数
+    if (projectId === 'text-ring-effect') {
       params.fontSize = parseInt(req.body.fontSize) || 70;
       params.opacity = parseFloat(req.body.opacity) || 1;
       params.ringRadius = parseFloat(req.body.ringRadius) || 250;
@@ -625,7 +625,7 @@ app.post('/api/render/:projectId', upload.single('background'), async (req, res)
     if (projectId === 'text-rain-effect' && (!params.words || params.words.length === 0)) {
       return res.status(400).json({ error: '请提供文字列表' });
     }
-    if (projectId === 'gold-text-ring-effect' && (!params.words || params.words.length === 0)) {
+    if (projectId === 'text-ring-effect' && (!params.words || params.words.length === 0)) {
       return res.status(400).json({ error: '请提供文字列表' });
     }
     if (projectId === 'text-firework-effect' && (!params.words || params.words.length === 0)) {

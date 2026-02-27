@@ -123,8 +123,8 @@ async function renderVideo(params, jobId, onProgress) {
     };
   }
 
-  // gold-text-ring-effect 特有参数
-  if (params.projectId === 'gold-text-ring-effect') {
+  // text-ring-effect 特有参数
+  if (params.projectId === 'text-ring-effect') {
     defaultProps.fontSize = params.fontSize;
     defaultProps.opacity = params.opacity;
     defaultProps.ringRadius = params.ringRadius;
@@ -135,8 +135,8 @@ async function renderVideo(params, jobId, onProgress) {
     defaultProps.perspective = params.perspective;
     defaultProps.mode = params.mode || 'vertical';
     defaultProps.verticalPosition = params.verticalPosition || 0.5;
-    console.log('[gold-text-ring-effect] mode 参数:', params.mode, '-> defaultProps.mode:', defaultProps.mode);
-    console.log('[gold-text-ring-effect] verticalPosition 参数:', params.verticalPosition, '-> defaultProps.verticalPosition:', defaultProps.verticalPosition);
+    console.log('[text-ring-effect] mode 参数:', params.mode, '-> defaultProps.mode:', defaultProps.mode);
+    console.log('[text-ring-effect] verticalPosition 参数:', params.verticalPosition, '-> defaultProps.verticalPosition:', defaultProps.verticalPosition);
   }
 
   // text-firework-effect 特有参数

@@ -1,4 +1,4 @@
-# 金色发光立体字环绕特效 (Gold Text Ring Effect)
+# 金色发光立体字环绕特效 (Text Ring Effect)
 
 基于 Remotion 的金色发光立体字环绕视频特效生成器。
 
@@ -12,7 +12,7 @@
 ## 项目结构
 
 ```
-gold-text-ring-effect/
+text-ring-effect/
 ├── src/
 │   ├── index.ts           # 入口文件
 │   ├── Root.tsx           # 预设配置
@@ -99,10 +99,10 @@ npm run render-edge
 
 ## API 调用
 
-### POST /api/render/gold-text-ring-effect
+### POST /api/render/text-ring-effect
 
 ```bash
-curl -X POST http://localhost:3001/api/render/gold-text-ring-effect \
+curl -X POST http://localhost:3001/api/render/text-ring-effect \
   -F 'words=["平安喜乐","万事如意","福禄寿喜"]' \
   -F 'fontSizeRange=[60,80]' \
   -F 'ringRadius=280' \

@@ -12,50 +12,69 @@ import { zColor } from "@remotion/zod-types";
 import { TextGrow } from "./TextGrow";
 import { ExplodeParticles, generateParticles, ShockWave } from "./ExplodeParticles";
 import { ContourPoint } from "./imageUtils";
+import {
+  Background,
+  Overlay,
+  BackgroundType,
+  BackgroundSchema,
+  OverlaySchema,
+} from "../../shared/index";
 
-// ==================== Schema 定义 ====================
+// ==================== Schema 定义（使用公共 Schema）====================
 
-export const TextGrowExplodeCompositionSchema = z.object({
+export const TextGrowExplodeCompositionSchema = BackgroundSchema.extend({
+  // 核心内容
   name: z.string().min(1).meta({ description: "姓名（核心文字）" }),
   words: z.array(z.string()).min(1).meta({ description: "爆炸后的文字碎片数组" }),
   imageSource: z.string().meta({ description: "目标图片路径" }),
   
-  // 预计算的轮廓点数据（由服务端或构建时计算）
+  // 预计算的轮廓点数据
   contourPointsData: z.array(z.object({
     x: z.number(),
     y: z.number(),
     opacity: z.number()
   })).optional().meta({ description: "预计算的轮廓点数据" }),
   
+  // 阶段时长配置
   growDuration: z.number().min(30).max(300).meta({ description: "生长阶段时长（帧）" }),
   holdDuration: z.number().min(10).max(120).meta({ description: "定格显示时长（帧）" }),
   explodeDuration: z.number().min(15).max(60).meta({ description: "爆炸阶段时长（帧）" }),
   fallDuration: z.number().min(30).max(180).meta({ description: "碎片下落时长（帧）" }),
+  
+  // 文字样式
   fontSize: z.number().min(10).max(100).meta({ description: "生长文字大小" }),
   particleFontSize: z.number().min(10).max(80).meta({ description: "粒子文字大小" }),
   textColor: zColor().meta({ description: "生长文字颜色" }),
   glowColor: zColor().meta({ description: "发光颜色" }),
   glowIntensity: z.number().min(0.1).max(2).meta({ description: "发光强度" }),
+  
+  // 粒子配置
   particleCount: z.number().min(20).max(200).meta({ description: "爆炸粒子数量" }),
   gravity: z.number().min(0.05).max(0.5).meta({ description: "重力系数" }),
   wind: z.number().min(-0.3).max(0.3).meta({ description: "风力系数" }),
+  
+  // 轮廓提取
   threshold: z.number().min(50).max(200).meta({ description: "二值化阈值" }),
   sampleDensity: z.number().min(4).max(20).meta({ description: "采样密度" }),
+  
+  // 生长样式
   growStyle: z.enum(["radial", "wave", "tree"]).meta({ description: "生长样式" }),
-  backgroundColor: zColor().meta({ description: "初始背景颜色" }),
+  
+  // 背景配置
   backgroundOpacity: z.number().min(0).max(1).meta({ description: "背景图片透明度" }),
-  // 新增：爆炸背景透明度
-  explodeBackgroundOpacity: z.number().min(0).max(1).meta({ description: "爆炸后背景图片透明度（0-1，越小越暗，让烟花更突出）" }),
+  explodeBackgroundOpacity: z.number().min(0).max(1).meta({ description: "爆炸后背景图片透明度" }),
+  
+  // 随机种子
   seed: z.number().meta({ description: "随机种子" }),
+
+  // 遮罩效果（从 OverlaySchema 继承）
+  ...OverlaySchema.shape,
 });
 
 export type TextGrowExplodeCompositionProps = z.infer<typeof TextGrowExplodeCompositionSchema>;
 
 // ==================== 辅助函数 ====================
 
-/**
- * 在服务端提取轮廓点（使用 canvas 模拟或预计算数据）
- */
 export function extractContourPointsFromImageData(
   imageData: { data: number[]; width: number; height: number },
   threshold: number = 128,
@@ -78,11 +97,7 @@ export function extractContourPointsFromImageData(
       const gray = (r * 77 + g * 150 + b * 29) >> 8;
 
       if (gray < threshold) {
-        points.push({
-          x,
-          y,
-          opacity: 1 - gray * invThreshold
-        });
+        points.push({ x, y, opacity: 1 - gray * invThreshold });
       }
     }
   }
@@ -116,16 +131,16 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
   backgroundOpacity = 0.9,
   explodeBackgroundOpacity = 0.5,
   seed = 42,
+  overlayColor = "#000000",
+  overlayOpacity = 0.15,
 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
 
-  // 使用预计算的轮廓点数据
   const contourPoints = useMemo(() => {
     return contourPointsData || [];
   }, [contourPointsData]);
 
-  // 预计算各阶段的时间点
   const timings = useMemo(() => ({
     growEndFrame: growDuration,
     holdEndFrame: growDuration + holdDuration,
@@ -134,19 +149,10 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
     fallEndFrame: growDuration + holdDuration + explodeDuration + fallDuration,
   }), [growDuration, holdDuration, explodeDuration, fallDuration]);
 
-  // 生成爆炸粒子（缓存）
   const particles = useMemo(() => {
-    return generateParticles(
-      width / 2,
-      height / 2,
-      words,
-      particleCount,
-      particleFontSize,
-      seed
-    );
+    return generateParticles(width / 2, height / 2, words, particleCount, particleFontSize, seed);
   }, [width, height, words, particleCount, particleFontSize, seed]);
 
-  // 计算动画状态
   const backgroundProgress = interpolate(
     frame,
     [timings.explodeStartFrame, timings.explodeStartFrame + 15],
@@ -168,35 +174,25 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
-  // 判断当前阶段
   const isGrowPhase = frame < timings.explodeStartFrame;
   const isExplodePhase = frame >= timings.explodeStartFrame;
   const showGrow = isGrowPhase && contourPoints.length > 0 && growOpacity > 0;
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
-      {/* 初始背景（生长阶段） */}
-      <AbsoluteFill
-        style={{
-          backgroundColor: backgroundColor,
-          background: `radial-gradient(ellipse at center, ${backgroundColor} 0%, #0a0a1a 70%, #000000 100%)`,
-        }}
+      <Background
+        type="color"
+        color={backgroundColor}
       />
       
-      {/* 爆炸后的背景图（带透明度控制） */}
       {backgroundProgress > 0 && (
         <AbsoluteFill style={{ opacity: backgroundProgress * explodeBackgroundOpacity }}>
-          <Img
-            src={staticFile(imageSource)}
-            style={{ width, height, objectFit: "cover" }}
-          />
+          <Img src={staticFile(imageSource)} style={{ width, height, objectFit: "cover" }} />
         </AbsoluteFill>
       )}
 
-      {/* 遮罩 */}
-      <AbsoluteFill style={{ backgroundColor: "#000000", opacity: 0.15 }} />
+      <Overlay color={overlayColor} opacity={overlayOpacity} />
 
-      {/* 生长阶段 */}
       {showGrow && (
         <AbsoluteFill style={{ opacity: growOpacity }}>
           <TextGrow
@@ -215,17 +211,10 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
         </AbsoluteFill>
       )}
 
-      {/* 爆炸闪光效果 */}
       {flashIntensity > 0 && (
-        <AbsoluteFill
-          style={{
-            backgroundColor: "#ffffff",
-            opacity: flashIntensity * 0.3,
-          }}
-        />
+        <AbsoluteFill style={{ backgroundColor: "#ffffff", opacity: flashIntensity * 0.3 }} />
       )}
 
-      {/* 冲击波效果 */}
       <ShockWave
         centerX={width / 2}
         centerY={height / 2}
@@ -235,7 +224,6 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
         color={glowColor}
       />
 
-      {/* 爆炸粒子 */}
       {isExplodePhase && (
         <ExplodeParticles
           particles={particles}

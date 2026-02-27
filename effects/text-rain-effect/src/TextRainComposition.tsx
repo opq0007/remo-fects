@@ -1,17 +1,18 @@
 import React from "react";
-import {
-  AbsoluteFill,
-  useVideoConfig,
-  staticFile,
-  Audio,
-} from "remotion";
-import { Img } from "remotion";
-import { Video } from "@remotion/media";
+import { AbsoluteFill, staticFile, Audio } from "remotion";
 import { TextRain, TextStyleConfig, ImageStyleConfig, RainContentType, TextDirection } from "./TextRain";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
+import {
+  Background,
+  Overlay,
+  BackgroundType,
+  FullBackgroundSchema,
+  OverlaySchema,
+  NestedAudioSchema,
+} from "../../shared/index";
 
-// ==================== Schema 定义 ====================
+// ==================== 特有 Schema 定义 ====================
 
 const GradientSchema = z.object({
   type: z.enum(["linear", "radial"]).meta({ description: "渐变类型" }),
@@ -38,7 +39,6 @@ const TextStyleSchema = z.object({
   strokeWidth: z.number().optional().meta({ description: "描边宽度" }),
 });
 
-// 图片样式 Schema
 const ImageStyleSchema = z.object({
   scale: z.number().optional().meta({ description: "基础缩放" }),
   scaleRange: z.tuple([z.number(), z.number()]).optional().meta({ description: "随机缩放范围" }),
@@ -59,15 +59,8 @@ const ImageStyleSchema = z.object({
   saturate: z.number().optional().meta({ description: "饱和度 (0-2)" }),
 });
 
-// 音频配置 Schema
-const AudioSchema = z.object({
-  enabled: z.boolean().optional().meta({ description: "是否启用音效" }),
-  src: z.string().optional().meta({ description: "音效文件路径 (相对于public目录)" }),
-  volume: z.number().min(0).max(2).optional().meta({ description: "音量 (0-2, 1为正常)" }),
-  loop: z.boolean().optional().meta({ description: "是否循环播放" }),
-});
+// ==================== 主组件 Schema（使用公共 Schema）====================
 
-// 主组件 Schema
 export const TextRainCompositionSchema = z.object({
   // 内容配置
   words: z.array(z.string()).optional().meta({ description: "要显示的文字列表" }),
@@ -95,74 +88,17 @@ export const TextRainCompositionSchema = z.object({
   textStyle: TextStyleSchema.optional().meta({ description: "文字样式配置" }),
   imageStyle: ImageStyleSchema.optional().meta({ description: "图片样式配置" }),
 
-  // 音效配置
-  audio: AudioSchema.optional().meta({ description: "音效配置" }),
+  // 音效配置（使用公共嵌套 Schema）
+  audio: NestedAudioSchema.optional().meta({ description: "音效配置" }),
 
-  // 背景配置
-  backgroundType: z.enum(["image", "video", "color"]).meta({ description: "背景类型" }),
-  backgroundSource: z.string().optional().meta({ description: "背景文件路径" }),
-  backgroundColor: zColor().optional().meta({ description: "背景颜色" }),
-  backgroundVideoLoop: z.boolean().optional().meta({ description: "背景视频是否循环" }),
-  backgroundVideoMuted: z.boolean().optional().meta({ description: "背景视频是否静音" }),
-
-  // 遮罩效果
-  overlayColor: zColor().optional().meta({ description: "遮罩颜色" }),
-  overlayOpacity: z.number().min(0).max(1).optional().meta({ description: "遮罩透明度" }),
+  // 背景配置（使用公共 Schema，包含视频选项）
+  ...FullBackgroundSchema.shape,
+  
+  // 遮罩效果（使用公共 Schema）
+  ...OverlaySchema.shape,
 });
 
 export type TextRainCompositionProps = z.infer<typeof TextRainCompositionSchema>;
-
-// ==================== 子组件 ====================
-
-const Background: React.FC<{
-  type: "image" | "video" | "color";
-  source?: string;
-  color?: string;
-  videoLoop?: boolean;
-  videoMuted?: boolean;
-}> = ({ type, source, color, videoLoop = true, videoMuted = true }) => {
-  const { width, height } = useVideoConfig();
-
-  if (type === "color") {
-    return <AbsoluteFill style={{ backgroundColor: color || "#1a1a2e" }} />;
-  }
-
-  if (type === "image" && source) {
-    return (
-      <AbsoluteFill>
-        <Img src={staticFile(source)} style={{ width, height, objectFit: "cover" }} />
-      </AbsoluteFill>
-    );
-  }
-
-  if (type === "video" && source) {
-    return (
-      <AbsoluteFill>
-        <Video
-          src={staticFile(source)}
-          style={{ width, height, objectFit: "cover" }}
-          loop={videoLoop}
-          muted={videoMuted}
-        />
-      </AbsoluteFill>
-    );
-  }
-
-  return (
-    <AbsoluteFill
-      style={{
-        background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-      }}
-    />
-  );
-};
-
-const Overlay: React.FC<{ color?: string; opacity?: number }> = ({
-  color = "#000000",
-  opacity = 0.3,
-}) => {
-  return <AbsoluteFill style={{ backgroundColor: color, opacity }} />;
-};
 
 // ==================== 主组件 ====================
 
@@ -216,23 +152,21 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
 
   // 默认音频配置
   const audioEnabled = audio?.enabled !== false;
-  const audioSrc = audio?.src ?? "coin-sound.mp3";
+  const audioSrc = audio?.src ?? audio?.source ?? "coin-sound.mp3";
   const audioVolume = audio?.volume ?? 0.5;
   const audioLoop = audio?.loop ?? true;
 
   return (
     <AbsoluteFill>
       <Background
-        type={backgroundType}
+        type={backgroundType as BackgroundType}
         source={backgroundSource}
         color={backgroundColor}
         videoLoop={backgroundVideoLoop}
         videoMuted={backgroundVideoMuted}
       />
 
-      {overlayOpacity > 0 && (
-        <Overlay color={overlayColor} opacity={overlayOpacity} />
-      )}
+      <Overlay color={overlayColor} opacity={overlayOpacity} />
 
       <TextRain
         words={words}
@@ -253,7 +187,6 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
         imageStyle={defaultImageStyle}
       />
 
-      {/* 默认金钱入账音效 */}
       {audioEnabled && (
         <Audio
           src={staticFile(audioSrc)}

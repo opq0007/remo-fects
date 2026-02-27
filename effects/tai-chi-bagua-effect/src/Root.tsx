@@ -16,6 +16,9 @@ export const RemotionRoot: React.FC = () => {
           yangColor: "#FFD700",
           yinColor: "#1a1a1a",
           backgroundColor: "#FFFFFF",
+          backgroundType: "color",
+          backgroundVideoLoop: true,
+          backgroundVideoMuted: true,
           glowIntensity: 0.9,
           taichiRotationSpeed: 1,
           baguaRotationSpeed: 0.8,
@@ -37,6 +40,8 @@ export const RemotionRoot: React.FC = () => {
           sparkleDensity: 30,
           enableMysticalAura: true,
           auraIntensity: 0.6,
+          overlayColor: "#000000",
+          overlayOpacity: 0,
         }}
       />
     </>
