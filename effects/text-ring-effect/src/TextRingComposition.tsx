@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, Audio, staticFile } from "remotion";
 import { TextRing } from "./TextRing";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
@@ -10,6 +10,7 @@ import {
   BackgroundType,
   FullBackgroundSchema,
   OverlaySchema,
+  AudioSchema,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
@@ -34,6 +35,9 @@ export const TextRingCompositionSchema = z.object({
   
   // 遮罩效果（使用公共 Schema）
   ...OverlaySchema.shape,
+
+  // 音效配置（使用公共 Schema）
+  ...AudioSchema.shape,
 });
 
 export type TextRingCompositionProps = z.infer<typeof TextRingCompositionSchema>;
@@ -60,6 +64,10 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   backgroundVideoMuted = true,
   overlayColor = "#000000",
   overlayOpacity = 0.2,
+  audioEnabled = false,
+  audioSource = "coin-sound.mp3",
+  audioVolume = 0.5,
+  audioLoop = true,
 }) => {
   return (
     <AbsoluteFill>
@@ -91,6 +99,14 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
         mode={mode}
         verticalPosition={verticalPosition}
       />
+
+      {audioEnabled && (
+        <Audio
+          src={staticFile(audioSource)}
+          volume={audioVolume}
+          loop={audioLoop}
+        />
+      )}
     </AbsoluteFill>
   );
 };

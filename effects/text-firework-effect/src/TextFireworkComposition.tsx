@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, useVideoConfig } from "remotion";
+import { AbsoluteFill, useVideoConfig, Audio, staticFile } from "remotion";
 import { Firework } from "./Firework";
 import { GoldenRain, generateGoldenParticles } from "./GoldenRain";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import {
   BackgroundType,
   FullBackgroundSchema,
   OverlaySchema,
+  AudioSchema,
   seededRandom,
 } from "../../shared/index";
 
@@ -45,6 +46,9 @@ export const TextFireworkCompositionSchema = z.object({
   
   // 遮罩效果（使用公共 Schema）
   ...OverlaySchema.shape,
+
+  // 音效配置（使用公共 Schema）
+  ...AudioSchema.shape,
 });
 
 export type TextFireworkCompositionProps = z.infer<typeof TextFireworkCompositionSchema>;
@@ -72,6 +76,10 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   backgroundVideoMuted = true,
   overlayColor = "#000000",
   overlayOpacity = 0.2,
+  audioEnabled = false,
+  audioSource = "coin-sound.mp3",
+  audioVolume = 0.5,
+  audioLoop = true,
 }) => {
   const { width, height } = useVideoConfig();
 
@@ -186,6 +194,14 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
           glowIntensity={glowIntensity}
         />
       ))}
+
+      {audioEnabled && (
+        <Audio
+          src={staticFile(audioSource)}
+          volume={audioVolume}
+          loop={audioLoop}
+        />
+      )}
     </AbsoluteFill>
   );
 };

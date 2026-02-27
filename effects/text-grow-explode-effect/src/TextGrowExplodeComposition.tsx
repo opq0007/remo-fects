@@ -6,6 +6,7 @@ import {
   staticFile,
   Img,
   interpolate,
+  Audio,
 } from "remotion";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
@@ -18,6 +19,7 @@ import {
   BackgroundType,
   BackgroundSchema,
   OverlaySchema,
+  AudioSchema,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -69,6 +71,9 @@ export const TextGrowExplodeCompositionSchema = BackgroundSchema.extend({
 
   // 遮罩效果（从 OverlaySchema 继承）
   ...OverlaySchema.shape,
+
+  // 音效配置（使用公共 Schema）
+  ...AudioSchema.shape,
 });
 
 export type TextGrowExplodeCompositionProps = z.infer<typeof TextGrowExplodeCompositionSchema>;
@@ -133,6 +138,10 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
   seed = 42,
   overlayColor = "#000000",
   overlayOpacity = 0.15,
+  audioEnabled = false,
+  audioSource = "coin-sound.mp3",
+  audioVolume = 0.5,
+  audioLoop = true,
 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
@@ -233,6 +242,14 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
           gravity={gravity}
           wind={wind}
           explosionRadius={100}
+        />
+      )}
+
+      {audioEnabled && (
+        <Audio
+          src={staticFile(audioSource)}
+          volume={audioVolume}
+          loop={audioLoop}
         />
       )}
     </AbsoluteFill>

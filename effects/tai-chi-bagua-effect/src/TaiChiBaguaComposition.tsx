@@ -6,6 +6,8 @@ import {
   interpolate,
   Easing,
   spring,
+  Audio,
+  staticFile,
 } from "remotion";
 import { z } from "zod";
 import { TaiChi } from "./TaiChi";
@@ -15,6 +17,7 @@ import {
   BackgroundType,
   BackgroundSchema,
   OverlaySchema,
+  AudioSchema,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -67,6 +70,9 @@ export const TaiChiBaguaSchema = BackgroundSchema.extend({
 
   // 遮罩效果（从 OverlaySchema 继承）
   ...OverlaySchema.shape,
+
+  // 音效配置（使用公共 Schema）
+  ...AudioSchema.shape,
 });
 
 export type TaiChiBaguaProps = z.infer<typeof TaiChiBaguaSchema>;
@@ -291,6 +297,10 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   auraIntensity = 0.6,
   overlayColor = "#000000",
   overlayOpacity = 0,
+  audioEnabled = false,
+  audioSource = "coin-sound.mp3",
+  audioVolume = 0.5,
+  audioLoop = true,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -419,6 +429,14 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
           );
         })}
       </svg>
+
+      {audioEnabled && (
+        <Audio
+          src={staticFile(audioSource)}
+          volume={audioVolume}
+          loop={audioLoop}
+        />
+      )}
     </AbsoluteFill>
   );
 };
