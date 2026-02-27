@@ -1,14 +1,22 @@
 import React, { ReactNode } from "react";
 import { AbsoluteFill, Audio, staticFile } from "remotion";
-import { Background, Overlay, Watermark } from "./index";
+import { Background, Overlay, Watermark, Marquee } from "./index";
 import { BackgroundType, BaseCompositionProps } from "../schemas";
 import { Watermark as WatermarkComponent, WatermarkProps } from "./Watermark";
+import { Marquee as MarqueeComponent, MarqueeProps } from "./Marquee";
 
 /**
  * 水印配置（用于 BaseComposition）
  * 从 WatermarkProps 中排除 text 必填限制，允许为空
  */
 type WatermarkConfig = Partial<WatermarkProps> & {
+  enabled?: boolean;
+};
+
+/**
+ * 走马灯配置（用于 BaseComposition）
+ */
+type MarqueeConfig = Partial<MarqueeProps> & {
   enabled?: boolean;
 };
 
@@ -36,6 +44,9 @@ export interface BaseCompositionComponentProps extends BaseCompositionProps {
   
   /** 水印配置对象（可选，用于批量传入） */
   watermark?: WatermarkConfig;
+  
+  /** 走马灯配置对象（可选，用于批量传入） */
+  marquee?: MarqueeConfig;
 }
 
 /**
@@ -104,6 +115,8 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
   audioLoop = true,
   // 水印参数
   watermark,
+  // 走马灯参数
+  marquee,
 }) => {
   // 渲染遮罩层
   const renderOverlay = () => {
@@ -137,6 +150,13 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
     return <WatermarkComponent {...watermark} text={watermark.text} />;
   };
 
+  // 渲染走马灯
+  const renderMarquee = () => {
+    if (!marquee || !marquee.enabled) return null;
+    
+    return <MarqueeComponent {...marquee} />;
+  };
+
   return (
     <AbsoluteFill>
       {/* 背景层 */}
@@ -168,6 +188,9 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
 
       {/* 水印层 */}
       {renderWatermark()}
+
+      {/* 走马灯层 */}
+      {renderMarquee()}
 
       {/* 音频层 */}
       {renderAudio()}

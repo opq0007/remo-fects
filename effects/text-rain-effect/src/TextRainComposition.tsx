@@ -8,6 +8,7 @@ import {
   OverlaySchema,
   NestedAudioSchema,
   WatermarkSchema,
+  MarqueeSchema,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -97,6 +98,9 @@ export const TextRainCompositionSchema = z.object({
 
   // 水印配置（使用公共 Schema）
   ...WatermarkSchema.shape,
+
+  // 走马灯配置（使用公共 Schema）
+  ...MarqueeSchema.shape,
 });
 
 export type TextRainCompositionProps = z.infer<typeof TextRainCompositionSchema>;
@@ -138,6 +142,24 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   watermarkIntensity,
   watermarkVelocityX,
   watermarkVelocityY,
+  // 走马灯参数
+  marqueeEnabled = false,
+  marqueeForegroundTexts,
+  marqueeForegroundFontSize,
+  marqueeForegroundOpacity,
+  marqueeForegroundColor,
+  marqueeForegroundEffect,
+  marqueeBackgroundTexts,
+  marqueeBackgroundFontSize,
+  marqueeBackgroundOpacity,
+  marqueeBackgroundColor,
+  marqueeBackgroundEffect,
+  marqueeOrientation,
+  marqueeDirection,
+  marqueeSpeed,
+  marqueeSpacing,
+  marqueeForegroundOffsetY,
+  marqueeBackgroundOffsetY,
 }) => {
   const defaultTextStyle: TextStyleConfig = {
     color: "#ffd700",
@@ -167,6 +189,29 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   const audioVolume = audio?.volume ?? 0.5;
   const audioLoop = audio?.loop ?? true;
 
+  // 构建走马灯配置
+  const marqueeConfig = marqueeEnabled
+    ? {
+        enabled: true,
+        foregroundTexts: marqueeForegroundTexts ?? ["新年快乐", "万事如意", "恭喜发财"],
+        foregroundFontSize: marqueeForegroundFontSize ?? 32,
+        foregroundOpacity: marqueeForegroundOpacity ?? 0.9,
+        foregroundColor: marqueeForegroundColor ?? "#ffd700",
+        foregroundEffect: marqueeForegroundEffect ?? "none",
+        backgroundTexts: marqueeBackgroundTexts ?? ["新春大吉", "财源广进", "龙年行大运"],
+        backgroundFontSize: marqueeBackgroundFontSize ?? 24,
+        backgroundOpacity: marqueeBackgroundOpacity ?? 0.5,
+        backgroundColor: marqueeBackgroundColor ?? "#ffffff",
+        backgroundEffect: marqueeBackgroundEffect ?? "none",
+        orientation: marqueeOrientation ?? "horizontal",
+        direction: marqueeDirection ?? "left-to-right",
+        speed: marqueeSpeed ?? 50,
+        spacing: marqueeSpacing ?? 80,
+        foregroundOffsetY: marqueeForegroundOffsetY ?? 0,
+        backgroundOffsetY: marqueeBackgroundOffsetY ?? 0,
+      }
+    : undefined;
+
   return (
     <BaseComposition
       backgroundType={backgroundType}
@@ -195,6 +240,7 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
             }
           : undefined
       }
+      marquee={marqueeConfig}
     >
       <TextRain
         words={words}

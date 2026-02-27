@@ -7,6 +7,7 @@ import {
   CenterGlow,
   CompleteCompositionSchema,
 } from "../../shared/index";
+import { MarqueeComponentProps } from "../../shared/schemas/marquee";
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
@@ -65,7 +66,61 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   watermarkIntensity,
   watermarkVelocityX,
   watermarkVelocityY,
+  // 走马灯参数
+  marqueeEnabled = false,
+  marqueeForegroundTexts,
+  marqueeForegroundFontSize,
+  marqueeForegroundOpacity,
+  marqueeForegroundColor,
+  marqueeForegroundEffect,
+  marqueeBackgroundTexts,
+  marqueeBackgroundFontSize,
+  marqueeBackgroundOpacity,
+  marqueeBackgroundColor,
+  marqueeBackgroundEffect,
+  marqueeOrientation,
+  marqueeDirection,
+  marqueeSpeed,
+  marqueeSpacing,
+  marqueeForegroundOffsetY,
+  marqueeBackgroundOffsetY,
 }) => {
+  // 构建走马灯配置
+  const marqueeConfig: MarqueeComponentProps | undefined = marqueeEnabled
+    ? {
+        enabled: true,
+        foreground: marqueeForegroundTexts?.length
+          ? {
+              texts: marqueeForegroundTexts.map((text) => ({ text })),
+              fontSize: marqueeForegroundFontSize ?? 48,
+              opacity: marqueeForegroundOpacity ?? 1,
+              spacing: marqueeSpacing ?? 60,
+              textStyle: {
+                color: marqueeForegroundColor ?? "#ffd700",
+                effect: marqueeForegroundEffect ?? "gold3d",
+              },
+            }
+          : undefined,
+        background: marqueeBackgroundTexts?.length
+          ? {
+              texts: marqueeBackgroundTexts.map((text) => ({ text })),
+              fontSize: marqueeBackgroundFontSize ?? 24,
+              opacity: marqueeBackgroundOpacity ?? 0.6,
+              spacing: marqueeSpacing ?? 40,
+              textStyle: {
+                color: marqueeBackgroundColor ?? "#ffaa00",
+                effect: marqueeBackgroundEffect ?? "shadow",
+              },
+            }
+          : undefined,
+        orientation: marqueeOrientation ?? "horizontal",
+        direction: marqueeDirection ?? "right-to-left",
+        speed: marqueeSpeed ?? 100,
+        foregroundOffsetY: marqueeForegroundOffsetY ?? 0,
+        backgroundOffsetY: marqueeBackgroundOffsetY ?? 0,
+      }
+    : undefined;
+
   return (
     <BaseComposition
       backgroundType={backgroundType}
@@ -95,6 +150,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
             }
           : undefined
       }
+      marquee={marqueeConfig}
     >
       <TextRing
         words={words}

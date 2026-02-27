@@ -78,6 +78,24 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   watermarkIntensity,
   watermarkVelocityX,
   watermarkVelocityY,
+  // 走马灯参数
+  marqueeEnabled = false,
+  marqueeForegroundTexts,
+  marqueeForegroundFontSize,
+  marqueeForegroundOpacity,
+  marqueeForegroundColor,
+  marqueeForegroundEffect,
+  marqueeBackgroundTexts,
+  marqueeBackgroundFontSize,
+  marqueeBackgroundOpacity,
+  marqueeBackgroundColor,
+  marqueeBackgroundEffect,
+  marqueeOrientation,
+  marqueeDirection,
+  marqueeSpeed,
+  marqueeSpacing,
+  marqueeForegroundOffsetY,
+  marqueeBackgroundOffsetY,
 }) => {
   const { width, height } = useVideoConfig();
 
@@ -145,6 +163,29 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
     return particles;
   }, [fireworks, particleCount, rainParticleSize, textDuration, rainDuration, textColor, glowColor]);
 
+  // 构建走马灯配置
+  const marqueeConfig = marqueeEnabled
+    ? {
+        enabled: true,
+        foregroundTexts: marqueeForegroundTexts ?? ["新年快乐", "万事如意", "恭喜发财"],
+        foregroundFontSize: marqueeForegroundFontSize ?? 32,
+        foregroundOpacity: marqueeForegroundOpacity ?? 0.9,
+        foregroundColor: marqueeForegroundColor ?? "#ffd700",
+        foregroundEffect: marqueeForegroundEffect ?? "none",
+        backgroundTexts: marqueeBackgroundTexts ?? ["新春大吉", "财源广进", "龙年行大运"],
+        backgroundFontSize: marqueeBackgroundFontSize ?? 24,
+        backgroundOpacity: marqueeBackgroundOpacity ?? 0.5,
+        backgroundColor: marqueeBackgroundColor ?? "#ffffff",
+        backgroundEffect: marqueeBackgroundEffect ?? "none",
+        orientation: marqueeOrientation ?? "horizontal",
+        direction: marqueeDirection ?? "left-to-right",
+        speed: marqueeSpeed ?? 50,
+        spacing: marqueeSpacing ?? 80,
+        foregroundOffsetY: marqueeForegroundOffsetY ?? 0,
+        backgroundOffsetY: marqueeBackgroundOffsetY ?? 0,
+      }
+    : undefined;
+
   return (
     <BaseComposition
       backgroundType={backgroundType}
@@ -174,6 +215,7 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
             }
           : undefined
       }
+      marquee={marqueeConfig}
     >
       {fireworks.map((firework, index) => (
         <Firework

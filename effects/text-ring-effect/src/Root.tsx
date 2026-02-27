@@ -61,6 +61,25 @@ export const RemotionRoot: React.FC = () => {
             watermarkIntensity: 0.8,
             watermarkVelocityX: 180,
             watermarkVelocityY: 120,
+
+            // 走马灯配置
+            marqueeEnabled: true,
+            marqueeForegroundTexts: ["恭喜发财", "财源广进", "万事如意", "心想事成"],
+            marqueeForegroundFontSize: 48,
+            marqueeForegroundOpacity: 0.9,
+            marqueeForegroundColor: "#ffd700",
+            marqueeForegroundEffect: "gold3d",
+            marqueeBackgroundTexts: ["新春快乐", "阖家幸福", "身体健康", "工作顺利", "步步高升"],
+            marqueeBackgroundFontSize: 24,
+            marqueeBackgroundOpacity: 0.5,
+            marqueeBackgroundColor: "#ffaa00",
+            marqueeBackgroundEffect: "shadow",
+            marqueeOrientation: "horizontal",
+            marqueeDirection: "right-to-left",
+            marqueeSpeed: 100,
+            marqueeSpacing: 80,
+            marqueeForegroundOffsetY: 300,
+            marqueeBackgroundOffsetY: -200,
           }}
         />
 

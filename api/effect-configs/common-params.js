@@ -165,6 +165,126 @@ const commonParams = {
     defaultValue: 120,
     parser: (v) => parseFloat(v) || 120,
     description: '水印Y方向速度（像素/秒）'
+  },
+
+  // ===== 走马灯配置 =====
+  marqueeEnabled: {
+    type: 'boolean',
+    defaultValue: false,
+    parser: (v) => v === 'true' || v === true,
+    description: '是否启用走马灯'
+  },
+  marqueeForegroundTexts: {
+    type: 'array',
+    defaultValue: ['新年快乐', '万事如意', '恭喜发财'],
+    parser: (v) => {
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        try {
+          const parsed = JSON.parse(v);
+          return Array.isArray(parsed) ? parsed : [v];
+        } catch {
+          return v.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+      return ['新年快乐', '万事如意', '恭喜发财'];
+    },
+    description: '前景文字列表'
+  },
+  marqueeForegroundFontSize: {
+    type: 'number',
+    defaultValue: 32,
+    parser: (v) => parseInt(v) || 32,
+    description: '前景文字字体大小'
+  },
+  marqueeForegroundOpacity: {
+    type: 'number',
+    defaultValue: 0.9,
+    parser: (v) => parseFloat(v) || 0.9,
+    description: '前景文字透明度（0-1）'
+  },
+  marqueeForegroundColor: {
+    type: 'string',
+    defaultValue: '#ffd700',
+    description: '前景文字颜色'
+  },
+  marqueeForegroundEffect: {
+    type: 'string',
+    defaultValue: 'none',
+    description: '前景文字效果：none | glow | shadow'
+  },
+  marqueeBackgroundTexts: {
+    type: 'array',
+    defaultValue: ['新春大吉', '财源广进', '龙年行大运'],
+    parser: (v) => {
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        try {
+          const parsed = JSON.parse(v);
+          return Array.isArray(parsed) ? parsed : [v];
+        } catch {
+          return v.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+      return ['新春大吉', '财源广进', '龙年行大运'];
+    },
+    description: '背景文字列表'
+  },
+  marqueeBackgroundFontSize: {
+    type: 'number',
+    defaultValue: 24,
+    parser: (v) => parseInt(v) || 24,
+    description: '背景文字字体大小'
+  },
+  marqueeBackgroundOpacity: {
+    type: 'number',
+    defaultValue: 0.5,
+    parser: (v) => parseFloat(v) || 0.5,
+    description: '背景文字透明度（0-1）'
+  },
+  marqueeBackgroundColor: {
+    type: 'string',
+    defaultValue: '#ffffff',
+    description: '背景文字颜色'
+  },
+  marqueeBackgroundEffect: {
+    type: 'string',
+    defaultValue: 'none',
+    description: '背景文字效果：none | glow | shadow'
+  },
+  marqueeOrientation: {
+    type: 'string',
+    defaultValue: 'horizontal',
+    description: '文字排列方向：horizontal | vertical'
+  },
+  marqueeDirection: {
+    type: 'string',
+    defaultValue: 'left-to-right',
+    description: '运动方向：left-to-right | right-to-left | top-to-bottom | bottom-to-top'
+  },
+  marqueeSpeed: {
+    type: 'number',
+    defaultValue: 50,
+    parser: (v) => parseFloat(v) || 50,
+    description: '走马灯速度（像素/帧）'
+  },
+  marqueeSpacing: {
+    type: 'number',
+    defaultValue: 80,
+    parser: (v) => parseInt(v) || 80,
+    description: '文字间距'
+  },
+  marqueeForegroundOffsetY: {
+    type: 'number',
+    defaultValue: 0,
+    parser: (v) => parseInt(v) || 0,
+    description: '前景层垂直偏移'
+  },
+  marqueeBackgroundOffsetY: {
+    type: 'number',
+    defaultValue: 0,
+    parser: (v) => parseInt(v) || 0,
+    description: '背景层垂直偏移'
   }
 };
 

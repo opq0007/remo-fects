@@ -19,7 +19,9 @@ import {
   OverlaySchema,
   AudioSchema,
   WatermarkSchema,
+  MarqueeSchema,
   Watermark,
+  Marquee,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -78,6 +80,9 @@ export const TaiChiBaguaSchema = BackgroundSchema.extend({
 
   // 水印配置（使用公共 Schema）
   ...WatermarkSchema.shape,
+
+  // 走马灯配置（使用公共 Schema）
+  ...MarqueeSchema.shape,
 });
 
 export type TaiChiBaguaProps = z.infer<typeof TaiChiBaguaSchema>;
@@ -316,6 +321,24 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   watermarkIntensity,
   watermarkVelocityX,
   watermarkVelocityY,
+  // 走马灯参数
+  marqueeEnabled = false,
+  marqueeForegroundTexts,
+  marqueeForegroundFontSize,
+  marqueeForegroundOpacity,
+  marqueeForegroundColor,
+  marqueeForegroundEffect,
+  marqueeBackgroundTexts,
+  marqueeBackgroundFontSize,
+  marqueeBackgroundOpacity,
+  marqueeBackgroundColor,
+  marqueeBackgroundEffect,
+  marqueeOrientation,
+  marqueeDirection,
+  marqueeSpeed,
+  marqueeSpacing,
+  marqueeForegroundOffsetY,
+  marqueeBackgroundOffsetY,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -463,6 +486,34 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
           intensity={watermarkIntensity ?? 0.8}
           velocityX={watermarkVelocityX ?? 180}
           velocityY={watermarkVelocityY ?? 120}
+        />
+      )}
+
+      {marqueeEnabled && (
+        <Marquee
+          foreground={{
+            texts: (marqueeForegroundTexts ?? ["新年快乐", "万事如意", "恭喜发财"]).map(text => ({ text })),
+            fontSize: marqueeForegroundFontSize ?? 32,
+            opacity: marqueeForegroundOpacity ?? 0.9,
+            textStyle: {
+              color: marqueeForegroundColor ?? "#ffd700",
+              effect: marqueeForegroundEffect ?? "none",
+            },
+          }}
+          background={{
+            texts: (marqueeBackgroundTexts ?? ["新春大吉", "财源广进", "龙年行大运"]).map(text => ({ text })),
+            fontSize: marqueeBackgroundFontSize ?? 24,
+            opacity: marqueeBackgroundOpacity ?? 0.5,
+            textStyle: {
+              color: marqueeBackgroundColor ?? "#ffffff",
+              effect: marqueeBackgroundEffect ?? "none",
+            },
+          }}
+          orientation={marqueeOrientation ?? "horizontal"}
+          direction={marqueeDirection ?? "left-to-right"}
+          speed={marqueeSpeed ?? 50}
+          foregroundOffsetY={marqueeForegroundOffsetY ?? 0}
+          backgroundOffsetY={marqueeBackgroundOffsetY ?? 0}
         />
       )}
     </AbsoluteFill>

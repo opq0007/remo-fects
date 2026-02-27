@@ -39,6 +39,20 @@ export {
   extractWatermarkProps,
 } from "./watermark";
 
+// 走马灯配置
+export {
+  MarqueeSchema,
+  MarqueeOrientationSchema,
+  MarqueeDirectionSchema,
+  MarqueeLayerConfigSchema,
+  MarqueeTextItemSchema,
+  MarqueeImageItemSchema,
+  MarqueeTextStyleSchema,
+  type MarqueeProps,
+  type MarqueeComponentProps,
+  extractMarqueeProps,
+} from "./marquee";
+
 // 通用配置
 export {
   BaseVideoSchema,
@@ -53,6 +67,7 @@ import { BackgroundSchema } from "./background";
 import { OverlaySchema } from "./overlay";
 import { AudioSchema } from "./audio";
 import { WatermarkSchema } from "./watermark";
+import { MarqueeSchema } from "./marquee";
 
 /**
  * 完整背景 Schema（背景 + 遮罩）
@@ -97,4 +112,4 @@ export const FullCompositionSchema = FullBackgroundSchema.merge(AudioSchema);
  * });
  * ```
  */
-export const CompleteCompositionSchema = FullCompositionSchema.merge(WatermarkSchema);
+export const CompleteCompositionSchema = FullCompositionSchema.merge(WatermarkSchema).merge(MarqueeSchema);

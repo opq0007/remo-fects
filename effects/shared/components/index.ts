@@ -19,5 +19,7 @@ export type { AudioPlayerProps } from "./AudioPlayer";
 
 export { Watermark } from "./Watermark";
 
+export { Marquee } from "./Marquee";
+
 export { BaseComposition } from "./BaseComposition";
 export type { BaseCompositionComponentProps } from "./BaseComposition";
