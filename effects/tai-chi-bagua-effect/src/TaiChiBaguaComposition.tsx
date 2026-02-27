@@ -334,6 +334,7 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   marqueeBackgroundColor,
   marqueeBackgroundEffect,
   marqueeOrientation,
+  marqueeTextOrientation,
   marqueeDirection,
   marqueeSpeed,
   marqueeSpacing,
@@ -510,6 +511,7 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
             },
           }}
           orientation={marqueeOrientation ?? "horizontal"}
+          textOrientation={marqueeTextOrientation ?? "horizontal"}
           direction={marqueeDirection ?? "left-to-right"}
           speed={marqueeSpeed ?? 50}
           foregroundOffsetY={marqueeForegroundOffsetY ?? 0}

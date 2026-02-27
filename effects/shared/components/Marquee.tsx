@@ -44,11 +44,18 @@ export interface MarqueeLayerConfig {
 }
 
 /**
- * 文字排列方向（文字如何排列）
- * - horizontal: 文字水平排列成一行
- * - vertical: 文字垂直排列成一列
+ * 文字排列方向（文字项如何排列）
+ * - horizontal: 文字项水平排列成一行
+ * - vertical: 文字项垂直排列成一列
  */
 export type MarqueeOrientation = "horizontal" | "vertical";
+
+/**
+ * 单个文字内部的字符排列方向
+ * - horizontal: 字符水平排列（如：新年快乐）
+ * - vertical: 字符垂直排列（如：新\n年\n快\n乐）
+ */
+export type MarqueeTextOrientation = "horizontal" | "vertical";
 
 /**
  * 运动方向（整体往哪个方向移动）
@@ -67,8 +74,10 @@ export interface MarqueeProps {
   enabled?: boolean;
   foreground?: MarqueeLayerConfig;
   background?: MarqueeLayerConfig;
-  /** 文字排列方向：horizontal（水平一行）或 vertical（垂直一列） */
+  /** 文字项排列方向：horizontal（水平一行）或 vertical（垂直一列） */
   orientation?: MarqueeOrientation;
+  /** 单个文字内部的字符排列方向：horizontal（水平）或 vertical（垂直） */
+  textOrientation?: MarqueeTextOrientation;
   /** 运动方向：文字整体移动的方向 */
   direction?: MarqueeDirection;
   speed?: number;
@@ -143,12 +152,19 @@ const applyTextEffect = (
 };
 
 /**
- * 计算文字宽度
+ * 计算文字宽度（水平排列时）
  */
 const calculateTextWidth = (text: string, fontSize: number): number => {
   return text.split("").reduce((acc, char) => {
     return acc + (/[\u4e00-\u9fa5]/.test(char) ? fontSize : fontSize * 0.6);
   }, 0);
+};
+
+/**
+ * 计算文字高度（垂直排列时）
+ */
+const calculateTextHeight = (text: string, fontSize: number): number => {
+  return text.length * fontSize;
 };
 
 /**
@@ -173,6 +189,7 @@ export const Marquee: React.FC<MarqueeProps> = ({
   foreground,
   background,
   orientation = "horizontal",
+  textOrientation = "horizontal",
   direction = "right-to-left",
   speed = 100,
   foregroundOffsetY = 0,
@@ -208,8 +225,9 @@ export const Marquee: React.FC<MarqueeProps> = ({
         <MarqueeLayer
           layer={background}
           orientation={orientation}
+          textOrientation={textOrientation}
           direction={direction}
-          speed={speed * 0.9}
+          speed={speed * 1}
           frame={frame}
           fps={fps}
           width={width}
@@ -224,6 +242,7 @@ export const Marquee: React.FC<MarqueeProps> = ({
         <MarqueeLayer
           layer={foreground}
           orientation={orientation}
+          textOrientation={textOrientation}
           direction={direction}
           speed={speed}
           frame={frame}
@@ -244,6 +263,7 @@ export const Marquee: React.FC<MarqueeProps> = ({
 const MarqueeLayer: React.FC<{
   layer: MarqueeLayerConfig;
   orientation: MarqueeOrientation;
+  textOrientation: MarqueeTextOrientation;
   direction: MarqueeDirection;
   speed: number;
   frame: number;
@@ -255,6 +275,7 @@ const MarqueeLayer: React.FC<{
 }> = ({
   layer,
   orientation,
+  textOrientation,
   direction,
   speed,
   frame,
@@ -269,8 +290,10 @@ const MarqueeLayer: React.FC<{
   const opacity = layer.opacity ?? 1;
   const textStyle = layer.textStyle || {};
 
-  // 文字排列方向
+  // 文字项排列方向
   const isHorizontalOrientation = orientation === "horizontal";
+  // 单个文字内部字符排列方向
+  const isVerticalText = textOrientation === "vertical";
   
   // 运动方向
   const isVerticalMove = isVerticalMovement(direction);
@@ -284,11 +307,25 @@ const MarqueeLayer: React.FC<{
       if (isHorizontalOrientation) {
         // 水平排列：计算总宽度
         layer.texts.forEach((item) => {
-          size += calculateTextWidth(item.text, fontSize) + spacing;
+          if (isVerticalText) {
+            // 垂直文字：宽度为单个字符宽度
+            size += fontSize + spacing;
+          } else {
+            // 水平文字：宽度为文字总宽度
+            size += calculateTextWidth(item.text, fontSize) + spacing;
+          }
         });
       } else {
         // 垂直排列：计算总高度
-        size = layer.texts.length * fontSize + (layer.texts.length - 1) * spacing;
+        layer.texts.forEach((item) => {
+          if (isVerticalText) {
+            // 垂直文字：高度为所有字符高度
+            size += calculateTextHeight(item.text, fontSize) + spacing;
+          } else {
+            // 水平文字：高度为单行高度
+            size += fontSize + spacing;
+          }
+        });
       }
     }
     
@@ -303,7 +340,7 @@ const MarqueeLayer: React.FC<{
     }
     
     return size;
-  }, [layer.texts, layer.images, fontSize, spacing, isHorizontalOrientation]);
+  }, [layer.texts, layer.images, fontSize, spacing, isHorizontalOrientation, isVerticalText]);
 
   // 计算动画偏移（根据运动方向）
   const time = frame / fps;
@@ -337,24 +374,41 @@ const MarqueeLayer: React.FC<{
           opacity,
         };
 
+        // 计算文字元素的尺寸
+        const textWidth = isVerticalText ? fontSize : calculateTextWidth(item.text, fontSize);
+        const textHeight = isVerticalText ? calculateTextHeight(item.text, fontSize) : fontSize;
+
         if (isHorizontalOrientation) {
-          // 水平排列：文字沿 X 轴排列，Y 固定
-          const textWidth = calculateTextWidth(item.text, fontSize);
+          // 水平排列：文字项沿 X 轴排列，Y 固定
           itemStyle.left = currentPos;
           itemStyle.top = baseY;
           itemStyle.transform = "translateY(-50%)";
           currentPos += textWidth + spacing;
         } else {
-          // 垂直排列：文字沿 Y 轴排列，X 固定
+          // 垂直排列：文字项沿 Y 轴排列，X 固定
           itemStyle.left = baseX;
           itemStyle.top = currentPos;
           itemStyle.transform = "translateX(-50%)";
-          currentPos += fontSize + spacing;
+          currentPos += textHeight + spacing;
         }
+
+        // 渲染文字内容
+        const renderTextContent = () => {
+          if (isVerticalText) {
+            // 垂直排列字符
+            return item.text.split("").map((char, charIndex) => (
+              <div key={charIndex} style={{ lineHeight: `${fontSize}px` }}>
+                {char}
+              </div>
+            ));
+          }
+          // 水平排列字符（默认）
+          return item.text;
+        };
 
         items.push(
           <span key={`text-${index}-${startOffset}`} style={itemStyle}>
-            {item.text}
+            {renderTextContent()}
           </span>
         );
       });

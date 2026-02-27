@@ -174,6 +174,7 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
   marqueeBackgroundColor,
   marqueeBackgroundEffect,
   marqueeOrientation,
+  marqueeTextOrientation,
   marqueeDirection,
   marqueeSpeed,
   marqueeSpacing,
@@ -324,6 +325,7 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
             },
           }}
           orientation={marqueeOrientation ?? "horizontal"}
+          textOrientation={marqueeTextOrientation ?? "horizontal"}
           direction={marqueeDirection ?? "left-to-right"}
           speed={marqueeSpeed ?? 50}
           foregroundOffsetY={marqueeForegroundOffsetY ?? 0}

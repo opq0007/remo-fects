@@ -255,7 +255,12 @@ const commonParams = {
   marqueeOrientation: {
     type: 'string',
     defaultValue: 'horizontal',
-    description: '文字排列方向：horizontal | vertical'
+    description: '文字项排列方向：horizontal | vertical'
+  },
+  marqueeTextOrientation: {
+    type: 'string',
+    defaultValue: 'horizontal',
+    description: '单个文字内部字符排列方向：horizontal（水平）或 vertical（垂直）'
   },
   marqueeDirection: {
     type: 'string',

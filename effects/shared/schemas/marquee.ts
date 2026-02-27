@@ -48,9 +48,14 @@ export const MarqueeLayerConfigSchema = z.object({
 });
 
 /**
- * 排列方向 Schema
+ * 排列方向 Schema（文字项如何排列）
  */
 export const MarqueeOrientationSchema = z.enum(["horizontal", "vertical"]);
+
+/**
+ * 文字内部排列方向 Schema（单个文字的字符如何排列）
+ */
+export const MarqueeTextOrientationSchema = z.enum(["horizontal", "vertical"]);
 
 /**
  * 运动方向 Schema
@@ -86,7 +91,8 @@ export const MarqueeSchema = z.object({
   marqueeBackgroundEffect: MarqueeTextStyleSchema.shape.effect.unwrap().optional().meta({ description: "后景文字特效" }),
   
   // 布局配置
-  marqueeOrientation: MarqueeOrientationSchema.optional().meta({ description: "排列方向" }),
+  marqueeOrientation: MarqueeOrientationSchema.optional().meta({ description: "文字项排列方向" }),
+  marqueeTextOrientation: MarqueeTextOrientationSchema.optional().meta({ description: "单个文字内部字符排列方向：horizontal（水平）或 vertical（垂直）" }),
   marqueeDirection: MarqueeDirectionSchema.optional().meta({ description: "运动方向" }),
   marqueeSpeed: z.number().min(10).max(500).optional().meta({ description: "移动速度（像素/秒）" }),
   marqueeSpacing: z.number().min(0).max(500).optional().meta({ description: "文字间距" }),
@@ -124,6 +130,7 @@ export interface MarqueeComponentProps {
     textStyle?: any;
   };
   orientation?: "horizontal" | "vertical";
+  textOrientation?: "horizontal" | "vertical";
   direction?: "left-to-right" | "right-to-left" | "top-to-bottom" | "bottom-to-top";
   speed?: number;
   perspectiveDepth?: number;
@@ -141,6 +148,7 @@ export function extractMarqueeProps(props: MarqueeProps): MarqueeComponentProps 
   const result: MarqueeComponentProps = {
     enabled: props.marqueeEnabled,
     orientation: props.marqueeOrientation,
+    textOrientation: props.marqueeTextOrientation,
     direction: props.marqueeDirection,
     speed: props.marqueeSpeed,
     perspectiveDepth: props.marqueePerspectiveDepth,

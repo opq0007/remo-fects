@@ -79,6 +79,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   marqueeBackgroundColor,
   marqueeBackgroundEffect,
   marqueeOrientation,
+  marqueeTextOrientation,
   marqueeDirection,
   marqueeSpeed,
   marqueeSpacing,
@@ -114,6 +115,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
             }
           : undefined,
         orientation: marqueeOrientation ?? "horizontal",
+        textOrientation: marqueeTextOrientation ?? "horizontal",
         direction: marqueeDirection ?? "right-to-left",
         speed: marqueeSpeed ?? 100,
         foregroundOffsetY: marqueeForegroundOffsetY ?? 0,
