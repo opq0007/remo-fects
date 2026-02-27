@@ -43,8 +43,18 @@ remo-fects/
 │   └── package.json                  # API 项目配置
 ├── effects/                          # 所有特效项目目录
 │   ├── shared/                       # 公共组件和 Schema
-│   │   ├── components/               # 公共组件（Background, Overlay, Audio 等）
+│   │   ├── components/               # 公共组件
+│   │   │   ├── Background.tsx        # 统一背景组件
+│   │   │   ├── Overlay.tsx           # 遮罩组件
+│   │   │   ├── AudioPlayer.tsx       # 音频播放组件
+│   │   │   ├── BaseComposition.tsx   # 基础组合组件（核心）
+│   │   │   ├── CenterGlow.tsx        # 中心发光效果
+│   │   │   └── StarField.tsx         # 星空背景
 │   │   ├── schemas/                  # 公共 Schema 定义
+│   │   │   ├── background.ts         # 背景 Schema
+│   │   │   ├── overlay.ts            # 遮罩 Schema
+│   │   │   ├── audio.ts              # 音频 Schema
+│   │   │   └── common.ts             # 通用 Schema + BaseCompositionProps
 │   │   └── utils/                    # 工具函数
 │   ├── text-rain-effect/             # 文字雨特效
 │   ├── text-ring-effect/             # 金色文字环绕特效
@@ -121,12 +131,17 @@ module.exports = { config, params, validate, buildRenderParams };
 | height | number | 1280 | 视频高度 |
 | fps | number | 24 | 帧率 |
 | duration | number | 10 | 视频时长（秒） |
-| backgroundType | string | 'color' | 背景类型 |
+| backgroundType | string | 'color' | 背景类型：color \| image \| video \| gradient |
 | backgroundColor | string | '#1a1a2e' | 背景颜色 |
+| backgroundSource | string | null | 背景源文件（图片或视频） |
+| backgroundVideoLoop | boolean | true | 背景视频是否循环 |
+| backgroundVideoMuted | boolean | true | 背景视频是否静音 |
 | overlayColor | string | '#000000' | 遮罩颜色 |
 | overlayOpacity | number | 0.2 | 遮罩透明度 |
 | audioEnabled | boolean | false | 是否启用音频 |
-| audioVolume | number | 0.5 | 音量 |
+| audioSource | string | 'coin-sound.mp3' | 音频文件路径 |
+| audioVolume | number | 0.5 | 音量（0-1） |
+| audioLoop | boolean | true | 音频是否循环 |
 | seed | number | 随机 | 随机种子 |
 
 ## 构建和运行
@@ -263,11 +278,79 @@ Content-Type: application/json
 
 在 `effects/` 目录下创建新项目，包含：
 - `src/index.ts` - 入口文件
-- `src/YourComposition.tsx` - 主组合组件
+- `src/YourComposition.tsx` - 主组合组件（继承 BaseComposition）
 - `remotion.config.ts` - Remotion 配置
 - `package.json` - 项目配置
 
-### 步骤 2：创建配置文件（关键）
+### 步骤 2：创建组合组件
+
+使用 `BaseComposition` 和 `FullCompositionSchema`：
+
+```tsx
+// effects/your-effect/src/YourComposition.tsx
+import React from "react";
+import { z } from "zod";
+import { BaseComposition, FullCompositionSchema } from "../../shared/index";
+import { YourEffectContent } from "./YourEffectContent";
+
+// 定义 Schema（继承公共参数）
+export const YourCompositionSchema = FullCompositionSchema.extend({
+  words: z.array(z.string()).meta({ description: "文字列表" }),
+  speed: z.number().min(0.1).max(2).default(1),
+});
+
+export type YourCompositionProps = z.infer<typeof YourCompositionSchema>;
+
+// 主组件
+export const YourComposition: React.FC<YourCompositionProps> = ({
+  words,
+  speed,
+  // 基础参数
+  backgroundType = "color",
+  backgroundColor = "#0a0a20",
+  overlayOpacity = 0.2,
+  audioEnabled = false,
+  audioSource = "coin-sound.mp3",
+  audioVolume = 0.5,
+}) => {
+  return (
+    <BaseComposition
+      backgroundType={backgroundType}
+      backgroundColor={backgroundColor}
+      overlayOpacity={overlayOpacity}
+      audioEnabled={audioEnabled}
+      audioSource={audioSource}
+      audioVolume={audioVolume}
+    >
+      <YourEffectContent words={words} speed={speed} />
+    </BaseComposition>
+  );
+};
+```
+
+### 步骤 3：创建入口文件
+
+```tsx
+// effects/your-effect/src/index.ts
+import { Composition } from "remotion";
+import { YourComposition, YourCompositionSchema } from "./YourComposition";
+
+export const RemotionRoot: React.FC = () => {
+  return (
+    <Composition
+      id="YourComposition"
+      component={YourComposition}
+      durationInFrames={300}
+      fps={24}
+      width={720}
+      height={1280}
+      schema={YourCompositionSchema}
+    />
+  );
+};
+```
+
+### 步骤 4：创建配置文件
 
 在 `api/effect-configs/` 目录创建配置文件：
 
@@ -283,21 +366,38 @@ const config = {
 };
 
 const params = {
-  // 定义你的参数
+  words: {
+    type: 'array',
+    defaultValue: [],
+    parser: (v) => Array.isArray(v) ? v : v.split(',').map(w => w.trim()),
+    required: true,
+  },
+  speed: {
+    type: 'number',
+    defaultValue: 1,
+    parser: (v) => parseFloat(v) || 1,
+  }
 };
 
 function validate(params) {
+  if (!params.words || params.words.length === 0) {
+    return { valid: false, error: '请提供文字列表 (words)' };
+  }
   return { valid: true };
 }
 
 function buildRenderParams(reqParams, commonParams) {
-  return { ...commonParams, ...reqParams };
+  const result = { ...commonParams };
+  for (const [name, def] of Object.entries(params)) {
+    result[name] = reqParams[name] ?? def.defaultValue;
+  }
+  return result;
 }
 
 module.exports = { config, params, validate, buildRenderParams };
 ```
 
-### 步骤 3：注册配置
+### 步骤 5：注册配置
 
 编辑 `api/effect-configs/index.js`，添加：
 
@@ -323,6 +423,8 @@ const effectConfigs = {
 | density | number | 2 | 雨滴密度 |
 | laneCount | number | 6 | 列道数量 |
 | textStyle | object | {...} | 文字样式 |
+| audio.enabled | boolean | true | 是否启用音频（嵌套格式） |
+| audio.volume | number | 0.5 | 音量 |
 
 ### text-firework-effect（文字烟花特效）
 
@@ -334,6 +436,29 @@ const effectConfigs = {
 | glowColor | string | '#ffaa00' | 发光颜色 |
 | particleCount | number | 80 | 粒子数量 |
 | interval | number | 40 | 发射间隔 |
+| audioEnabled | boolean | false | 是否启用音频 |
+
+### text-ring-effect（文字环绕特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| words | array | [] | 文字列表（必填） |
+| fontSize | number | 70 | 字体大小 |
+| ringRadius | number | 250 | 环绕半径 |
+| rotationSpeed | number | 0.8 | 旋转速度 |
+| depth3d | number | 8 | 3D深度层数 |
+| glowIntensity | number | 0.9 | 发光强度 |
+| audioEnabled | boolean | false | 是否启用音频 |
+
+### text-breakthrough-effect（文字破屏特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| words | array | [] | 文字列表 |
+| fontSize | number | 120 | 字体大小 |
+| approachDuration | number | 45 | 接近时长 |
+| impactScale | number | 1.4 | 冲击缩放 |
+| audioEnabled | boolean | false | 是否启用音频 |
 
 ### tai-chi-bagua-effect（太极八卦特效）
 
@@ -345,15 +470,17 @@ const effectConfigs = {
 | baguaRadius | number | 280 | 八卦半径 |
 | enable3D | boolean | false | 启用3D效果 |
 | enableGoldenSparkle | boolean | true | 金光闪闪 |
+| audioEnabled | boolean | false | 是否启用音频 |
 
-### text-breakthrough-effect（文字破屏特效）
+### text-grow-explode-effect（生长爆炸特效）
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| words | array | [] | 文字列表 |
-| fontSize | number | 120 | 字体大小 |
-| approachDuration | number | 45 | 接近时长 |
-| impactScale | number | 1.4 | 冲击缩放 |
+| name | string | '福' | 核心文字 |
+| words | array | [...] | 爆炸碎片文字 |
+| growDuration | number | 90 | 生长时长（帧） |
+| explodeDuration | number | 30 | 爆炸时长（帧） |
+| audioEnabled | boolean | false | 是否启用音频 |
 
 ## 开发规范
 
@@ -362,6 +489,100 @@ const effectConfigs = {
 - **TypeScript**：所有组件使用 TypeScript
 - **Zod Schema**：每个组合组件定义 Zod schema
 - **配置驱动**：参数处理逻辑放在配置文件中
+- **BaseComposition**：新特效应继承 BaseComposition 基础组件
+
+### BaseComposition 基础组件
+
+`BaseComposition` 是所有特效组合组件的基础类，统一处理背景、遮罩、音效渲染，减少重复代码。
+
+#### 基本用法
+
+```tsx
+import { BaseComposition, StarField, FullCompositionSchema } from "../../shared/index";
+
+export const MyEffectSchema = FullCompositionSchema.extend({
+  // 特有参数
+  words: z.array(z.string()),
+  speed: z.number(),
+});
+
+export const MyEffect: React.FC<MyEffectProps> = ({
+  words,
+  speed,
+  // 基础参数（自动传递给 BaseComposition）
+  backgroundType = "color",
+  backgroundColor = "#0a0a20",
+  overlayOpacity = 0.2,
+  audioEnabled = false,
+  audioSource = "coin-sound.mp3",
+  audioVolume = 0.5,
+}) => {
+  return (
+    <BaseComposition
+      backgroundType={backgroundType}
+      backgroundColor={backgroundColor}
+      overlayOpacity={overlayOpacity}
+      audioEnabled={audioEnabled}
+      audioSource={audioSource}
+      audioVolume={audioVolume}
+      extraLayers={<StarField count={100} opacity={0.5} />}
+    >
+      {/* 特效内容 */}
+      <MyEffectContent words={words} speed={speed} />
+    </BaseComposition>
+  );
+};
+```
+
+#### BaseComposition Props
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| children | ReactNode | - | 特效内容（必填） |
+| showBackground | boolean | true | 是否显示背景层 |
+| showOverlay | boolean | true | 是否显示遮罩层 |
+| overlayPosition | string | 'before' | 遮罩位置：before \| after |
+| extraLayers | ReactNode | null | 额外特效层（如 StarField） |
+| extraLayersPosition | string | 'before-content' | 额外层位置 |
+| backgroundType | string | 'color' | 背景类型 |
+| backgroundColor | string | '#1a1a2e' | 背景颜色 |
+| backgroundSource | string | null | 背景源文件 |
+| overlayColor | string | '#000000' | 遮罩颜色 |
+| overlayOpacity | number | 0.2 | 遮罩透明度 |
+| audioEnabled | boolean | false | 是否启用音频 |
+| audioSource | string | 'coin-sound.mp3' | 音频文件 |
+| audioVolume | number | 0.5 | 音量 |
+| audioLoop | boolean | true | 是否循环 |
+
+#### Schema 扩展方式
+
+```tsx
+import { FullCompositionSchema } from "../../shared/index";
+
+// 方式1：使用 FullCompositionSchema（包含背景+遮罩+音频）
+export const MySchema = FullCompositionSchema.extend({
+  myParam: z.string(),
+});
+
+// 方式2：使用 FullBackgroundSchema（仅背景+遮罩，不含音频）
+import { FullBackgroundSchema, AudioSchema } from "../../shared/index";
+export const MySchema = FullBackgroundSchema.extend({
+  ...AudioSchema.shape,  // 单独添加音频
+  myParam: z.string(),
+});
+```
+
+#### 渲染层顺序
+
+BaseComposition 按以下顺序渲染各层：
+
+1. **背景层**（Background）
+2. **额外层**（extraLayers，before-content 时）
+3. **遮罩层**（Overlay，before 时）
+4. **内容层**（children）
+5. **遮罩层**（Overlay，after 时）
+6. **额外层**（extraLayers，after-content 时）
+7. **音频层**（Audio）
 
 ### 响应式设计
 

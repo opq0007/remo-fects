@@ -1,23 +1,16 @@
 import React from "react";
 import {
-  AbsoluteFill,
   useVideoConfig,
   useCurrentFrame,
-  Audio,
-  staticFile,
 } from "remotion";
 import { TextBreakthrough } from "./TextBreakthrough";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
-  Background,
-  Overlay,
+  BaseComposition,
   StarField,
   CenterGlow,
-  BackgroundType,
-  FullBackgroundSchema,
-  OverlaySchema,
-  AudioSchema,
+  FullCompositionSchema,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -37,7 +30,7 @@ export const TextFinalPositionSchema = z.object({
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
-export const TextBreakthroughCompositionSchema = z.object({
+export const TextBreakthroughCompositionSchema = FullCompositionSchema.extend({
   // 文字配置
   textGroups: z.array(z.object({
     texts: z.array(z.string()).min(1).meta({ description: "一组文字" }),
@@ -82,15 +75,6 @@ export const TextBreakthroughCompositionSchema = z.object({
   enableFallDown: z.boolean().optional().meta({ description: "启用下落消失" }),
   fallDownDuration: z.number().min(10).max(120).optional().meta({ description: "下落时长" }),
   fallDownEndY: z.number().min(0.1).max(0.5).optional().meta({ description: "下落结束位置" }),
-
-  // 背景配置（使用公共 Schema）
-  ...FullBackgroundSchema.shape,
-
-  // 遮罩效果（使用公共 Schema）
-  ...OverlaySchema.shape,
-
-  // 音效配置（使用公共 Schema）
-  ...AudioSchema.shape,
 });
 
 export type TextBreakthroughCompositionProps = z.infer<typeof TextBreakthroughCompositionSchema>;
@@ -160,7 +144,7 @@ const BorderBreakEffect: React.FC<{
   }, []);
 
   return (
-    <AbsoluteFill style={{ pointerEvents: "none" }}>
+    <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
       {shards.map((shard, index) => {
         let x, y;
         const offset = progress * shard.speed * 50;
@@ -190,7 +174,7 @@ const BorderBreakEffect: React.FC<{
           />
         );
       })}
-    </AbsoluteFill>
+    </div>
   );
 };
 
@@ -306,26 +290,30 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
     return positions;
   }, [groupTimings, finalPosition]);
 
-  return (
-    <AbsoluteFill>
-      <Background
-        type={backgroundType as BackgroundType}
-        source={backgroundSource}
-        color={backgroundColor}
-        videoLoop={backgroundVideoLoop}
-        videoMuted={backgroundVideoMuted}
-      />
-
+  // 构建额外层
+  const extraLayers = (
+    <>
       <CenterGlow color={glowColor} intensity={glowIntensity * 0.5} />
-
       <StarField count={200} opacity={0.5} twinkle />
-
       <EnergyRing centerX={width / 2} centerY={height / 2} frame={frame} color={glowColor} active={isAnyBreakingThrough} />
-
-      {overlayOpacity > 0 && <Overlay color={overlayColor} opacity={overlayOpacity} />}
-
       <BorderBreakEffect active={isAnyBreakingThrough} progress={breakthroughProgress} color={glowColor} />
+    </>
+  );
 
+  return (
+    <BaseComposition
+      backgroundType={backgroundType}
+      backgroundSource={backgroundSource}
+      backgroundColor={backgroundColor}
+      backgroundVideoLoop={backgroundVideoLoop}
+      backgroundVideoMuted={backgroundVideoMuted}
+      overlayColor={overlayColor}
+      overlayOpacity={overlayOpacity}
+      audioEnabled={audioEnabled}
+      audioSource={audioSource}
+      audioVolume={audioVolume}
+      extraLayers={extraLayers}
+    >
       {groupTimings.map((timing, groupIndex) => {
         let positionOffset = 0;
         for (let i = 0; i < groupIndex; i++) {
@@ -381,8 +369,6 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
           }}
         />
       )}
-
-      {audioEnabled && <Audio src={staticFile(audioSource)} volume={audioVolume} loop />}
-    </AbsoluteFill>
+    </BaseComposition>
   );
 };

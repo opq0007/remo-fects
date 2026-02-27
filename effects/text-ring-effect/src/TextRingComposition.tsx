@@ -1,21 +1,17 @@
 import React from "react";
-import { AbsoluteFill, Audio, staticFile } from "remotion";
 import { TextRing } from "./TextRing";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
-  Background,
-  Overlay,
+  BaseComposition,
   CenterGlow,
-  BackgroundType,
-  FullBackgroundSchema,
-  OverlaySchema,
-  AudioSchema,
+  FullCompositionSchema,
+  BaseCompositionProps,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
-export const TextRingCompositionSchema = z.object({
+export const TextRingCompositionSchema = FullCompositionSchema.extend({
   // 特有参数
   words: z.array(z.string()).meta({ description: "要显示的文字列表" }),
   fontSize: z.number().min(20).max(200).meta({ description: "字体大小" }),
@@ -29,15 +25,6 @@ export const TextRingCompositionSchema = z.object({
   perspective: z.number().min(500).max(2000).meta({ description: "透视距离" }),
   mode: z.enum(["vertical", "positions"]).meta({ description: "显示模式: vertical-垂直排列模式, positions-方位模式" }),
   verticalPosition: z.number().min(0).max(1).optional().meta({ description: "垂直位置: 0=顶部, 0.5=中心, 1=底部" }),
-
-  // 背景配置（使用公共 Schema，包含视频选项）
-  ...FullBackgroundSchema.shape,
-  
-  // 遮罩效果（使用公共 Schema）
-  ...OverlaySchema.shape,
-
-  // 音效配置（使用公共 Schema）
-  ...AudioSchema.shape,
 });
 
 export type TextRingCompositionProps = z.infer<typeof TextRingCompositionSchema>;
@@ -57,6 +44,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   perspective = 1000,
   mode = "vertical",
   verticalPosition = 0.5,
+  // 基础参数（传递给 BaseComposition）
   backgroundType = "color",
   backgroundSource,
   backgroundColor = "#1a0a00",
@@ -70,21 +58,20 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   audioLoop = true,
 }) => {
   return (
-    <AbsoluteFill>
-      <Background
-        type={backgroundType as BackgroundType}
-        source={backgroundSource}
-        color={backgroundColor}
-        videoLoop={backgroundVideoLoop}
-        videoMuted={backgroundVideoMuted}
-      />
-
-      {overlayOpacity > 0 && (
-        <Overlay color={overlayColor} opacity={overlayOpacity} />
-      )}
-
-      <CenterGlow intensity={glowIntensity} />
-
+    <BaseComposition
+      backgroundType={backgroundType}
+      backgroundSource={backgroundSource}
+      backgroundColor={backgroundColor}
+      backgroundVideoLoop={backgroundVideoLoop}
+      backgroundVideoMuted={backgroundVideoMuted}
+      overlayColor={overlayColor}
+      overlayOpacity={overlayOpacity}
+      audioEnabled={audioEnabled}
+      audioSource={audioSource}
+      audioVolume={audioVolume}
+      audioLoop={audioLoop}
+      extraLayers={<CenterGlow intensity={glowIntensity} />}
+    >
       <TextRing
         words={words}
         fontSize={fontSize}
@@ -99,14 +86,6 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
         mode={mode}
         verticalPosition={verticalPosition}
       />
-
-      {audioEnabled && (
-        <Audio
-          src={staticFile(audioSource)}
-          volume={audioVolume}
-          loop={audioLoop}
-        />
-      )}
-    </AbsoluteFill>
+    </BaseComposition>
   );
 };

@@ -1,12 +1,9 @@
 import React from "react";
-import { AbsoluteFill, staticFile, Audio } from "remotion";
 import { TextRain, TextStyleConfig, ImageStyleConfig, RainContentType, TextDirection } from "./TextRain";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
-  Background,
-  Overlay,
-  BackgroundType,
+  BaseComposition,
   FullBackgroundSchema,
   OverlaySchema,
   NestedAudioSchema,
@@ -150,24 +147,26 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
     ...imageStyle,
   };
 
-  // 默认音频配置
+  // 从嵌套 audio 对象提取扁平化参数
   const audioEnabled = audio?.enabled !== false;
-  const audioSrc = audio?.src ?? audio?.source ?? "coin-sound.mp3";
+  const audioSource = audio?.src ?? audio?.source ?? "coin-sound.mp3";
   const audioVolume = audio?.volume ?? 0.5;
   const audioLoop = audio?.loop ?? true;
 
   return (
-    <AbsoluteFill>
-      <Background
-        type={backgroundType as BackgroundType}
-        source={backgroundSource}
-        color={backgroundColor}
-        videoLoop={backgroundVideoLoop}
-        videoMuted={backgroundVideoMuted}
-      />
-
-      <Overlay color={overlayColor} opacity={overlayOpacity} />
-
+    <BaseComposition
+      backgroundType={backgroundType}
+      backgroundSource={backgroundSource}
+      backgroundColor={backgroundColor}
+      backgroundVideoLoop={backgroundVideoLoop}
+      backgroundVideoMuted={backgroundVideoMuted}
+      overlayColor={overlayColor}
+      overlayOpacity={overlayOpacity}
+      audioEnabled={audioEnabled}
+      audioSource={audioSource}
+      audioVolume={audioVolume}
+      audioLoop={audioLoop}
+    >
       <TextRain
         words={words}
         images={images}
@@ -186,14 +185,6 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
         textStyle={defaultTextStyle}
         imageStyle={defaultImageStyle}
       />
-
-      {audioEnabled && (
-        <Audio
-          src={staticFile(audioSrc)}
-          volume={audioVolume}
-          loop={audioLoop}
-        />
-      )}
-    </AbsoluteFill>
+    </BaseComposition>
   );
 };

@@ -1,23 +1,19 @@
 import React from "react";
-import { AbsoluteFill, useVideoConfig, Audio, staticFile } from "remotion";
+import { useVideoConfig } from "remotion";
 import { Firework } from "./Firework";
 import { GoldenRain, generateGoldenParticles } from "./GoldenRain";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
-  Background,
-  Overlay,
+  BaseComposition,
   StarField,
-  BackgroundType,
-  FullBackgroundSchema,
-  OverlaySchema,
-  AudioSchema,
+  FullCompositionSchema,
   seededRandom,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
-export const TextFireworkCompositionSchema = z.object({
+export const TextFireworkCompositionSchema = FullCompositionSchema.extend({
   // 文字配置
   words: z.array(z.string()).min(1).meta({ description: "要显示的文字列表（每个文字一个烟花）" }),
   
@@ -40,15 +36,6 @@ export const TextFireworkCompositionSchema = z.object({
   
   // 时间配置
   interval: z.number().min(10).max(60).meta({ description: "烟花发射间隔（帧）" }),
-
-  // 背景配置（使用公共 Schema，包含视频选项）
-  ...FullBackgroundSchema.shape,
-  
-  // 遮罩效果（使用公共 Schema）
-  ...OverlaySchema.shape,
-
-  // 音效配置（使用公共 Schema）
-  ...AudioSchema.shape,
 });
 
 export type TextFireworkCompositionProps = z.infer<typeof TextFireworkCompositionSchema>;
@@ -69,6 +56,7 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   wind = 0,
   rainParticleSize = 3,
   interval = 30,
+  // 基础参数
   backgroundType = "color",
   backgroundSource,
   backgroundColor = "#0a0a20",
@@ -148,21 +136,20 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   }, [fireworks, particleCount, rainParticleSize, textDuration, rainDuration, textColor, glowColor]);
 
   return (
-    <AbsoluteFill>
-      <Background
-        type={backgroundType as BackgroundType}
-        source={backgroundSource}
-        color={backgroundColor}
-        videoLoop={backgroundVideoLoop}
-        videoMuted={backgroundVideoMuted}
-      />
-
-      <StarField count={100} opacity={0.5} />
-
-      {overlayOpacity > 0 && (
-        <Overlay color={overlayColor} opacity={overlayOpacity} />
-      )}
-
+    <BaseComposition
+      backgroundType={backgroundType}
+      backgroundSource={backgroundSource}
+      backgroundColor={backgroundColor}
+      backgroundVideoLoop={backgroundVideoLoop}
+      backgroundVideoMuted={backgroundVideoMuted}
+      overlayColor={overlayColor}
+      overlayOpacity={overlayOpacity}
+      audioEnabled={audioEnabled}
+      audioSource={audioSource}
+      audioVolume={audioVolume}
+      audioLoop={audioLoop}
+      extraLayers={<StarField count={100} opacity={0.5} />}
+    >
       {fireworks.map((firework, index) => (
         <Firework
           key={index}
@@ -194,14 +181,6 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
           glowIntensity={glowIntensity}
         />
       ))}
-
-      {audioEnabled && (
-        <Audio
-          src={staticFile(audioSource)}
-          volume={audioVolume}
-          loop={audioLoop}
-        />
-      )}
-    </AbsoluteFill>
+    </BaseComposition>
   );
 };

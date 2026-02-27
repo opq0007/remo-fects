@@ -30,7 +30,12 @@ export {
 } from "./audio";
 
 // 通用配置
-export { BaseVideoSchema, GlowEffectSchema } from "./common";
+export {
+  BaseVideoSchema,
+  GlowEffectSchema,
+  BaseCompositionPropsSchema,
+  type BaseCompositionProps,
+} from "./common";
 
 // 重新导出完整背景 Schema（合并背景和遮罩）
 import { z } from "zod";
