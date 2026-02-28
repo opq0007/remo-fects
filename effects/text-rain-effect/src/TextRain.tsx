@@ -437,10 +437,42 @@ const generateNonOverlappingDrops = (
       dropType = "image";
     } else if (contentType === "blessing") {
       dropType = "blessing";
-    } else if (contentType === "mixed" && hasText && hasImages) {
-      dropType = random(`type-${seedValue}`) < imageWeight ? "image" : "text";
-    } else if (contentType === "mixed" && hasImages) {
-      dropType = "image";
+    } else if (contentType === "mixed") {
+      // mixed 模式：支持文字、图片、祝福图案的自由组合
+      const availableTypes: ("text" | "image" | "blessing")[] = [];
+      if (hasText) availableTypes.push("text");
+      if (hasImages) availableTypes.push("image");
+      if (hasBlessing) availableTypes.push("blessing");
+      
+      if (availableTypes.length > 0) {
+        // 如果有多种类型，根据 imageWeight 调整概率
+        if (availableTypes.length === 1) {
+          dropType = availableTypes[0];
+        } else if (availableTypes.includes("text") && availableTypes.includes("image") && availableTypes.includes("blessing")) {
+          // 三种类型都有：text = 1-imageWeight-blessingWeight, image = imageWeight, blessing = blessingWeight
+          const blessingWeight = 0.3; // 祝福图案的默认权重
+          const textWeight = 1 - imageWeight - blessingWeight;
+          const rand = random(`type-${seedValue}`);
+          if (rand < textWeight) {
+            dropType = "text";
+          } else if (rand < textWeight + imageWeight) {
+            dropType = "image";
+          } else {
+            dropType = "blessing";
+          }
+        } else if (availableTypes.includes("text") && availableTypes.includes("image")) {
+          // 只有文字和图片
+          dropType = random(`type-${seedValue}`) < imageWeight ? "image" : "text";
+        } else if (availableTypes.includes("text") && availableTypes.includes("blessing")) {
+          // 只有文字和祝福
+          dropType = random(`type-${seedValue}`) < 0.5 ? "blessing" : "text";
+        } else if (availableTypes.includes("image") && availableTypes.includes("blessing")) {
+          // 只有图片和祝福
+          dropType = random(`type-${seedValue}`) < 0.5 ? "blessing" : "image";
+        } else {
+          dropType = availableTypes[0];
+        }
+      }
     }
     
     // 【优化】使用预计算的 delta 值，减少重复计算
