@@ -29,3 +29,8 @@ export {
   getEasing,
   type EasingFunction,
 } from "./easing";
+
+export {
+  generateTextStyle,
+  type TextStyleConfig,
+} from "./textStyle";

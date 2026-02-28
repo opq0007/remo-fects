@@ -641,4 +641,46 @@ export const BlessingSymbol: React.FC<BlessingSymbolProps> = ({
   );
 };
 
+/**
+ * 单个祝福图案渲染组件（简化版）
+ * 直接传入 type 和 size 即可渲染单个图案
+ */
+export const SingleBlessingSymbol: React.FC<{
+  /** 图案类型 */
+  type: BlessingSymbolType;
+  /** 大小（像素） */
+  size?: number;
+  /** 主颜色 */
+  primaryColor?: string;
+  /** 次颜色 */
+  secondaryColor?: string;
+  /** 是否启用3D效果 */
+  enable3D?: boolean;
+  /** 是否启用发光效果 */
+  enableGlow?: boolean;
+  /** 发光强度 */
+  glowIntensity?: number;
+}> = ({
+  type,
+  size = 60,
+  primaryColor = DEFAULT_PRIMARY_COLOR,
+  secondaryColor = DEFAULT_SECONDARY_COLOR,
+  enable3D = false,
+  enableGlow = true,
+  glowIntensity = 1,
+}) => {
+  return (
+    <div style={{ width: size, height: size }}>
+      <SymbolRenderer
+        type={type}
+        primaryColor={primaryColor}
+        secondaryColor={secondaryColor}
+        enable3D={enable3D}
+        enableGlow={enableGlow}
+        glowIntensity={glowIntensity}
+      />
+    </div>
+  );
+};
+
 export default BlessingSymbol;

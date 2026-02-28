@@ -1,0 +1,20 @@
+{
+  "name": "text-tornado-effect",
+  "version": "1.0.0",
+  "description": "文字龙卷风特效 - 文字/图片/祝福图案聚集成旋转龙卷风",
+  "scripts": {
+    "start": "remotion studio src/index.ts",
+    "build": "remotion render src/index.ts TextTornado out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextTornado out/video.mp4 --chromium-flags=\"--headless=new\""
+  },
+  "dependencies": {
+    "@remotion/player": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "typescript": "^5.0.0"
+  }
+}
