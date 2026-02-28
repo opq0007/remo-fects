@@ -1,5 +1,5 @@
 import React from "react";
-import { TextRain, TextStyleConfig, ImageStyleConfig, RainContentType, TextDirection } from "./TextRain";
+import { TextRain, TextStyleConfig, ImageStyleConfig, RainContentType, TextDirection, BlessingStyleConfig } from "./TextRain";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
@@ -9,6 +9,7 @@ import {
   NestedAudioSchema,
   WatermarkSchema,
   MarqueeSchema,
+  BlessingSymbolTypeSchema,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -58,14 +59,28 @@ const ImageStyleSchema = z.object({
   saturate: z.number().optional().meta({ description: "饱和度 (0-2)" }),
 });
 
+// 祝福图案样式 Schema
+const BlessingStyleSchema = z.object({
+  primaryColor: zColor().optional().meta({ description: "主颜色" }),
+  secondaryColor: zColor().optional().meta({ description: "次颜色" }),
+  enable3D: z.boolean().optional().meta({ description: "是否启用3D效果" }),
+  enableGlow: z.boolean().optional().meta({ description: "是否启用发光效果" }),
+  glowIntensity: z.number().min(0).max(2).optional().meta({ description: "发光强度" }),
+  animated: z.boolean().optional().meta({ description: "是否启用动画" }),
+});
+
 // ==================== 主组件 Schema（使用公共 Schema）====================
 
 export const TextRainCompositionSchema = z.object({
   // 内容配置
   words: z.array(z.string()).optional().meta({ description: "要显示的文字列表" }),
   images: z.array(z.string()).optional().meta({ description: "PNG图片路径列表 (相对于public目录)" }),
-  contentType: z.enum(["text", "image", "mixed"]).meta({ description: "内容类型" }),
+  contentType: z.enum(["text", "image", "mixed", "blessing"]).meta({ description: "内容类型" }),
   imageWeight: z.number().min(0).max(1).optional().meta({ description: "图片出现权重 (mixed模式下)" }),
+  
+  // 祝福图案配置 (blessing 模式)
+  blessingTypes: z.array(BlessingSymbolTypeSchema).optional().meta({ description: "祝福图案类型列表" }),
+  blessingStyle: BlessingStyleSchema.optional().meta({ description: "祝福图案样式配置" }),
   
   // 文字排列方向
   textDirection: z.enum(["horizontal", "vertical"]).meta({ description: "文字排列方向：horizontal (从左到右) 或 vertical (从上到下)" }),
@@ -124,6 +139,9 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   minVerticalGap = 140,
   textStyle,
   imageStyle,
+  // 祝福图案参数
+  blessingTypes,
+  blessingStyle,
   audio,
   backgroundType = "color",
   backgroundSource,
@@ -184,6 +202,16 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
     swingAngle: 10,
     swingSpeed: 2,
     ...imageStyle,
+  };
+
+  const defaultBlessingStyle: BlessingStyleConfig = {
+    primaryColor: "#FFD700",
+    secondaryColor: "#FFA500",
+    enable3D: true,
+    enableGlow: true,
+    glowIntensity: 1,
+    animated: false,
+    ...blessingStyle,
   };
 
   // 从嵌套 audio 对象提取扁平化参数
@@ -274,6 +302,8 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
         minVerticalGap={minVerticalGap}
         textStyle={defaultTextStyle}
         imageStyle={defaultImageStyle}
+        blessingTypes={blessingTypes}
+        blessingStyle={defaultBlessingStyle}
       />
     </BaseComposition>
   );

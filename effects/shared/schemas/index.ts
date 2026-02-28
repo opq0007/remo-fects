@@ -61,6 +61,20 @@ export {
   type BaseCompositionProps,
 } from "./common";
 
+// 祝福图案配置
+export {
+  BlessingSymbolTypeSchema,
+  SingleSymbolConfigSchema,
+  BatchGenerateConfigSchema,
+  BlessingSymbolSchema,
+  type BlessingSymbolType,
+  type SingleSymbolConfig,
+  type BatchGenerateConfig,
+  type BlessingSymbolProps,
+  type BlessingSymbolComponentProps,
+  extractBlessingSymbolProps,
+} from "./blessing-symbol";
+
 // 重新导出完整背景 Schema（合并背景和遮罩）
 import { z } from "zod";
 import { BackgroundSchema } from "./background";

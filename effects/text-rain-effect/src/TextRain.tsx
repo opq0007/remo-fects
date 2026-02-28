@@ -9,6 +9,10 @@ import {
   staticFile,
   Img,
 } from "remotion";
+import {
+  BlessingSymbol,
+  BlessingSymbolType,
+} from "../../shared/components/BlessingSymbol";
 
 // ==================== 文字样式类型定义 ====================
 
@@ -73,7 +77,18 @@ export interface ImageStyleConfig {
 // ==================== 雨滴类型定义 ====================
 
 // 内容类型
-export type RainContentType = "text" | "image" | "mixed";
+export type RainContentType = "text" | "image" | "mixed" | "blessing";
+
+// 祝福图案样式配置
+export interface BlessingStyleConfig {
+  primaryColor?: string;
+  secondaryColor?: string;
+  enable3D?: boolean;
+  enableGlow?: boolean;
+  glowIntensity?: number;
+  animated?: boolean;
+  animationSpeed?: number;
+}
 
 // 文字雨滴属性
 interface TextRainDrop {
@@ -114,7 +129,33 @@ interface ImageRainDrop {
   spinDirection: number;
 }
 
-type RainDrop = TextRainDrop | ImageRainDrop;
+// 祝福图案雨滴属性
+interface BlessingRainDrop {
+  type: "blessing";
+  id: number;
+  blessingType: BlessingSymbolType;
+  x: number;
+  lane: number;
+  startY: number;
+  endY: number;
+  delay: number;
+  duration: number;
+  width: number;
+  height: number;
+  opacity: number;
+  rotation: number;
+  scale: number;
+  // 祝福图案特有样式
+  primaryColor: string;
+  secondaryColor: string;
+  enable3D: boolean;
+  enableGlow: boolean;
+  glowIntensity: number;
+  animated: boolean;
+  animationDelay: number;
+}
+
+type RainDrop = TextRainDrop | ImageRainDrop | BlessingRainDrop;
 
 // ==================== Props 定义 ====================
 
@@ -127,6 +168,10 @@ interface TextRainProps {
   images?: string[];             // 图片路径列表 (相对于 public 目录)
   contentType?: RainContentType; // 内容类型
   imageWeight?: number;          // 图片出现权重 (0-1, mixed 模式下有效)
+  
+  // 祝福图案配置 (blessing 模式)
+  blessingTypes?: BlessingSymbolType[];  // 祝福图案类型列表
+  blessingStyle?: BlessingStyleConfig;   // 祝福图案样式配置
   
   // 文字排列方向
   textDirection?: TextDirection; // 文字排列方向：horizontal (从左到右) 或 vertical (从上到下)
@@ -353,7 +398,10 @@ const generateNonOverlappingDrops = (
   width: number,
   height: number,
   laneCount: number,
-  minVerticalGap: number
+  minVerticalGap: number,
+  // 祝福图案配置
+  blessingTypes: BlessingSymbolType[] = [],
+  blessingStyle: BlessingStyleConfig = {}
 ): RainDrop[] => {
   const drops: RainDrop[] = [];
   
@@ -366,6 +414,7 @@ const generateNonOverlappingDrops = (
 
   const hasText = words.length > 0;
   const hasImages = images.length > 0;
+  const hasBlessing = blessingTypes.length > 0;
   
   // 【优化】预先计算常量，避免在循环中重复计算
   const opacityDelta = opacityRange[1] - opacityRange[0];
@@ -377,14 +426,17 @@ const generateNonOverlappingDrops = (
   // 【修复】使用独立计数器来跟踪成功添加的文字/图片数量，确保轮询顺序正确
   let textIndex = 0;   // 文字计数器
   let imageIndex = 0;  // 图片计数器
+  let blessingIndex = 0;  // 祝福图案计数器
 
   for (let i = 0; i < count; i++) {
     const seedValue = seed + i * 1000;
     
     // 决定内容类型
-    let dropType: "text" | "image" = "text";
+    let dropType: "text" | "image" | "blessing" = "text";
     if (contentType === "image") {
       dropType = "image";
+    } else if (contentType === "blessing") {
+      dropType = "blessing";
     } else if (contentType === "mixed" && hasText && hasImages) {
       dropType = random(`type-${seedValue}`) < imageWeight ? "image" : "text";
     } else if (contentType === "mixed" && hasImages) {
@@ -448,6 +500,43 @@ const generateNonOverlappingDrops = (
         delay: 0, duration: 0, width: itemSize, height: itemSize, opacity, rotation,
         swingPhase: random(`swing-${seedValue}`) * Math.PI * 2,
         spinDirection: random(`spin-${seedValue}`) > 0.5 ? 1 : -1,
+      });
+    } else if (dropType === "blessing" && hasBlessing) {
+      // 祝福图案雨滴
+      const currentBlessingIndex = blessingIndex;
+      const blessingType = blessingTypes[blessingIndex % blessingTypes.length];
+      blessingIndex++;
+      
+      // 【优化】使用预计算的 delta 值
+      const itemSize = imageSizeRange[0] + random(`blessingSize-${seedValue}`) * imageSizeDelta;
+      itemWidth = itemSize;
+      itemHeight = itemSize;
+      
+      // 根据图案类型调整尺寸比例
+      const sizeMultiplier = blessingType === "ingotPile" || blessingType === "coinStack" ? 1.5 : 1;
+      
+      drops.push({
+        type: "blessing",
+        id: i,
+        blessingType,
+        x: 0,
+        lane: 0,
+        startY: 0,
+        endY: 0,
+        delay: 0,
+        duration: 0,
+        width: itemSize * sizeMultiplier,
+        height: itemSize * sizeMultiplier,
+        opacity,
+        rotation,
+        scale: 1,
+        primaryColor: blessingStyle.primaryColor ?? "#FFD700",
+        secondaryColor: blessingStyle.secondaryColor ?? "#FFA500",
+        enable3D: blessingStyle.enable3D ?? true,
+        enableGlow: blessingStyle.enableGlow ?? true,
+        glowIntensity: blessingStyle.glowIntensity ?? 1,
+        animated: blessingStyle.animated ?? false,
+        animationDelay: random(`animDelay-${seedValue}`) * 30,
       });
     } else {
       continue;
@@ -663,6 +752,72 @@ const ImageRainDropItem: React.FC<{
   );
 };
 
+const BlessingRainDropItem: React.FC<{
+  drop: BlessingRainDrop;
+  frame: number;
+}> = ({ drop, frame }) => {
+  const currentFrame = frame - drop.delay;
+  if (currentFrame < 0) return null;
+
+  const progress = interpolate(currentFrame, [0, drop.duration], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const easedProgress = Easing.out(Easing.quad)(progress);
+  const y = interpolate(easedProgress, [0, 1], [drop.startY, drop.endY]);
+
+  const fadeInDuration = drop.duration * 0.1;
+  const fadeOutStart = drop.duration * 0.85;
+  
+  let opacity = drop.opacity;
+  if (currentFrame < fadeInDuration) {
+    opacity *= interpolate(currentFrame, [0, fadeInDuration], [0, 1], { extrapolateRight: "clamp" });
+  } else if (currentFrame > fadeOutStart) {
+    opacity *= interpolate(currentFrame, [fadeOutStart, drop.duration], [1, 0], {
+      extrapolateLeft: "clamp", extrapolateRight: "clamp",
+    });
+  }
+
+  // 计算动态旋转
+  let dynamicRotation = drop.rotation;
+  if (drop.animated) {
+    dynamicRotation += currentFrame * 0.5;
+  }
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: drop.x,
+        top: y,
+        transform: `translateX(-50%) rotate(${dynamicRotation}deg) scale(${drop.scale})`,
+        opacity,
+        pointerEvents: "none",
+        width: drop.width,
+        height: drop.height,
+      }}
+    >
+      <BlessingSymbol
+        symbols={[
+          {
+            type: drop.blessingType,
+            x: 50,
+            y: 50,
+            scale: 1,
+            primaryColor: drop.primaryColor,
+            secondaryColor: drop.secondaryColor,
+            enable3D: drop.enable3D,
+            enableGlow: drop.enableGlow,
+            glowIntensity: drop.glowIntensity,
+          },
+        ]}
+        animationSpeed={0}
+      />
+    </div>
+  );
+};
+
 // ==================== 主组件 ====================
 
 export const TextRain: React.FC<TextRainProps> = ({
@@ -682,6 +837,8 @@ export const TextRain: React.FC<TextRainProps> = ({
   minVerticalGap = 80,
   textStyle = {},
   imageStyle = {},
+  blessingTypes = [],
+  blessingStyle = {},
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames, width, height } = useVideoConfig();
@@ -707,6 +864,16 @@ export const TextRain: React.FC<TextRainProps> = ({
     ...imageStyle,
   };
 
+  const mergedBlessingStyle: BlessingStyleConfig = {
+    primaryColor: "#FFD700",
+    secondaryColor: "#FFA500",
+    enable3D: true,
+    enableGlow: true,
+    glowIntensity: 1,
+    animated: false,
+    ...blessingStyle,
+  };
+
   // 【性能关键】计算总雨滴数量
   // 公式：duration(秒) × density × 15
   // 例如：10秒 × 2 × 15 = 300个雨滴
@@ -726,12 +893,14 @@ export const TextRain: React.FC<TextRainProps> = ({
       words, images, contentType, imageWeight, textDirection, totalDrops, durationInFrames, fps / fallSpeed, seed,
       fontSizeRange, imageSizeRange, opacityRange, rotationRange, width, height,
       laneCount, minVerticalGap,
+      blessingTypes, mergedBlessingStyle,
     );
     // 使用 JSON 序列化处理数组依赖，避免引用比较问题
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     JSON.stringify(words),
     JSON.stringify(images),
+    JSON.stringify(blessingTypes),
     contentType,
     imageWeight,
     textDirection,
@@ -748,6 +917,7 @@ export const TextRain: React.FC<TextRainProps> = ({
     height,
     laneCount,
     minVerticalGap,
+    JSON.stringify(mergedBlessingStyle),
   ]);
 
   return (
@@ -755,8 +925,10 @@ export const TextRain: React.FC<TextRainProps> = ({
       {drops.map((drop) => {
         if (drop.type === "text") {
           return <TextRainDropItem key={drop.id} drop={drop} frame={frame} textStyle={mergedTextStyle} />;
-        } else {
+        } else if (drop.type === "image") {
           return <ImageRainDropItem key={drop.id} drop={drop} frame={frame} imageStyle={mergedImageStyle} />;
+        } else {
+          return <BlessingRainDropItem key={drop.id} drop={drop} frame={frame} />;
         }
       })}
     </AbsoluteFill>
@@ -764,4 +936,4 @@ export const TextRain: React.FC<TextRainProps> = ({
 };
 
 // 导出类型
-export type { TextRainProps, RainDrop, TextRainDrop, ImageRainDrop };
+export type { TextRainProps, RainDrop, TextRainDrop, ImageRainDrop, BlessingRainDrop };

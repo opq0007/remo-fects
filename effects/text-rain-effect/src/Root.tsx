@@ -11,19 +11,23 @@ const defaultWords = [
   "健康成长"
 ];
 
-// 默认图片列表 (PNG透明图片)
-const defaultImages = [
-  "gold-ingot.png",    // 金元宝
-  "ancient-coin.png",  // 穿孔钱
-  "gold-coin.png",     // 金币
-];
-
+/**
+ * TextRain 特效预设
+ * 
+ * 本文件包含 4 个代表性预设，更多效果可在 Remotion Studio 中在线调整参数预览。
+ * 
+ * 预设说明：
+ * - TextRain: 主要文字雨效果（烫金3D风格）
+ * - TextRainFast: 快速渲染版本（适合测试）
+ * - BlessingRain: 祝福图案雨（金元宝、金币、莲花等）
+ * - TextRainVertical: 竖排文字雨
+ */
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Folder name="TextRain">
-        {/* 主要的文字雨组合 - 烫金3D效果 (横排) */}
-        {/* 【性能提示】此预设使用视频背景，渲染较慢。如需快速渲染，请使用 TextRainFast 预设 */}
+        {/* 1. 主要的文字雨组合 - 烫金3D效果 */}
+        {/* 【性能提示】此预设使用图片背景，渲染较慢。如需快速渲染，请使用 TextRainFast 预设 */}
         <Composition
           id="TextRain"
           component={TextRainComposition}
@@ -38,7 +42,7 @@ export const RemotionRoot: React.FC = () => {
             textDirection: "vertical",
             density: 2,
             fallSpeed: 0.15,
-            fontSizeRange: [60,60],
+            fontSizeRange: [60, 60],
             imageSizeRange: [80, 150],
             opacityRange: [0.5, 0.95],
             rotationRange: [-10, 10],
@@ -71,12 +75,12 @@ export const RemotionRoot: React.FC = () => {
           }}
         />
 
-        {/* 【优化预设】快速渲染版本 - 适合测试和快速出片 */}
+        {/* 2. 【优化预设】快速渲染版本 - 适合测试和快速出片 */}
         <Composition
           id="TextRainFast"
           component={TextRainComposition}
-          durationInFrames={180}  // 缩短时长到 6 秒
-          fps={24}                // 保持 24fps
+          durationInFrames={180}
+          fps={24}
           width={720}
           height={1280}
           schema={TextRainCompositionSchema}
@@ -84,28 +88,27 @@ export const RemotionRoot: React.FC = () => {
             words: defaultWords,
             contentType: "text",
             textDirection: "vertical",
-            density: 1.5,           // 降低密度
+            density: 1.5,
             fallSpeed: 0.2,
             fontSizeRange: [60, 60],
             imageSizeRange: [80, 120],
             opacityRange: [0.5, 0.95],
-            rotationRange: [-5, 5], // 减小旋转范围
+            rotationRange: [-5, 5],
             seed: 42,
-            laneCount: 4,           // 减少列道数
+            laneCount: 4,
             minVerticalGap: 120,
             textStyle: {
               color: "#ffd700",
-              effect: "shadow",     // 使用简单效果替代 gold3d
+              effect: "shadow",
               effectIntensity: 0.8,
               fontWeight: 800,
               letterSpacing: 2,
             },
-            backgroundType: "color", // 使用纯色背景替代视频
+            backgroundType: "color",
             backgroundColor: "#1a1a2e",
             overlayColor: "#000000",
             overlayOpacity: 0.2,
 
-            // 水印配置
             watermarkEnabled: true,
             watermarkText: "© Remo-Fects",
             watermarkFontSize: 24,
@@ -118,7 +121,55 @@ export const RemotionRoot: React.FC = () => {
           }}
         />
 
-        {/* 预设：竖排文字雨 - 烫金3D效果 */}
+        {/* 3. 祝福图案雨 - 使用 BlessingSymbol 组件生成金元宝、金币、莲花等 */}
+        <Composition
+          id="BlessingRain"
+          component={TextRainComposition}
+          durationInFrames={300}
+          fps={24}
+          width={720}
+          height={1280}
+          schema={TextRainCompositionSchema}
+          defaultProps={{
+            contentType: "blessing",
+            textDirection: "horizontal",
+            // 祝福图案类型：金币、金钱袋、福袋、红包
+            blessingTypes: ["goldCoin", "moneyBag", "luckyBag", "redPacket"],
+            blessingStyle: {
+              primaryColor: "#FFD700",
+              secondaryColor: "#FFA500",
+              enable3D: true,
+              enableGlow: true,
+              glowIntensity: 1,
+              animated: false,
+            },
+            density: 1.5,
+            fallSpeed: 0.18,
+            fontSizeRange: [60, 100],
+            imageSizeRange: [60, 120],
+            opacityRange: [0.7, 1],
+            rotationRange: [-20, 20],
+            seed: 2026,
+            laneCount: 6,
+            minVerticalGap: 100,
+            backgroundType: "color",
+            backgroundColor: "#1a0a2e",
+            overlayColor: "#000000",
+            overlayOpacity: 0.15,
+
+            watermarkEnabled: true,
+            watermarkText: "© Remo-Fects",
+            watermarkFontSize: 24,
+            watermarkColor: "#ffd700",
+            watermarkOpacity: 0.35,
+            watermarkSpeed: 1,
+            watermarkIntensity: 0.8,
+            watermarkVelocityX: 180,
+            watermarkVelocityY: 120,
+          }}
+        />
+
+        {/* 4. 竖排文字雨 - 烫金3D效果 */}
         <Composition
           id="TextRainVertical"
           component={TextRainComposition}
@@ -131,7 +182,7 @@ export const RemotionRoot: React.FC = () => {
             words: defaultWords,
             contentType: "text",
             textDirection: "vertical",
-            density: 1.2,  // 降低密度以提高渲染速度
+            density: 1.2,
             fallSpeed: 0.12,
             fontSizeRange: [60, 100],
             imageSizeRange: [80, 150],
@@ -153,364 +204,10 @@ export const RemotionRoot: React.FC = () => {
             overlayColor: "#000000",
             overlayOpacity: 0.2,
 
-            // 水印配置
             watermarkEnabled: true,
             watermarkText: "© Remo-Fects",
             watermarkFontSize: 24,
             watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-          }}
-        />
-
-        {/* 预设：金元宝下雨特效 */}
-        <Composition
-          id="ImageRainGold"
-          component={TextRainComposition}
-          durationInFrames={240}
-          fps={24}
-          width={1080}
-          height={1920}
-          schema={TextRainCompositionSchema}
-          defaultProps={{
-            images: ["gold-ingot.png", "gold-coin.png"],
-            contentType: "image",
-            textDirection: "horizontal",
-            density: 1.5,  // 降低密度
-            fallSpeed: 0.2,
-            fontSizeRange: [60, 120],
-            imageSizeRange: [80, 160],
-            opacityRange: [0.7, 1],
-            rotationRange: [-20, 20],
-            seed: 100,
-            laneCount: 8,
-            minVerticalGap: 120,
-            imageStyle: {
-              glow: true,
-              glowColor: "#ffd700",
-              glowIntensity: 0.8,
-              shadow: true,
-              shadowBlur: 20,
-              shadowColor: "rgba(0,0,0,0.5)",
-              swing: true,
-              swingAngle: 15,
-              swingSpeed: 2,
-              spin: false,
-            },
-            backgroundType: "color",
-            backgroundColor: "#1a0a1a",
-            overlayColor: "#000000",
-            overlayOpacity: 0.3,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-          }}
-        />
-
-        {/* 预设：古铜钱下雨特效 */}
-        <Composition
-          id="ImageRainCoins"
-          component={TextRainComposition}
-          durationInFrames={240}
-          fps={24}
-          width={1080}
-          height={1920}
-          schema={TextRainCompositionSchema}
-          defaultProps={{
-            images: ["ancient-coin.png", "copper-coin.png"],
-            contentType: "image",
-            textDirection: "horizontal",
-            density: 2,  // 降低密度
-            fallSpeed: 0.15,
-            fontSizeRange: [50, 100],
-            imageSizeRange: [60, 120],
-            opacityRange: [0.6, 0.95],
-            rotationRange: [-30, 30],
-            seed: 200,
-            laneCount: 10,
-            minVerticalGap: 80,
-            imageStyle: {
-              glow: true,
-              glowColor: "#cd7f32",
-              glowIntensity: 0.5,
-              shadow: true,
-              shadowBlur: 15,
-              swing: true,
-              swingAngle: 20,
-              swingSpeed: 3,
-              spin: true,
-              spinSpeed: 0.5,
-            },
-            backgroundType: "color",
-            backgroundColor: "#0d0d0d",
-            overlayColor: "#1a0a00",
-            overlayOpacity: 0.2,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-          }}
-        />
-
-        {/* 预设：文字+图片混合雨特效 */}
-        <Composition
-          id="MixedRain"
-          component={TextRainComposition}
-          durationInFrames={240}
-          fps={24}
-          width={1080}
-          height={1920}
-          schema={TextRainCompositionSchema}
-          defaultProps={{
-            words: ["财源广进", "招财进宝", "恭喜发财", "金玉满堂"],
-            images: ["gold-ingot.png", "gold-coin.png", "money-bag.png"],
-            contentType: "mixed",
-            imageWeight: 0.4,
-            textDirection: "horizontal",
-            density: 1.5,  // 降低密度
-            fallSpeed: 0.18,
-            fontSizeRange: [60, 120],
-            imageSizeRange: [70, 140],
-            opacityRange: [0.6, 1],
-            rotationRange: [-15, 15],
-            seed: 300,
-            laneCount: 8,
-            minVerticalGap: 130,
-            textStyle: {
-              color: "#ffd700",
-              effect: "gold3d",
-              effectIntensity: 0.9,
-              fontWeight: 700,
-            },
-            imageStyle: {
-              glow: true,
-              glowColor: "#ffd700",
-              glowIntensity: 0.7,
-              shadow: true,
-              shadowBlur: 18,
-              swing: true,
-              swingAngle: 12,
-              swingSpeed: 2.5,
-            },
-            backgroundType: "color",
-            backgroundColor: "#0a0a14",
-            overlayColor: "#000000",
-            overlayOpacity: 0.25,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-          }}
-        />
-
-        {/* 预设：简约白底 + 浮雕效果 */}
-        <Composition
-          id="TextRainSimple"
-          component={TextRainComposition}
-          durationInFrames={240}
-          fps={24}
-          width={1080}
-          height={1920}
-          schema={TextRainCompositionSchema}
-          defaultProps={{
-            words: ["平安喜乐", "万事如意", "心想事成"],
-            contentType: "text",
-            textDirection: "horizontal",
-            density: 1.2,  // 降低密度
-            fallSpeed: 0.27,
-            fontSizeRange: [60, 140],
-            imageSizeRange: [60, 120],
-            opacityRange: [0.6, 1],
-            rotationRange: [-5, 5],
-            seed: 100,
-            laneCount: 6,
-            minVerticalGap: 150,
-            textStyle: {
-              color: "#333333",
-              effect: "emboss",
-              effectIntensity: 0.8,
-              fontWeight: 700,
-              letterSpacing: 3,
-            },
-            backgroundType: "color",
-            backgroundColor: "#f5f5f5",
-            overlayOpacity: 0,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#333333",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-          }}
-        />
-
-        {/* 预设：霓虹发光效果 */}
-        <Composition
-          id="TextRainNeon"
-          component={TextRainComposition}
-          durationInFrames={240}
-          fps={24}
-          width={1920}
-          height={1080}
-          schema={TextRainCompositionSchema}
-          defaultProps={{
-            words: ["精彩", "冲刺", "闪耀", "星光", "美好", "温暖"],
-            contentType: "text",
-            textDirection: "horizontal",
-            density: 1.5,  // 降低密度
-            fallSpeed: 0.4,
-            fontSizeRange: [72, 150],
-            imageSizeRange: [80, 150],
-            opacityRange: [0.7, 1],
-            rotationRange: [-15, 15],
-            seed: 888,
-            laneCount: 10,
-            minVerticalGap: 120,
-            textStyle: {
-              color: "#00ffff",
-              effect: "neon",
-              effectIntensity: 1,
-              fontWeight: 700,
-              shadowColor: "#ff00ff",
-              shadowBlur: 30,
-            },
-            backgroundType: "color",
-            backgroundColor: "#0a0a1a",
-            overlayOpacity: 0,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#00ffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-          }}
-        />
-
-        {/* 预设：渐变金属效果 */}
-        <Composition
-          id="TextRainGradient"
-          component={TextRainComposition}
-          durationInFrames={240}
-          fps={24}
-          width={1920}
-          height={1080}
-          schema={TextRainCompositionSchema}
-          defaultProps={{
-            words: ["前程似锦", "步步高升", "飞黄腾达", "鹏程万里", "大展宏图"],
-            contentType: "text",
-            textDirection: "horizontal",
-            density: 1.2,  // 降低密度
-            fallSpeed: 0.2,
-            fontSizeRange: [64, 140],
-            imageSizeRange: [80, 150],
-            opacityRange: [0.6, 1],
-            rotationRange: [-8, 8],
-            seed: 555,
-            laneCount: 8,
-            minVerticalGap: 150,
-            textStyle: {
-              gradient: {
-                type: "linear",
-                colors: ["#ffd700", "#ff8c00", "#ff4500"],
-                angle: 135,
-              },
-              effect: "3d",
-              effectIntensity: 0.9,
-              fontWeight: 800,
-              letterSpacing: 4,
-            },
-            backgroundType: "color",
-            backgroundColor: "#1a0a2e",
-            overlayColor: "#000000",
-            overlayOpacity: 0.3,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffd700",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-          }}
-        />
-
-        {/* 预设：复古怀旧效果 */}
-        <Composition
-          id="TextRainRetro"
-          component={TextRainComposition}
-          durationInFrames={240}
-          fps={24}
-          width={1920}
-          height={1080}
-          schema={TextRainCompositionSchema}
-          defaultProps={{
-            words: ["岁月静好", "时光荏苒", "岁月如歌", "初心不改"],
-            contentType: "text",
-            textDirection: "horizontal",
-            density: 1.2,  // 降低密度
-            fallSpeed: 0.13,
-            fontSizeRange: [60, 130],
-            imageSizeRange: [70, 130],
-            opacityRange: [0.5, 0.9],
-            rotationRange: [-12, 12],
-            seed: 333,
-            laneCount: 8,
-            minVerticalGap: 130,
-            textStyle: {
-              color: "#d4a574",
-              effect: "retro",
-              effectIntensity: 0.9,
-              fontWeight: 700,
-              letterSpacing: 5,
-            },
-            backgroundType: "color",
-            backgroundColor: "#2d1f14",
-            overlayColor: "#1a120a",
-            overlayOpacity: 0.2,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#d4a574",
             watermarkOpacity: 0.35,
             watermarkSpeed: 1,
             watermarkIntensity: 0.8,

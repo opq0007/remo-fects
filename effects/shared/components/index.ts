@@ -23,3 +23,5 @@ export { Marquee } from "./Marquee";
 
 export { BaseComposition } from "./BaseComposition";
 export type { BaseCompositionComponentProps } from "./BaseComposition";
+
+export { BlessingSymbol } from "./BlessingSymbol";
