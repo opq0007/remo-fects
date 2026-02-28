@@ -380,7 +380,7 @@ const MarqueeLayer: React.FC<{
 
         if (isHorizontalOrientation) {
           // 水平排列：文字项沿 X 轴排列，Y 固定
-          itemStyle.left = currentPos;
+          itemStyle.left = currentPos + offsetX;
           itemStyle.top = baseY;
           itemStyle.transform = "translateY(-50%)";
           currentPos += textWidth + spacing;
@@ -475,8 +475,8 @@ const MarqueeLayer: React.FC<{
     <div style={containerStyle}>
       {/* 第一组内容 */}
       {renderContent(0)}
-      {/* 第二组内容（用于无缝循环） */}
-      {renderContent(contentSize + spacing)}
+      {/* 第二组内容（用于无缝循环，起始位置为 contentSize） */}
+      {renderContent(contentSize)}
     </div>
   );
 };
