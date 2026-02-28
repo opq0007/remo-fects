@@ -79,6 +79,9 @@ export interface ImageStyleConfig {
 // 内容类型
 export type RainContentType = "text" | "image" | "mixed" | "blessing";
 
+// 运动方向
+export type FallDirection = "down" | "up";  // down: 从上到下, up: 从下到上
+
 // 祝福图案样式配置
 export interface BlessingStyleConfig {
   primaryColor?: string;
@@ -175,6 +178,9 @@ interface TextRainProps {
   
   // 文字排列方向
   textDirection?: TextDirection; // 文字排列方向：horizontal (从左到右) 或 vertical (从上到下)
+  
+  // 运动方向
+  fallDirection?: FallDirection; // 雨滴运动方向：down (从上到下，默认) 或 up (从下到上)
   
   // 雨滴配置
   density?: number;
@@ -387,6 +393,7 @@ const generateNonOverlappingDrops = (
   contentType: RainContentType,
   imageWeight: number,
   textDirection: TextDirection,
+  fallDirection: FallDirection,  // 运动方向
   count: number,
   durationInFrames: number,
   fps: number,
@@ -596,17 +603,29 @@ const generateNonOverlappingDrops = (
     const fallDistance = height + itemHeight * 2;
     const fallPixelsPerFrame = fallDistance / baseDuration;
     
+    // 【修复】碰撞检测中也要根据 fallDirection 计算正确的起始位置
+    const collisionStartY = fallDirection === "up" 
+      ? height + itemHeight + random(`startY-${seedValue}`) * itemHeight
+      : -itemHeight - random(`startY-${seedValue}`) * itemHeight;
+    const collisionEndY = fallDirection === "up" 
+      ? -itemHeight 
+      : height + itemHeight;
+    
     for (const lane of shuffledLanes) {
-      const startY = -itemHeight - random(`startY-${seedValue}`) * itemHeight;
-      const endY = height + itemHeight;
-      
       let hasCollision = false;
       for (const occupied of laneOccupancy[lane]) {
         const timeOverlap = !(baseDelay + baseDuration < occupied.startTime || baseDelay > occupied.endTime);
         if (timeOverlap) {
           const frameAtOverlap = Math.max(baseDelay, occupied.startTime);
-          const currentY = startY + (frameAtOverlap - baseDelay) * fallPixelsPerFrame;
-          const occupiedY = occupied.startY + (frameAtOverlap - occupied.startTime) * fallPixelsPerFrame;
+          // 【修复】根据运动方向计算当前位置
+          // down: startY -> endY (从负数到正数，Y增加)
+          // up: startY -> endY (从正数到负数，Y减少)
+          const currentY = fallDirection === "up"
+            ? collisionStartY - (frameAtOverlap - baseDelay) * fallPixelsPerFrame
+            : collisionStartY + (frameAtOverlap - baseDelay) * fallPixelsPerFrame;
+          const occupiedY = fallDirection === "up"
+            ? occupied.startY - (frameAtOverlap - occupied.startTime) * fallPixelsPerFrame
+            : occupied.startY + (frameAtOverlap - occupied.startTime) * fallPixelsPerFrame;
           if (Math.abs(currentY - occupiedY) < itemHeight + minVerticalGap) {
             hasCollision = true;
             break;
@@ -637,8 +656,10 @@ const generateNonOverlappingDrops = (
     const laneX = selectedLane * laneWidth + laneWidth / 2;
     const offsetX = (random(`offset-${seedValue}-${selectedLane}`) - 0.5) * laneWidth * 0.6;
     const x = laneX + offsetX;
-    const startY = -itemHeight - random(`startY-${seedValue}`) * itemHeight;
-    const endY = height + itemHeight;
+    
+    // 【修复】使用碰撞检测中已计算的 startY 和 endY
+    const startY = collisionStartY;
+    const endY = collisionEndY;
     
     laneOccupancy[selectedLane].push({
       startY, endY, startTime: bestDelay, endTime: bestDelay + bestDuration,
@@ -702,14 +723,12 @@ const TextRainDropItem: React.FC<{
         top: y,
         transform: `translateX(-50%) rotate(${effectiveRotation}deg)`,
         opacity,
-        whiteSpace: isVertical ? "normal" : "nowrap",
+        // 【修复】垂直文字使用 writingMode 实现竖排，不需要额外的 flex 布局
+        // writingMode 和 flex 组合会导致渲染不稳定，文字可能先水平后垂直
+        whiteSpace: isVertical ? "nowrap" : "nowrap",
         writingMode: isVertical ? "vertical-rl" : "horizontal-tb",
         textOrientation: isVertical ? "upright" : "mixed",
         pointerEvents: "none",
-        display: "flex",
-        flexDirection: isVertical ? "column" : "row",
-        alignItems: "center",
-        justifyContent: isVertical ? "flex-start" : "center",
         lineHeight: isVertical ? 1.1 : 1.2,
         ...textStyles,
       }}
@@ -858,6 +877,7 @@ export const TextRain: React.FC<TextRainProps> = ({
   contentType = "text",
   imageWeight = 0.5,
   textDirection = "horizontal",
+  fallDirection = "down",  // 默认从上到下
   density = 3,
   fallSpeed = 1,
   fontSizeRange = [24, 72],
@@ -922,7 +942,7 @@ export const TextRain: React.FC<TextRainProps> = ({
   const drops = useMemo(() => {
     // 【性能提示】这是渲染的主要瓶颈，雨滴数量越多计算越慢
     return generateNonOverlappingDrops(
-      words, images, contentType, imageWeight, textDirection, totalDrops, durationInFrames, fps / fallSpeed, seed,
+      words, images, contentType, imageWeight, textDirection, fallDirection, totalDrops, durationInFrames, fps / fallSpeed, seed,
       fontSizeRange, imageSizeRange, opacityRange, rotationRange, width, height,
       laneCount, minVerticalGap,
       blessingTypes, mergedBlessingStyle,
@@ -936,6 +956,7 @@ export const TextRain: React.FC<TextRainProps> = ({
     contentType,
     imageWeight,
     textDirection,
+    fallDirection,
     totalDrops,
     durationInFrames,
     fps,

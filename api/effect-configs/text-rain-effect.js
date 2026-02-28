@@ -17,61 +17,121 @@ const config = {
 };
 
 /**
+ * 数组解析器工厂函数
+ */
+const arrayParser = (defaultValue = []) => (v) => {
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string') {
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v.split(',').map(w => w.trim()).filter(w => w);
+    }
+  }
+  return defaultValue;
+};
+
+/**
+ * 对象解析器工厂函数
+ */
+const objectParser = (defaultValue = {}) => (v) => {
+  if (typeof v === 'string') {
+    try {
+      return JSON.parse(v);
+    } catch {
+      return defaultValue;
+    }
+  }
+  return v || defaultValue;
+};
+
+/**
  * 特效特有参数定义
  */
 const params = {
+  // ===== 内容类型 =====
+  contentType: {
+    type: 'string',
+    defaultValue: 'text',
+    description: '内容类型：text(纯文字) | image(纯图片) | blessing(祝福图案) | mixed(混合模式)'
+  },
+
   // ===== 文字内容 =====
   words: {
     type: 'array',
     defaultValue: [],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return v.split(',').map(w => w.trim()).filter(w => w);
-        }
-      }
-      return [];
-    },
-    required: true,
+    parser: arrayParser([]),
     description: '文字列表'
+  },
+
+  // ===== 图片内容 =====
+  images: {
+    type: 'array',
+    defaultValue: [],
+    parser: arrayParser([]),
+    description: '图片路径列表 (相对于 public 目录)'
+  },
+  imageWeight: {
+    type: 'number',
+    defaultValue: 0.5,
+    parser: (v) => Math.max(0, Math.min(1, parseFloat(v) || 0.5)),
+    description: 'mixed 模式下图片出现权重 (0-1)'
+  },
+
+  // ===== 祝福图案配置 =====
+  blessingTypes: {
+    type: 'array',
+    defaultValue: [],
+    parser: arrayParser([]),
+    description: '祝福图案类型列表：goldCoin(金币) | moneyBag(金钱袋) | luckyBag(福袋) | redPacket(红包)'
+  },
+  blessingStyle: {
+    type: 'object',
+    defaultValue: {
+      primaryColor: '#FFD700',
+      secondaryColor: '#FFA500',
+      enable3D: true,
+      enableGlow: true,
+      glowIntensity: 1,
+      animated: false
+    },
+    parser: objectParser({
+      primaryColor: '#FFD700',
+      secondaryColor: '#FFA500',
+      enable3D: true,
+      enableGlow: true,
+      glowIntensity: 1,
+      animated: false
+    }),
+    description: '祝福图案样式配置'
   },
 
   // ===== 文字方向 =====
   textDirection: {
     type: 'string',
     defaultValue: 'horizontal',
-    description: '文字方向：horizontal | vertical'
+    description: '文字排列方向：horizontal(横排) | vertical(竖排)'
   },
-  contentType: {
+
+  // ===== 运动方向 =====
+  fallDirection: {
     type: 'string',
-    defaultValue: 'text',
-    description: '内容类型'
+    defaultValue: 'down',
+    description: '雨滴运动方向：down(从上到下) | up(从下到上)'
   },
 
   // ===== 字体配置 =====
   fontSizeRange: {
     type: 'array',
     defaultValue: [80, 160],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return [80, 160];
-        }
-      }
-      return [80, 160];
-    },
+    parser: arrayParser([80, 160]),
     description: '字体大小范围 [min, max]'
   },
   imageSizeRange: {
     type: 'array',
     defaultValue: [80, 150],
-    description: '图片大小范围'
+    parser: arrayParser([80, 150]),
+    description: '图片大小范围 [min, max]'
   },
 
   // ===== 运动参数 =====
@@ -79,7 +139,7 @@ const params = {
     type: 'number',
     defaultValue: 0.15,
     parser: (v) => parseFloat(v) || 0.15,
-    description: '下落速度系数'
+    description: '下落/上升速度系数'
   },
   density: {
     type: 'number',
@@ -104,33 +164,13 @@ const params = {
   opacityRange: {
     type: 'array',
     defaultValue: [0.6, 1],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return [0.6, 1];
-        }
-      }
-      return [0.6, 1];
-    },
+    parser: arrayParser([0.6, 1]),
     description: '透明度范围 [min, max]'
   },
   rotationRange: {
     type: 'array',
     defaultValue: [-10, 10],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return [-10, 10];
-        }
-      }
-      return [-10, 10];
-    },
+    parser: arrayParser([-10, 10]),
     description: '旋转角度范围 [min, max]'
   },
 
@@ -144,16 +184,13 @@ const params = {
       fontWeight: 700,
       letterSpacing: 4
     },
-    parser: (v) => {
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return { color: '#ffd700', effect: 'gold3d', effectIntensity: 0.9, fontWeight: 700, letterSpacing: 4 };
-        }
-      }
-      return v || { color: '#ffd700', effect: 'gold3d', effectIntensity: 0.9, fontWeight: 700, letterSpacing: 4 };
-    },
+    parser: objectParser({
+      color: '#ffd700',
+      effect: 'gold3d',
+      effectIntensity: 0.9,
+      fontWeight: 700,
+      letterSpacing: 4
+    }),
     description: '文字样式配置'
   },
 
@@ -172,9 +209,31 @@ const params = {
  * @returns {{ valid: boolean, error?: string }}
  */
 function validate(params) {
-  if (!params.words || params.words.length === 0) {
-    return { valid: false, error: '请提供文字列表 (words)' };
+  const { contentType, words, images, blessingTypes } = params;
+
+  // 根据内容类型验证必要参数
+  if (contentType === 'text') {
+    if (!words || words.length === 0) {
+      return { valid: false, error: 'text 模式需要提供文字列表 (words)' };
+    }
+  } else if (contentType === 'image') {
+    if (!images || images.length === 0) {
+      return { valid: false, error: 'image 模式需要提供图片列表 (images)' };
+    }
+  } else if (contentType === 'blessing') {
+    if (!blessingTypes || blessingTypes.length === 0) {
+      return { valid: false, error: 'blessing 模式需要提供祝福图案类型列表 (blessingTypes)' };
+    }
+  } else if (contentType === 'mixed') {
+    // mixed 模式至少需要提供一种内容
+    const hasContent = (words && words.length > 0) || 
+                       (images && images.length > 0) || 
+                       (blessingTypes && blessingTypes.length > 0);
+    if (!hasContent) {
+      return { valid: false, error: 'mixed 模式需要至少提供 words、images 或 blessingTypes 中的一种' };
+    }
   }
+
   return { valid: true };
 }
 
@@ -192,13 +251,10 @@ function buildRenderParams(reqParams, commonParams) {
   for (const [name, def] of Object.entries(params)) {
     if (reqParams[name] !== undefined && reqParams[name] !== null && reqParams[name] !== '') {
       result[name] = def.parser ? def.parser(reqParams[name]) : reqParams[name];
-    } else {
+    } else if (def.defaultValue !== undefined) {
       result[name] = typeof def.defaultValue === 'function' ? def.defaultValue() : def.defaultValue;
     }
   }
-
-  // 设置 contentType
-  result.contentType = 'text';
 
   return result;
 }

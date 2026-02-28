@@ -1,5 +1,5 @@
 import React from "react";
-import { TextRain, TextStyleConfig, ImageStyleConfig, RainContentType, TextDirection, BlessingStyleConfig } from "./TextRain";
+import { TextRain, TextStyleConfig, ImageStyleConfig, RainContentType, TextDirection, FallDirection, BlessingStyleConfig } from "./TextRain";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
@@ -85,6 +85,9 @@ export const TextRainCompositionSchema = z.object({
   // 文字排列方向
   textDirection: z.enum(["horizontal", "vertical"]).meta({ description: "文字排列方向：horizontal (从左到右) 或 vertical (从上到下)" }),
   
+  // 运动方向
+  fallDirection: z.enum(["down", "up"]).optional().meta({ description: "雨滴运动方向：down (从上到下，默认) 或 up (从下到上)" }),
+  
   // 雨滴配置
   density: z.number().min(1).max(20).meta({ description: "雨滴密度" }),
   fallSpeed: z.number().min(0.1).max(2).meta({ description: "下落速度系数" }),
@@ -128,6 +131,7 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   contentType = "text",
   imageWeight = 0.5,
   textDirection = "horizontal",
+  fallDirection = "down",  // 默认从上到下
   density = 2,
   fallSpeed = 0.2,
   fontSizeRange = [72, 140],
@@ -291,6 +295,7 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
         contentType={contentType}
         imageWeight={imageWeight}
         textDirection={textDirection}
+        fallDirection={fallDirection}
         density={density}
         fallSpeed={fallSpeed}
         fontSizeRange={fontSizeRange}
