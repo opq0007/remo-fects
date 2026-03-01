@@ -1,15 +1,39 @@
 import React from "react";
-import { useCurrentFrame, useVideoConfig, interpolate } from "remotion";
+import { useCurrentFrame, useVideoConfig, interpolate, Img, staticFile } from "remotion";
+import { SingleBlessingSymbol, BlessingSymbolType } from "../../shared/index";
+
+// ==================== 类型定义 ====================
+
+export type FireworkContentType = "text" | "image" | "blessing";
 
 interface FireworkProps {
-  text: string;
+  // 内容配置
+  contentType?: FireworkContentType;
+  text?: string;
+  imageSrc?: string;
+  blessingType?: BlessingSymbolType;
+  blessingStyle?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    enable3D?: boolean;
+    enableGlow?: boolean;
+    glowIntensity?: number;
+  };
+  
+  // 位置配置
   startX: number;
   startY: number;
   targetX: number;
   targetY: number;
   launchFrame: number;
   explodeFrame: number;
+  
+  // 尺寸配置
   fontSize: number;
+  imageSize?: number;
+  blessingSize?: number;
+  
+  // 颜色配置
   textColor: string;
   glowColor: string;
   glowIntensity: number;
@@ -37,8 +61,14 @@ interface ExplosionRing {
   color: string;
 }
 
+// ==================== 主组件 ====================
+
 export const Firework: React.FC<FireworkProps> = ({
+  contentType = "text",
   text,
+  imageSrc,
+  blessingType,
+  blessingStyle = {},
   startX,
   startY,
   targetX,
@@ -46,6 +76,8 @@ export const Firework: React.FC<FireworkProps> = ({
   launchFrame,
   explodeFrame,
   fontSize,
+  imageSize,
+  blessingSize,
   textColor,
   glowColor,
   glowIntensity,
@@ -62,14 +94,19 @@ export const Firework: React.FC<FireworkProps> = ({
   const rocketX = interpolate(easeOut(launchProgress), [0, 1], [startX, targetX]);
   const rocketY = interpolate(easeOut(launchProgress), [0, 1], [startY, targetY]);
 
+  // 确定内容哈希（用于随机种子）
+  const contentHash = contentType === "text" 
+    ? (text?.split('').reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0) ?? 0)
+    : contentType === "image"
+    ? (imageSrc?.length ?? 0) * 100
+    : (blessingType?.length ?? 0) * 200;
+
   // 生成增强的爆炸粒子（多种类型）
   const particles = React.useMemo(() => {
     const particles: Particle[] = [];
     
-    // 使用确定性随机数生成器（基于 text 的哈希）
-    const textHash = text.split('').reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0);
     const seededRandom = (seed: number) => {
-      const x = Math.sin((textHash + seed) * 9999) * 10000;
+      const x = Math.sin((contentHash + seed) * 9999) * 10000;
       return x - Math.floor(x);
     };
     
@@ -141,7 +178,7 @@ export const Firework: React.FC<FireworkProps> = ({
     }
     
     return particles;
-  }, [particleCount, glowColor, textColor, text]);
+  }, [particleCount, glowColor, textColor, contentHash]);
 
   // 爆炸波纹效果
   const explosionRings = React.useMemo(() => {
@@ -159,7 +196,7 @@ export const Firework: React.FC<FireworkProps> = ({
   }, [glowColor]);
 
   // 计算爆炸后的粒子位置
-  const explosionProgress = Math.max(0, (frame - explodeFrame) / 80); // 80帧内完成
+  const explosionProgress = Math.max(0, (frame - explodeFrame) / 80);
   
   const renderedParticles = particles.map((particle, index) => {
     if (frame < explodeFrame) return null;
@@ -167,7 +204,6 @@ export const Firework: React.FC<FireworkProps> = ({
     const progress = Math.min(1, explosionProgress);
     const gravity = 0.12;
     
-    // 粒子生命周期（基于进度计算，不修改原始对象）
     const life = Math.max(0, 1 - progress * (particle.decay * 80));
     if (life <= 0) return null;
     
@@ -176,9 +212,7 @@ export const Firework: React.FC<FireworkProps> = ({
     const opacity = life;
     const size = particle.size * (1 - progress * 0.3);
     
-    // 根据粒子类型渲染不同效果
     if (particle.type === 'star') {
-      // 十字星效果
       return (
         <div
           key={index}
@@ -197,7 +231,6 @@ export const Firework: React.FC<FireworkProps> = ({
         />
       );
     } else if (particle.type === 'ring') {
-      // 环形粒子
       return (
         <div
           key={index}
@@ -217,7 +250,6 @@ export const Firework: React.FC<FireworkProps> = ({
         />
       );
     } else {
-      // 普通火花
       return (
         <div
           key={index}
@@ -273,6 +305,118 @@ export const Firework: React.FC<FireworkProps> = ({
     ? interpolate(frame, [explodeFrame, explodeFrame + 5], [1, 0], { extrapolateRight: 'clamp' })
     : 0;
 
+  // 渲染爆炸内容
+  const renderContent = () => {
+    if (frame < explodeFrame) return null;
+
+    const contentOpacity = Math.max(0, 1 - explosionProgress * 0.8);
+
+    if (contentType === "text" && text) {
+      return (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              left: targetX,
+              top: targetY,
+              transform: "translate(-50%, -50%)",
+              fontSize: fontSize,
+              fontWeight: "bold",
+              color: textColor,
+              textShadow: `
+                0 0 ${20 * glowIntensity}px ${glowColor},
+                0 0 ${40 * glowIntensity}px ${glowColor},
+                0 0 ${60 * glowIntensity}px ${textColor},
+                0 0 ${80 * glowIntensity}px ${textColor}
+              `,
+              opacity: contentOpacity,
+              whiteSpace: "nowrap",
+              fontFamily: "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
+              letterSpacing: "4px",
+              zIndex: 10,
+            }}
+          >
+            {text}
+          </div>
+          {/* 文字外发光环 */}
+          <div
+            style={{
+              position: "absolute",
+              left: targetX,
+              top: targetY,
+              transform: "translate(-50%, -50%)",
+              fontSize: fontSize,
+              fontWeight: "bold",
+              color: "transparent",
+              WebkitTextStroke: `2px ${glowColor}`,
+              opacity: contentOpacity * 0.5,
+              whiteSpace: "nowrap",
+              fontFamily: "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
+              letterSpacing: "4px",
+              zIndex: 9,
+            }}
+          >
+            {text}
+          </div>
+        </>
+      );
+    }
+
+    if (contentType === "image" && imageSrc) {
+      const size = imageSize ?? fontSize * 1.5;
+      return (
+        <div
+          style={{
+            position: "absolute",
+            left: targetX,
+            top: targetY,
+            transform: "translate(-50%, -50%)",
+            opacity: contentOpacity,
+            filter: `drop-shadow(0 0 ${20 * glowIntensity}px ${glowColor})`,
+            zIndex: 10,
+          }}
+        >
+          <Img
+            src={staticFile(imageSrc)}
+            style={{
+              width: size,
+              height: size,
+              objectFit: "contain",
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (contentType === "blessing" && blessingType) {
+      const size = blessingSize ?? fontSize * 1.2;
+      return (
+        <div
+          style={{
+            position: "absolute",
+            left: targetX,
+            top: targetY,
+            transform: "translate(-50%, -50%)",
+            opacity: contentOpacity,
+            zIndex: 10,
+          }}
+        >
+          <SingleBlessingSymbol
+            type={blessingType}
+            size={size}
+            primaryColor={blessingStyle.primaryColor ?? textColor}
+            secondaryColor={blessingStyle.secondaryColor ?? glowColor}
+            enable3D={blessingStyle.enable3D ?? true}
+            enableGlow={blessingStyle.enableGlow ?? true}
+            glowIntensity={blessingStyle.glowIntensity ?? glowIntensity}
+          />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <>
       {/* 发射火箭 */}
@@ -291,7 +435,6 @@ export const Firework: React.FC<FireworkProps> = ({
               zIndex: 10,
             }}
           />
-          {/* 火箭尾迹 */}
           <div
             style={{
               position: "absolute",
@@ -305,7 +448,6 @@ export const Firework: React.FC<FireworkProps> = ({
               zIndex: 9,
             }}
           />
-          {/* 火箭头光晕 */}
           <div
             style={{
               position: "absolute",
@@ -346,55 +488,8 @@ export const Firework: React.FC<FireworkProps> = ({
       {/* 爆炸波纹 */}
       {renderedRings}
       
-      {/* 爆炸文字 */}
-      {frame >= explodeFrame && (
-        <>
-          <div
-            style={{
-              position: "absolute",
-              left: targetX,
-              top: targetY,
-              transform: "translate(-50%, -50%)",
-              fontSize: fontSize,
-              fontWeight: "bold",
-              color: textColor,
-              textShadow: `
-                0 0 ${20 * glowIntensity}px ${glowColor},
-                0 0 ${40 * glowIntensity}px ${glowColor},
-                0 0 ${60 * glowIntensity}px ${textColor},
-                0 0 ${80 * glowIntensity}px ${textColor}
-              `,
-              opacity: Math.max(0, 1 - explosionProgress * 0.8),
-              whiteSpace: "nowrap",
-              fontFamily: "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
-              letterSpacing: "4px",
-              zIndex: 10,
-            }}
-          >
-            {text}
-          </div>
-          {/* 文字外发光环 */}
-          <div
-            style={{
-              position: "absolute",
-              left: targetX,
-              top: targetY,
-              transform: "translate(-50%, -50%)",
-              fontSize: fontSize,
-              fontWeight: "bold",
-              color: "transparent",
-              WebkitTextStroke: `2px ${glowColor}`,
-              opacity: Math.max(0, (1 - explosionProgress * 0.8) * 0.5),
-              whiteSpace: "nowrap",
-              fontFamily: "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
-              letterSpacing: "4px",
-              zIndex: 9,
-            }}
-          >
-            {text}
-          </div>
-        </>
-      )}
+      {/* 爆炸内容 */}
+      {renderContent()}
       
       {/* 爆炸粒子 */}
       {renderedParticles}

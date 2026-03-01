@@ -71,6 +71,9 @@ export const TextGrowExplodeCompositionSchema = BackgroundSchema.extend({
   
   // 随机种子
   seed: z.number().meta({ description: "随机种子" }),
+  
+  // 循环播放
+  enableLoop: z.boolean().optional().meta({ description: "启用循环播放" }),
 
   // 遮罩效果（从 OverlaySchema 继承）
   ...OverlaySchema.shape,
@@ -145,6 +148,7 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
   backgroundOpacity = 0.9,
   explodeBackgroundOpacity = 0.5,
   seed = 42,
+  enableLoop = false,
   overlayColor = "#000000",
   overlayOpacity = 0.15,
   audioEnabled = false,
@@ -184,11 +188,29 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
   marqueeBackgroundOffsetY,
 }) => {
   const frame = useCurrentFrame();
-  const { width, height } = useVideoConfig();
+  const { width, height, durationInFrames } = useVideoConfig();
 
   const contourPoints = useMemo(() => {
     return contourPointsData || [];
   }, [contourPointsData]);
+
+  // 单个动画周期的时长
+  const cycleDuration = useMemo(() => {
+    return growDuration + holdDuration + explodeDuration + fallDuration;
+  }, [growDuration, holdDuration, explodeDuration, fallDuration]);
+
+  // 计算当前帧所在的周期和周期内帧数
+  const cycleInfo = useMemo(() => {
+    if (enableLoop && cycleDuration > 0) {
+      const cycleIndex = Math.floor(frame / cycleDuration);
+      const frameInCycle = frame % cycleDuration;
+      return { cycleIndex, frameInCycle };
+    }
+    return { cycleIndex: 0, frameInCycle: frame };
+  }, [frame, enableLoop, cycleDuration]);
+
+  const currentFrame = cycleInfo.frameInCycle;
+  const cycleIndex = cycleInfo.cycleIndex;
 
   const timings = useMemo(() => ({
     growEndFrame: growDuration,
@@ -198,33 +220,34 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
     fallEndFrame: growDuration + holdDuration + explodeDuration + fallDuration,
   }), [growDuration, holdDuration, explodeDuration, fallDuration]);
 
+  // 使用 cycleIndex 作为 seed 的一部分，确保每个周期粒子不同
   const particles = useMemo(() => {
-    return generateParticles(width / 2, height / 2, words, particleCount, particleFontSize, seed);
-  }, [width, height, words, particleCount, particleFontSize, seed]);
+    return generateParticles(width / 2, height / 2, words, particleCount, particleFontSize, seed + cycleIndex * 1000);
+  }, [width, height, words, particleCount, particleFontSize, seed, cycleIndex]);
 
   const backgroundProgress = interpolate(
-    frame,
+    currentFrame,
     [timings.explodeStartFrame, timings.explodeStartFrame + 15],
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
   const growOpacity = interpolate(
-    frame,
+    currentFrame,
     [timings.explodeStartFrame - 10, timings.explodeStartFrame],
     [1, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
   const flashIntensity = interpolate(
-    frame,
+    currentFrame,
     [timings.explodeStartFrame, timings.explodeStartFrame + 5, timings.explodeStartFrame + 15],
     [1, 0.5, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
 
-  const isGrowPhase = frame < timings.explodeStartFrame;
-  const isExplodePhase = frame >= timings.explodeStartFrame;
+  const isGrowPhase = currentFrame < timings.explodeStartFrame;
+  const isExplodePhase = currentFrame >= timings.explodeStartFrame;
   const showGrow = isGrowPhase && contourPoints.length > 0 && growOpacity > 0;
 
   return (
@@ -255,7 +278,7 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
             glowIntensity={glowIntensity}
             startY={height + 50}
             growStyle={growStyle}
-            seed={seed}
+            seed={seed + cycleIndex * 1000}
           />
         </AbsoluteFill>
       )}

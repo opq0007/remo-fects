@@ -3,7 +3,7 @@ import {
   useVideoConfig,
   useCurrentFrame,
 } from "remotion";
-import { TextBreakthrough } from "./TextBreakthrough";
+import { TextBreakthrough, BreakthroughContentType } from "./TextBreakthrough";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
@@ -11,35 +11,15 @@ import {
   StarField,
   CenterGlow,
   CompleteCompositionSchema,
-  type WatermarkProps,
+  MixedInputSchema,
+  BlessingSymbolType,
+  DEFAULT_BLESSING_TYPES,
+  seededRandom,
 } from "../../shared/index";
 
-// ==================== 特有 Schema 定义 ====================
+// ==================== 主组件 Schema ====================
 
-export const TextFinalPositionSchema = z.object({
-  defaultX: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认水平位置" }),
-  defaultY: z.number().min(-0.5).max(0.5).optional().meta({ description: "默认垂直位置" }),
-  groupPositions: z.array(z.object({
-    x: z.number().min(-0.5).max(0.5).meta({ description: "水平位置" }),
-    y: z.number().min(-0.5).max(0.5).meta({ description: "垂直位置" }),
-    arrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "排列方式" }),
-    arrangementSpacing: z.number().min(0).max(0.5).optional().meta({ description: "排列间距" }),
-  })).optional().meta({ description: "每个文字组的独立位置配置" }),
-  autoArrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "自动排列方式" }),
-  autoArrangementSpacing: z.number().min(0).max(0.5).optional().meta({ description: "自动排列间距" }),
-});
-
-// ==================== 主组件 Schema（使用公共 Schema）====================
-
-export const TextBreakthroughCompositionSchema = CompleteCompositionSchema.extend({
-  // 文字配置
-  textGroups: z.array(z.object({
-    texts: z.array(z.string()).min(1).meta({ description: "一组文字" }),
-    groupDelay: z.number().optional().meta({ description: "延迟帧数" }),
-  })).min(1).meta({ description: "文字组列表" }),
-
-  finalPosition: TextFinalPositionSchema.optional().meta({ description: "文字最终定格位置配置" }),
-
+export const TextBreakthroughCompositionSchema = CompleteCompositionSchema.merge(MixedInputSchema).extend({
   // 字体配置
   fontSize: z.number().min(20).max(300).meta({ description: "基础字体大小" }),
   fontFamily: z.string().meta({ description: "字体名称" }),
@@ -51,6 +31,10 @@ export const TextBreakthroughCompositionSchema = CompleteCompositionSchema.exten
   secondaryGlowColor: zColor().meta({ description: "次要发光颜色" }),
   glowIntensity: z.number().min(0.1).max(3).meta({ description: "发光强度" }),
   bevelDepth: z.number().min(0).max(10).meta({ description: "3D立体深度" }),
+
+  // 图片/祝福图案配置
+  imageSize: z.number().min(20).max(300).optional().meta({ description: "图片大小" }),
+  blessingSize: z.number().min(20).max(300).optional().meta({ description: "祝福图案大小" }),
 
   // 3D透视参数
   startZ: z.number().min(500).max(3000).meta({ description: "起始深度" }),
@@ -66,11 +50,21 @@ export const TextBreakthroughCompositionSchema = CompleteCompositionSchema.exten
   impactRotation: z.number().min(0).max(30).meta({ description: "冲击旋转角度" }),
   shakeIntensity: z.number().min(0).max(20).meta({ description: "震动强度" }),
 
-  // 组间延迟
-  groupInterval: z.number().min(10).max(120).meta({ description: "文字组间隔帧数" }),
+  // 内容间隔
+  contentInterval: z.number().min(10).max(120).meta({ description: "内容间隔帧数" }),
 
   // 运动方向配置
   direction: z.enum(["bottom-up", "top-down"]).optional().meta({ description: "运动方向" }),
+
+  // 内容排列方式
+  arrangement: z.enum(["horizontal", "vertical", "circular", "stacked"]).optional().meta({ description: "内容排列方式" }),
+  arrangementSpacing: z.number().min(0).max(0.5).step(0.01).optional().meta({ description: "排列间距" }),
+
+  // 位置偏移
+  centerY: z.number().min(-0.5).max(0.5).step(0.01).optional().meta({ description: "Y轴中心偏移（-0.5到0.5）" }),
+
+  // 循环播放
+  enableLoop: z.boolean().optional().meta({ description: "启用循环播放" }),
 
   // 下落消失效果
   enableFallDown: z.boolean().optional().meta({ description: "启用下落消失" }),
@@ -79,6 +73,13 @@ export const TextBreakthroughCompositionSchema = CompleteCompositionSchema.exten
 });
 
 export type TextBreakthroughCompositionProps = z.infer<typeof TextBreakthroughCompositionSchema>;
+
+// ==================== 内容项类型 ====================
+
+interface ContentItem {
+  type: BreakthroughContentType;
+  content: string;
+}
 
 // ==================== 特有子组件 ====================
 
@@ -182,8 +183,15 @@ const BorderBreakEffect: React.FC<{
 // ==================== 主组件 ====================
 
 export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionProps> = ({
-  textGroups,
-  finalPosition,
+  // 混合输入参数
+  contentType = "text",
+  words = [],
+  images = [],
+  blessingTypes = [],
+  imageWeight = 0.5,
+  blessingStyle = {},
+  
+  // 字体配置
   fontSize = 80,
   fontFamily = "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
   fontWeight = 900,
@@ -192,6 +200,8 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   secondaryGlowColor = "#ff6600",
   glowIntensity = 1.5,
   bevelDepth = 3,
+  imageSize,
+  blessingSize,
   startZ = 2000,
   endZ = -100,
   approachDuration = 45,
@@ -200,8 +210,17 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   impactScale = 1.3,
   impactRotation = 10,
   shakeIntensity = 8,
-  groupInterval = 30,
+  contentInterval = 30,
   direction = "bottom-up",
+  arrangement = "circular",
+  arrangementSpacing = 0.25,
+  centerY = 0,
+  enableLoop = false,
+  enableFallDown = false,
+  fallDownDuration = 40,
+  fallDownEndY = 0.2,
+  
+  // 基础参数
   backgroundType = "color",
   backgroundSource,
   backgroundColor = "#0a0a20",
@@ -209,13 +228,9 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   backgroundVideoMuted = true,
   overlayColor = "#000000",
   overlayOpacity = 0.1,
-  enableFallDown = false,
-  fallDownDuration = 40,
-  fallDownEndY = 0.2,
   audioEnabled = false,
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
-  // 水印参数
   watermarkEnabled = false,
   watermarkText,
   watermarkFontSize,
@@ -225,7 +240,6 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   watermarkIntensity,
   watermarkVelocityX,
   watermarkVelocityY,
-  // 走马灯参数
   marqueeEnabled = false,
   marqueeForegroundTexts,
   marqueeForegroundFontSize,
@@ -247,30 +261,143 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
 }) => {
-  const { width, height } = useVideoConfig();
+  const { width, height, durationInFrames } = useVideoConfig();
   const frame = useCurrentFrame();
 
-  const groupTimings = React.useMemo(() => {
-    const result: { startFrame: number; texts: string[] }[] = [];
-    let currentFrame = 0;
-    textGroups.forEach((group) => {
-      result.push({ startFrame: currentFrame, texts: group.texts });
-      currentFrame += group.groupDelay ?? groupInterval;
-    });
-    return result;
-  }, [textGroups, groupInterval]);
+  // 计算有效的祝福图案类型
+  const effectiveBlessingTypes = blessingTypes && blessingTypes.length > 0 ? blessingTypes : DEFAULT_BLESSING_TYPES;
 
+  // 检测可用内容
+  const hasText = words.length > 0;
+  const hasImages = images.length > 0;
+  const hasBlessing = effectiveBlessingTypes.length > 0;
+  const availableTypes: ("text" | "image" | "blessing")[] = [];
+  if (hasText) availableTypes.push("text");
+  if (hasImages) availableTypes.push("image");
+  if (hasBlessing) availableTypes.push("blessing");
+
+  // 生成内容项列表
+  const contentItems = React.useMemo((): ContentItem[] => {
+    const items: ContentItem[] = [];
+
+    if (contentType === "text") {
+      if (hasText) {
+        words.forEach(w => items.push({ type: "text", content: w }));
+      } else if (hasBlessing) {
+        effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
+      }
+    } else if (contentType === "image") {
+      if (hasImages) {
+        images.forEach(img => items.push({ type: "image", content: img }));
+      } else if (hasBlessing) {
+        effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
+      }
+    } else if (contentType === "blessing") {
+      effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
+    } else {
+      // mixed 模式：根据权重随机分配类型
+      const totalItems = Math.max(words.length, images.length, effectiveBlessingTypes.length, 4);
+      const counters = { text: 0, image: 0, blessing: 0 };
+
+      for (let i = 0; i < totalItems; i++) {
+        const seedValue = i * 1000;
+        let type: "text" | "image" | "blessing" = "blessing";
+
+        // 根据可用类型和权重决定类型
+        if (availableTypes.length === 1) {
+          type = availableTypes[0];
+        } else if (availableTypes.length === 2) {
+          const rand = seededRandom(`type-${seedValue}`);
+          if (hasText && hasImages) {
+            type = rand < imageWeight ? "image" : "text";
+          } else if (hasText && hasBlessing) {
+            type = rand < 0.5 ? "text" : "blessing";
+          } else if (hasImages && hasBlessing) {
+            type = rand < 0.5 ? "image" : "blessing";
+          }
+        } else if (availableTypes.length === 3) {
+          const blessingWeight = 0.3;
+          const textWeight = 1 - imageWeight - blessingWeight;
+          const rand = seededRandom(`type-${seedValue}`);
+          if (rand < textWeight) {
+            type = "text";
+          } else if (rand < textWeight + imageWeight) {
+            type = "image";
+          } else {
+            type = "blessing";
+          }
+        }
+
+        // 获取实际内容
+        let content = "";
+        if (type === "text" && hasText) {
+          content = words[counters.text % words.length];
+          counters.text++;
+        } else if (type === "image" && hasImages) {
+          content = images[counters.image % images.length];
+          counters.image++;
+        } else {
+          type = "blessing";
+          content = effectiveBlessingTypes[counters.blessing % effectiveBlessingTypes.length];
+          counters.blessing++;
+        }
+
+        items.push({ type, content });
+      }
+    }
+
+    return items;
+  }, [contentType, words, images, effectiveBlessingTypes, imageWeight, availableTypes, hasText, hasImages, hasBlessing]);
+
+  // 计算单个动画周期的总帧数
+  const cycleDuration = React.useMemo(() => {
+    const lastItemStart = (contentItems.length - 1) * contentInterval;
+    const itemDuration = approachDuration + breakthroughDuration + holdDuration + (enableFallDown ? fallDownDuration : 0);
+    return lastItemStart + itemDuration;
+  }, [contentItems.length, contentInterval, approachDuration, breakthroughDuration, holdDuration, enableFallDown, fallDownDuration]);
+
+  // 计算每个内容项的时间安排（支持循环）
+  const contentTimings = React.useMemo(() => {
+    const timings: { startFrame: number; item: ContentItem; itemIndex: number; cycleIndex: number }[] = [];
+    
+    if (enableLoop && cycleDuration > 0) {
+      // 循环模式：生成多个周期的内容
+      const maxFrame = durationInFrames;
+      let cycleIndex = 0;
+      let currentFrame = 0;
+
+      while (currentFrame < maxFrame) {
+        contentItems.forEach((item, index) => {
+          const startFrame = currentFrame + index * contentInterval;
+          if (startFrame < maxFrame) {
+            timings.push({ startFrame, item, itemIndex: index, cycleIndex });
+          }
+        });
+        currentFrame += cycleDuration;
+        cycleIndex++;
+      }
+    } else {
+      // 非循环模式：只生成一次
+      contentItems.forEach((item, index) => {
+        timings.push({ startFrame: index * contentInterval, item, itemIndex: index, cycleIndex: 0 });
+      });
+    }
+
+    return timings;
+  }, [contentItems, contentInterval, enableLoop, cycleDuration, durationInFrames]);
+
+  // 检测是否有内容正在突破
   const isAnyBreakingThrough = React.useMemo(() => {
-    return groupTimings.some((timing) => {
+    return contentTimings.some((timing) => {
       const approachEnd = timing.startFrame + approachDuration;
       const breakthroughEnd = approachEnd + breakthroughDuration;
       return frame >= approachEnd && frame < breakthroughEnd;
     });
-  }, [groupTimings, frame, approachDuration, breakthroughDuration]);
+  }, [contentTimings, frame, approachDuration, breakthroughDuration]);
 
   const breakthroughProgress = React.useMemo(() => {
     let maxProgress = 0;
-    groupTimings.forEach((timing) => {
+    contentTimings.forEach((timing) => {
       const approachEnd = timing.startFrame + approachDuration;
       const breakthroughEnd = approachEnd + breakthroughDuration;
       if (frame >= approachEnd && frame < breakthroughEnd) {
@@ -278,49 +405,42 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
       }
     });
     return maxProgress;
-  }, [groupTimings, frame, approachDuration, breakthroughDuration]);
+  }, [contentTimings, frame, approachDuration, breakthroughDuration]);
 
-  const textPositions = React.useMemo(() => {
+  // 计算位置
+  const contentPositions = React.useMemo(() => {
     const positions: { x: number; y: number }[] = [];
-    const defaultX = finalPosition?.defaultX ?? 0;
-    const defaultY = finalPosition?.defaultY ?? 0;
-    const autoArrangement = finalPosition?.autoArrangement ?? "circular";
-    const autoArrangementSpacing = finalPosition?.autoArrangementSpacing ?? 0.25;
-    
-    groupTimings.forEach((timing, groupIndex) => {
-      const groupPosition = finalPosition?.groupPositions?.[groupIndex];
-      const groupBaseX = groupPosition?.x ?? defaultX;
-      const groupBaseY = groupPosition?.y ?? defaultY;
-      const arrangement = groupPosition?.arrangement ?? autoArrangement;
-      const spacing = groupPosition?.arrangementSpacing ?? autoArrangementSpacing;
-      
-      timing.texts.forEach((_, textIndex) => {
-        const totalTexts = timing.texts.length;
-        let offsetX = 0, offsetY = 0;
-        
-        if (totalTexts > 1) {
-          switch (arrangement) {
-            case "horizontal":
-              offsetX = (textIndex - (totalTexts - 1) / 2) * spacing;
-              break;
-            case "vertical":
-              offsetY = (textIndex - (totalTexts - 1) / 2) * spacing;
-              break;
-            case "stacked":
-              offsetX = textIndex * spacing * 0.3;
-              offsetY = textIndex * spacing * 0.2;
-              break;
-            default:
-              const angle = (textIndex / totalTexts) * Math.PI * 2 - Math.PI / 2;
-              offsetX = Math.cos(angle) * spacing;
-              offsetY = Math.sin(angle) * spacing * 0.5;
-          }
+    const totalItems = contentItems.length;
+    const baseY = centerY;
+
+    contentItems.forEach((_, itemIndex) => {
+      let offsetX = 0, offsetY = 0;
+
+      if (totalItems > 1) {
+        switch (arrangement) {
+          case "horizontal":
+            offsetX = (itemIndex - (totalItems - 1) / 2) * arrangementSpacing;
+            break;
+          case "vertical":
+            offsetY = (itemIndex - (totalItems - 1) / 2) * arrangementSpacing;
+            break;
+          case "stacked":
+            offsetX = itemIndex * arrangementSpacing * 0.3;
+            offsetY = itemIndex * arrangementSpacing * 0.2;
+            break;
+          case "circular":
+          default:
+            const angle = (itemIndex / totalItems) * Math.PI * 2 - Math.PI / 2;
+            offsetX = Math.cos(angle) * arrangementSpacing;
+            offsetY = Math.sin(angle) * arrangementSpacing * 0.5;
         }
-        positions.push({ x: groupBaseX + offsetX, y: groupBaseY + offsetY });
-      });
+      }
+
+      positions.push({ x: offsetX, y: baseY + offsetY });
     });
+
     return positions;
-  }, [groupTimings, finalPosition]);
+  }, [contentItems, arrangement, arrangementSpacing, centerY]);
 
   // 构建额外层
   const extraLayers = (
@@ -397,47 +517,46 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
       }
       marquee={marqueeConfig}
     >
-      {groupTimings.map((timing, groupIndex) => {
-        let positionOffset = 0;
-        for (let i = 0; i < groupIndex; i++) {
-          positionOffset += groupTimings[i].texts.length;
-        }
+      {contentTimings.map((timing, index) => {
+        const pos = contentPositions[timing.itemIndex] ?? contentPositions[0] ?? { x: 0, y: 0 };
+        const startYOffset = direction === "top-down" ? -0.3 : 0.8;
 
-        return timing.texts.map((text, textIndex) => {
-          const pos = textPositions[positionOffset + textIndex];
-          const startYOffset = direction === "top-down" ? -0.3 : 0.8;
-          
-          return (
-            <TextBreakthrough
-              key={`${groupIndex}-${textIndex}`}
-              text={text}
-              startFrame={timing.startFrame}
-              startZ={startZ}
-              endZ={endZ}
-              startX={pos.x * 0.3}
-              startY={pos.y + startYOffset}
-              endX={pos.x}
-              endY={pos.y}
-              fontSize={fontSize}
-              fontFamily={fontFamily}
-              fontWeight={fontWeight}
-              textColor={textColor}
-              glowColor={glowColor}
-              secondaryGlowColor={secondaryGlowColor}
-              glowIntensity={glowIntensity}
-              bevelDepth={bevelDepth}
-              approachDuration={approachDuration}
-              breakthroughDuration={breakthroughDuration}
-              holdDuration={holdDuration}
-              impactScale={impactScale}
-              impactRotation={impactRotation}
-              shakeIntensity={shakeIntensity}
-              enableFallDown={enableFallDown}
-              fallDownDuration={fallDownDuration}
-              fallDownEndY={fallDownEndY}
-            />
-          );
-        });
+        return (
+          <TextBreakthrough
+            key={`${timing.cycleIndex}-${timing.itemIndex}`}
+            contentType={timing.item.type}
+            text={timing.item.type === "text" ? timing.item.content : undefined}
+            imageSrc={timing.item.type === "image" ? timing.item.content : undefined}
+            blessingType={timing.item.type === "blessing" ? timing.item.content as BlessingSymbolType : undefined}
+            blessingStyle={blessingStyle}
+            startFrame={timing.startFrame}
+            startZ={startZ}
+            endZ={endZ}
+            startX={pos.x * 0.3}
+            startY={pos.y + startYOffset}
+            endX={pos.x}
+            endY={pos.y}
+            fontSize={fontSize}
+            fontFamily={fontFamily}
+            fontWeight={fontWeight}
+            textColor={textColor}
+            glowColor={glowColor}
+            secondaryGlowColor={secondaryGlowColor}
+            glowIntensity={glowIntensity}
+            bevelDepth={bevelDepth}
+            approachDuration={approachDuration}
+            breakthroughDuration={breakthroughDuration}
+            holdDuration={holdDuration}
+            impactScale={impactScale}
+            impactRotation={impactRotation}
+            shakeIntensity={shakeIntensity}
+            enableFallDown={enableFallDown}
+            fallDownDuration={fallDownDuration}
+            fallDownEndY={fallDownEndY}
+            imageSize={imageSize}
+            blessingSize={blessingSize}
+          />
+        );
       })}
 
       {isAnyBreakingThrough && (

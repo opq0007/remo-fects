@@ -2,6 +2,7 @@
  * 文字环绕特效参数配置
  * 
  * 定义 text-ring-effect 特效的所有参数
+ * 支持文字、图片、祝福图案的混合输入
  */
 
 const path = require('path');
@@ -17,10 +18,20 @@ const config = {
 };
 
 /**
+ * 祝福图案类型
+ */
+const BLESSING_TYPES = ['goldCoin', 'moneyBag', 'luckyBag', 'redPacket'];
+
+/**
  * 特效特有参数定义
  */
 const params = {
-  // ===== 文字内容 =====
+  // ===== 混合输入配置 =====
+  contentType: {
+    type: 'string',
+    defaultValue: 'text',
+    description: '内容类型：text | image | blessing | mixed'
+  },
   words: {
     type: 'array',
     defaultValue: [],
@@ -35,16 +46,87 @@ const params = {
       }
       return [];
     },
-    required: true,
     description: '文字列表'
   },
+  images: {
+    type: 'array',
+    defaultValue: [],
+    parser: (v) => {
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        try {
+          return JSON.parse(v);
+        } catch {
+          return v.split(',').map(w => w.trim()).filter(w => w);
+        }
+      }
+      return [];
+    },
+    description: '图片列表（相对于 public 目录）'
+  },
+  blessingTypes: {
+    type: 'array',
+    defaultValue: BLESSING_TYPES,
+    parser: (v) => {
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        try {
+          return JSON.parse(v);
+        } catch {
+          return v.split(',').map(w => w.trim()).filter(w => BLESSING_TYPES.includes(w));
+        }
+      }
+      return BLESSING_TYPES;
+    },
+    description: '祝福图案类型：goldCoin | moneyBag | luckyBag | redPacket'
+  },
+  imageWeight: {
+    type: 'number',
+    defaultValue: 0.5,
+    parser: (v) => parseFloat(v) || 0.5,
+    description: '图片出现权重（0-1，mixed 模式下有效）'
+  },
+  blessingStyle: {
+    type: 'object',
+    defaultValue: {
+      primaryColor: '#FFD700',
+      secondaryColor: '#FFA500',
+      enable3D: true,
+      enableGlow: true,
+      glowIntensity: 1
+    },
+    parser: (v) => {
+      if (!v) return null;
+      if (typeof v === 'string') {
+        try {
+          return JSON.parse(v);
+        } catch {
+          return null;
+        }
+      }
+      return v;
+    },
+    description: '祝福图案样式配置'
+  },
 
-  // ===== 字体配置 =====
+  // ===== 尺寸配置 =====
   fontSize: {
     type: 'number',
     defaultValue: 70,
     parser: (v) => parseInt(v) || 70,
     description: '字体大小'
+  },
+  imageSize: {
+    type: 'number',
+    defaultValue: 80,
+    parser: (v) => parseInt(v) || 80,
+    description: '图片大小'
+  },
+  blessingSize: {
+    type: 'number',
+    defaultValue: 80,
+    parser: (v) => parseInt(v) || 80,
+    description: '祝福图案大小'
   },
 
   // ===== 透明度 =====
@@ -113,13 +195,34 @@ const params = {
 
 /**
  * 参数验证函数
- * @param {Object} params - 解析后的参数
- * @returns {{ valid: boolean, error?: string }}
  */
 function validate(params) {
-  if (!params.words || params.words.length === 0) {
-    return { valid: false, error: '请提供文字列表 (words)' };
+  const hasText = params.words && params.words.length > 0;
+  const hasImages = params.images && params.images.length > 0;
+  const hasBlessing = params.blessingTypes && params.blessingTypes.length > 0;
+  
+  // blessing 模式始终可用，因为默认有祝福图案
+  if (params.contentType === 'blessing') {
+    return { valid: true };
   }
+  
+  if (params.contentType === 'text' && !hasText) {
+    return { valid: false, error: 'text 模式需要提供文字列表 (words)' };
+  }
+  
+  if (params.contentType === 'image' && !hasImages) {
+    return { valid: false, error: 'image 模式需要提供图片列表 (images)' };
+  }
+  
+  if (params.contentType === 'mixed' && !hasText && !hasImages) {
+    return { valid: false, error: 'mixed 模式至少需要提供文字或图片' };
+  }
+  
+  // 兼容旧版：如果没有指定 contentType 但提供了 words
+  if (!params.contentType && hasText) {
+    return { valid: true };
+  }
+  
   return { valid: true };
 }
 
@@ -135,6 +238,11 @@ function buildRenderParams(reqParams, commonParams) {
     } else {
       result[name] = typeof def.defaultValue === 'function' ? def.defaultValue() : def.defaultValue;
     }
+  }
+
+  // 兼容旧版：如果没有指定 contentType 但提供了 words，设置为 text 模式
+  if (!reqParams.contentType && result.words && result.words.length > 0) {
+    result.contentType = 'text';
   }
 
   return result;

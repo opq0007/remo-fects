@@ -146,6 +146,22 @@ const params = {
     type: 'string',
     defaultValue: null,
     description: '图片源'
+  },
+
+  // ===== 循环播放 =====
+  enableLoop: {
+    type: 'boolean',
+    defaultValue: false,
+    parser: (v) => v === true || v === 'true',
+    description: '启用循环播放'
+  },
+
+  // ===== 随机种子 =====
+  seed: {
+    type: 'number',
+    defaultValue: 42,
+    parser: (v) => parseInt(v) || 42,
+    description: '随机种子'
   }
 };
 
@@ -185,8 +201,8 @@ function buildRenderParams(reqParams, commonParams) {
     result.imageSource = reqParams.backgroundFile;
   }
 
-  // 自动计算时长
-  if (!reqParams.duration) {
+  // 自动计算时长（非循环模式）
+  if (!reqParams.duration && !result.enableLoop) {
     result.duration = calculateDuration(result);
   }
 

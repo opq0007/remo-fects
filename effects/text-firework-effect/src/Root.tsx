@@ -2,6 +2,14 @@ import React from "react";
 import { Composition } from "remotion";
 import { TextFireworkComposition, TextFireworkCompositionSchema } from "./TextFireworkComposition";
 
+// 混合输入默认参数
+const defaultMixedInput = {
+  contentType: "text" as const,
+  images: [],
+  blessingTypes: [],
+  imageWeight: 0.5,
+};
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -14,6 +22,7 @@ export const RemotionRoot: React.FC = () => {
         height={1280}
         schema={TextFireworkCompositionSchema}
         defaultProps={{
+          ...defaultMixedInput,
           words: ["新年快乐", "万事如意", "心想事成"],
           fontSize: 60,
           textColor: "#ffd700",

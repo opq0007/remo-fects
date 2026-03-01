@@ -1,6 +1,23 @@
 import React from "react";
 import { Composition } from "remotion";
 import { TextBreakthroughComposition, TextBreakthroughCompositionSchema } from "./TextBreakthroughComposition";
+import { BlessingSymbolType } from "../../shared/index";
+
+// 混合输入默认参数
+const defaultMixedInput = {
+  contentType: "mixed" as const,
+  words: ["平安喜乐", "健康成长"],
+  images: [] as string[],
+  blessingTypes: ["goldCoin", "moneyBag", "luckyBag", "redPacket"] as BlessingSymbolType[],
+  imageWeight: 0.3,
+  blessingStyle: {
+    primaryColor: "#FFD700",
+    secondaryColor: "#FFA500",
+    enable3D: true,
+    enableGlow: true,
+    glowIntensity: 1.5,
+  },
+};
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -14,42 +31,7 @@ export const RemotionRoot: React.FC = () => {
         height={1920}
         schema={TextBreakthroughCompositionSchema}
         defaultProps={{
-          // 文字组配置
-          textGroups: [
-            {
-              texts: ["平安喜乐"],
-              groupDelay: 48,
-            },
-            {
-              texts: ["健康成长"],
-              groupDelay: 48,
-            },
-            {
-              texts: ["财源滚滚"],
-              groupDelay: 48,
-            },
-            {
-              texts: ["马上有钱"],
-              groupDelay: 60,
-            },
-          ],
-
-          // 文字最终定格位置配置
-          finalPosition: {
-            // 默认位置（画面中心为 0,0，x 范围 -0.5 到 0.5，y 范围 -0.5 到 0.5）
-            defaultX: 0,    // 水平居中
-            defaultY: 0,    // 垂直居中
-            // 每个文字组的独立位置（可选，覆盖默认位置）
-            groupPositions: [
-              { x: 0, y: -0.3, arrangement: "circular" },      // 第一组：上方居中，圆形排列
-              { x: -0.15, y: -0.1, arrangement: "horizontal" }, // 第二组：左上，水平排列
-              { x: 0.15, y: 0.1, arrangement: "horizontal" },   // 第三组：右下，水平排列
-              { x: 0, y: 0.3, arrangement: "circular" },        // 第四组：下方居中，圆形排列
-            ],
-            // 自动排列方式（当组内未指定时使用）
-            autoArrangement: "circular",  // horizontal / vertical / circular / stacked
-            autoArrangementSpacing: 0.25, // 排列间距
-          },
+          ...defaultMixedInput,
 
           // 字体配置
           fontSize: 120,
@@ -62,6 +44,10 @@ export const RemotionRoot: React.FC = () => {
           secondaryGlowColor: "#ff6600",
           glowIntensity: 1.5,
           bevelDepth: 3,
+
+          // 图片/祝福图案大小
+          imageSize: 150,
+          blessingSize: 120,
 
           // 3D透视参数
           startZ: 2000,
@@ -77,12 +63,26 @@ export const RemotionRoot: React.FC = () => {
           impactRotation: 12,
           shakeIntensity: 10,
 
-          // 组间延迟
-          groupInterval: 50,
+          // 内容间隔
+          contentInterval: 50,
 
-          // 运动方向：bottom-up 从下往上（默认），top-down 从上往下
-          direction: "top-down", // 取消注释可切换为从上往下
+          // 运动方向
+          direction: "top-down",
+
+          // 排列方式
+          arrangement: "circular",
+          arrangementSpacing: 0.25,
+
+          // Y轴中心偏移（-0.5到0.5，0为画面中心）
+          centerY: 0,
+
+          // 循环播放
+          enableLoop: true,
+
+          // 下落消失
           enableFallDown: true,
+          fallDownDuration: 40,
+          fallDownEndY: 0.2,
 
           // 背景
           backgroundType: "image",
@@ -93,20 +93,20 @@ export const RemotionRoot: React.FC = () => {
           overlayOpacity: 0.1,
 
           // 音效配置
-          audioEnabled: true,              // 是否启用背景音效
-          audioSource: "coin-sound.mp3",    // 音效文件路径
-          audioVolume: 0.5,                 // 音量（0-2，1为正常音量）
+          audioEnabled: true,
+          audioSource: "coin-sound.mp3",
+          audioVolume: 0.5,
 
           // 水印配置
-          watermarkEnabled: true,           // 启用水印
-          watermarkText: "水印测试",    // 水印文字
-          watermarkFontSize: 24,            // 字体大小
-          watermarkColor: "#ffffff",        // 颜色
-          watermarkOpacity: 0.35,           // 透明度
-          watermarkSpeed: 1,                // 动画速度
-          watermarkIntensity: 0.8,          // 效果强度
-          watermarkVelocityX: 180,          // X方向速度（像素/秒）
-          watermarkVelocityY: 120,          // Y方向速度（像素/秒）
+          watermarkEnabled: true,
+          watermarkText: "水印测试",
+          watermarkFontSize: 24,
+          watermarkColor: "#ffffff",
+          watermarkOpacity: 0.35,
+          watermarkSpeed: 1,
+          watermarkIntensity: 0.8,
+          watermarkVelocityX: 180,
+          watermarkVelocityY: 120,
         }}
       />
     </>

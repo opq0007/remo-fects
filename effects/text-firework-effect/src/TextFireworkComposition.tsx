@@ -1,6 +1,6 @@
 import React from "react";
 import { useVideoConfig } from "remotion";
-import { Firework } from "./Firework";
+import { Firework, FireworkContentType } from "./Firework";
 import { GoldenRain, generateGoldenParticles } from "./GoldenRain";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
@@ -8,20 +8,29 @@ import {
   BaseComposition,
   StarField,
   CompleteCompositionSchema,
+  MixedInputSchema,
   seededRandom,
+  BlessingSymbolType,
+  detectAvailableContent,
+  determineContentType,
+  DEFAULT_BLESSING_TYPES,
 } from "../../shared/index";
 
-// ==================== 主组件 Schema（使用公共 Schema）====================
+// ==================== 主组件 Schema ====================
 
-export const TextFireworkCompositionSchema = CompleteCompositionSchema.extend({
-  // 文字配置
-  words: z.array(z.string()).min(1).meta({ description: "要显示的文字列表（每个文字一个烟花）" }),
+export const TextFireworkCompositionSchema = CompleteCompositionSchema.merge(MixedInputSchema).extend({
+  // 文字配置（兼容旧版本）
+  words: z.array(z.string()).optional().meta({ description: "要显示的文字列表（每个文字一个烟花）" }),
   
   // 字体配置
   fontSize: z.number().min(20).max(200).meta({ description: "字体大小" }),
   textColor: zColor().meta({ description: "文字颜色" }),
   glowColor: zColor().meta({ description: "发光颜色" }),
   glowIntensity: z.number().min(0).max(2).meta({ description: "发光强度" }),
+  
+  // 图片/祝福图案配置
+  imageSize: z.number().min(20).max(300).optional().meta({ description: "图片大小" }),
+  blessingSize: z.number().min(20).max(300).optional().meta({ description: "祝福图案大小" }),
   
   // 烟花配置
   launchHeight: z.number().min(0.05).max(0.5).meta({ description: "爆炸高度比例" }),
@@ -36,18 +45,42 @@ export const TextFireworkCompositionSchema = CompleteCompositionSchema.extend({
   
   // 时间配置
   interval: z.number().min(10).max(60).meta({ description: "烟花发射间隔（帧）" }),
+  
+  // 循环播放
+  enableLoop: z.boolean().optional().meta({ description: "启用循环播放" }),
 });
 
 export type TextFireworkCompositionProps = z.infer<typeof TextFireworkCompositionSchema>;
 
+// ==================== 内容项目类型 ====================
+
+interface ContentItem {
+  type: FireworkContentType;
+  content: string;
+}
+
 // ==================== 主组件 ====================
 
 export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = ({
-  words,
+  // 混合输入参数
+  contentType = "text",
+  words = [],
+  images = [],
+  blessingTypes = [],
+  imageWeight = 0.5,
+  blessingStyle = {},
+  
+  // 尺寸配置
   fontSize = 60,
+  imageSize,
+  blessingSize,
+  
+  // 颜色配置
   textColor = "#ffd700",
   glowColor = "#ffaa00",
   glowIntensity = 1,
+  
+  // 烟花配置
   launchHeight = 0.2,
   particleCount = 80,
   textDuration = 60,
@@ -56,6 +89,8 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   wind = 0,
   rainParticleSize = 3,
   interval = 30,
+  enableLoop = false,
+  
   // 基础参数
   backgroundType = "color",
   backgroundSource,
@@ -68,6 +103,7 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
   audioLoop = true,
+  
   // 水印参数
   watermarkEnabled = false,
   watermarkText,
@@ -78,6 +114,7 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   watermarkIntensity,
   watermarkVelocityX,
   watermarkVelocityY,
+  
   // 走马灯参数
   marqueeEnabled = false,
   marqueeForegroundTexts,
@@ -100,40 +137,167 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
 }) => {
-  const { width, height } = useVideoConfig();
+  const { width, height, durationInFrames } = useVideoConfig();
 
-  // 计算每个烟花的时间安排
-  const fireworks = React.useMemo(() => {
-    const result = [];
+  // 计算有效的祝福图案类型（如果有默认值则使用默认值）
+  const effectiveBlessingTypes = blessingTypes && blessingTypes.length > 0 ? blessingTypes : DEFAULT_BLESSING_TYPES;
+  
+  // 检测可用内容（使用有效的祝福图案列表）
+  const available = detectAvailableContent({ 
+    contentType, 
+    words, 
+    images, 
+    blessingTypes: effectiveBlessingTypes,
+    imageWeight 
+  });
+
+  // 生成内容列表
+  const contentItems = React.useMemo((): ContentItem[] => {
+    const items: ContentItem[] = [];
     
-    for (let i = 0; i < words.length; i++) {
-      const launchFrame = i * interval;
-      const explodeFrame = launchFrame + 30;
+    if (contentType === "text") {
+      if (words.length > 0) {
+        words.forEach(word => items.push({ type: "text", content: word }));
+      } else {
+        effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
+      }
+    } else if (contentType === "image") {
+      if (images.length > 0) {
+        images.forEach(img => items.push({ type: "image", content: img }));
+      } else {
+        effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
+      }
+    } else if (contentType === "blessing") {
+      effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
+    } else {
+      // mixed 模式
+      const totalItems = Math.max(
+        available.hasText ? words.length : 0,
+        available.hasImages ? images.length : 0,
+        available.hasBlessing ? effectiveBlessingTypes.length : 0,
+        4
+      );
       
-      const random1 = seededRandom(`startX-${i}-${words[i]}`);
-      const random2 = seededRandom(`targetX-${i}-${words[i]}`);
-      const random3 = seededRandom(`height-${i}-${words[i]}`);
+      const counters = { text: 0, image: 0, blessing: 0 };
       
-      const startX = width * 0.2 + random1 * width * 0.6;
-      const startY = height + 20;
-      const targetX = width * 0.15 + random2 * width * 0.7;
-      const heightVariation = (random3 - 0.5) * 0.1;
-      const actualLaunchHeight = Math.max(0.1, Math.min(0.35, launchHeight + heightVariation));
-      const targetY = height * actualLaunchHeight;
-      
-      result.push({
-        text: words[i],
-        startX,
-        startY,
-        targetX,
-        targetY,
-        launchFrame,
-        explodeFrame,
+      for (let i = 0; i < totalItems; i++) {
+        const seedValue = i * 1000;
+        const { type, content } = determineContentType(
+          { contentType, words, images, blessingTypes: effectiveBlessingTypes, imageWeight },
+          available,
+          seedValue
+        );
+        
+        let actualContent = content;
+        if (type === "text" && words.length > 0) {
+          actualContent = words[counters.text % words.length];
+          counters.text++;
+        } else if (type === "image" && images.length > 0) {
+          actualContent = images[counters.image % images.length];
+          counters.image++;
+        } else if (type === "blessing") {
+          actualContent = effectiveBlessingTypes[counters.blessing % effectiveBlessingTypes.length];
+          counters.blessing++;
+        }
+        
+        items.push({ type, content: actualContent });
+      }
+    }
+    
+    return items;
+  }, [contentType, words, images, effectiveBlessingTypes, imageWeight, available]);
+
+  // 计算单个烟花周期时长
+  const cycleDuration = React.useMemo(() => {
+    const lastLaunchFrame = (contentItems.length - 1) * interval;
+    return lastLaunchFrame + 30 + textDuration + rainDuration + 30;
+  }, [contentItems.length, interval, textDuration, rainDuration]);
+
+  // 计算烟花时间安排（支持循环）
+  const fireworks = React.useMemo(() => {
+    const result: Array<{
+      item: ContentItem;
+      startX: number;
+      startY: number;
+      targetX: number;
+      targetY: number;
+      launchFrame: number;
+      explodeFrame: number;
+      cycleIndex: number;
+      itemIndex: number;
+    }> = [];
+    
+    if (enableLoop && cycleDuration > 0) {
+      // 循环模式
+      let cycleIndex = 0;
+      let currentFrame = 0;
+
+      while (currentFrame < durationInFrames) {
+        contentItems.forEach((item, itemIndex) => {
+          const launchFrame = currentFrame + itemIndex * interval;
+          if (launchFrame < durationInFrames) {
+            const explodeFrame = launchFrame + 30;
+            
+            const random1 = seededRandom(`startX-${cycleIndex}-${itemIndex}-${item.content}`);
+            const random2 = seededRandom(`targetX-${cycleIndex}-${itemIndex}-${item.content}`);
+            const random3 = seededRandom(`height-${cycleIndex}-${itemIndex}-${item.content}`);
+            
+            const startX = width * 0.2 + random1 * width * 0.6;
+            const startY = height + 20;
+            const targetX = width * 0.15 + random2 * width * 0.7;
+            const heightVariation = (random3 - 0.5) * 0.1;
+            const actualLaunchHeight = Math.max(0.1, Math.min(0.35, launchHeight + heightVariation));
+            const targetY = height * actualLaunchHeight;
+            
+            result.push({
+              item,
+              startX,
+              startY,
+              targetX,
+              targetY,
+              launchFrame,
+              explodeFrame,
+              cycleIndex,
+              itemIndex,
+            });
+          }
+        });
+        currentFrame += cycleDuration;
+        cycleIndex++;
+      }
+    } else {
+      // 非循环模式
+      contentItems.forEach((item, itemIndex) => {
+        const launchFrame = itemIndex * interval;
+        const explodeFrame = launchFrame + 30;
+        
+        const random1 = seededRandom(`startX-${itemIndex}-${item.content}`);
+        const random2 = seededRandom(`targetX-${itemIndex}-${item.content}`);
+        const random3 = seededRandom(`height-${itemIndex}-${item.content}`);
+        
+        const startX = width * 0.2 + random1 * width * 0.6;
+        const startY = height + 20;
+        const targetX = width * 0.15 + random2 * width * 0.7;
+        const heightVariation = (random3 - 0.5) * 0.1;
+        const actualLaunchHeight = Math.max(0.1, Math.min(0.35, launchHeight + heightVariation));
+        const targetY = height * actualLaunchHeight;
+        
+        result.push({
+          item,
+          startX,
+          startY,
+          targetX,
+          targetY,
+          launchFrame,
+          explodeFrame,
+          cycleIndex: 0,
+          itemIndex,
+        });
       });
     }
     
     return result;
-  }, [words, width, height, launchHeight, interval]);
+  }, [contentItems, width, height, launchHeight, interval, enableLoop, cycleDuration, durationInFrames]);
 
   // 收集所有烟花爆炸时生成的粒子
   const allParticles = React.useMemo(() => {
@@ -234,8 +398,12 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
     >
       {fireworks.map((firework, index) => (
         <Firework
-          key={index}
-          text={firework.text}
+          key={`${firework.cycleIndex}-${firework.itemIndex}`}
+          contentType={firework.item.type}
+          text={firework.item.type === "text" ? firework.item.content : undefined}
+          imageSrc={firework.item.type === "image" ? firework.item.content : undefined}
+          blessingType={firework.item.type === "blessing" ? firework.item.content as BlessingSymbolType : undefined}
+          blessingStyle={blessingStyle}
           startX={firework.startX}
           startY={firework.startY}
           targetX={firework.targetX}
@@ -243,6 +411,8 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
           launchFrame={firework.launchFrame}
           explodeFrame={firework.explodeFrame}
           fontSize={fontSize}
+          imageSize={imageSize}
+          blessingSize={blessingSize}
           textColor={textColor}
           glowColor={glowColor}
           glowIntensity={glowIntensity}

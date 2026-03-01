@@ -75,6 +75,26 @@ export {
   extractBlessingSymbolProps,
 } from "./blessing-symbol";
 
+// 混合输入配置
+export {
+  MixedContentTypeSchema,
+  MixedItemTypeSchema,
+  BlessingStyleSchema,
+  MixedTextStyleSchema,
+  MixedImageStyleSchema,
+  MixedInputSchema,
+  FullMixedInputSchema,
+  type MixedContentType,
+  type MixedItemType,
+  type BlessingStyle,
+  type MixedTextStyle,
+  type MixedImageStyle,
+  type MixedInputProps,
+  type FullMixedInputProps,
+  extractMixedInputProps,
+  extractFullMixedInputProps,
+} from "./mixed-input";
+
 // 重新导出完整背景 Schema（合并背景和遮罩）
 import { z } from "zod";
 import { BackgroundSchema } from "./background";

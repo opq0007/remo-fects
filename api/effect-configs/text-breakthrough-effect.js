@@ -1,5 +1,6 @@
 /**
  * 文字破屏特效参数配置
+ * 支持文字、图片、祝福图案的混合输入
  */
 
 const path = require('path');
@@ -11,8 +12,18 @@ const config = {
   path: path.join(__dirname, '../../effects/text-breakthrough-effect')
 };
 
+/**
+ * 祝福图案类型
+ */
+const BLESSING_TYPES = ['goldCoin', 'moneyBag', 'luckyBag', 'redPacket'];
+
 const params = {
-  // ===== 文字内容 =====
+  // ===== 混合输入配置 =====
+  contentType: {
+    type: 'string',
+    defaultValue: 'mixed',
+    description: '内容类型：text | image | blessing | mixed'
+  },
   words: {
     type: 'array',
     defaultValue: [],
@@ -29,29 +40,53 @@ const params = {
     },
     description: '文字列表'
   },
-
-  // ===== 文字组配置 =====
-  textGroups: {
+  images: {
     type: 'array',
-    defaultValue: null,
+    defaultValue: [],
     parser: (v) => {
-      if (!v) return null;
+      if (Array.isArray(v)) return v;
       if (typeof v === 'string') {
         try {
           return JSON.parse(v);
         } catch {
-          return null;
+          return v.split(',').map(w => w.trim()).filter(w => w);
         }
       }
-      return v;
+      return [];
     },
-    description: '文字组配置'
+    description: '图片列表（相对于 public 目录）'
   },
-
-  // ===== 定格位置 =====
-  finalPosition: {
+  blessingTypes: {
+    type: 'array',
+    defaultValue: BLESSING_TYPES,
+    parser: (v) => {
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        try {
+          return JSON.parse(v);
+        } catch {
+          return v.split(',').map(w => w.trim()).filter(w => BLESSING_TYPES.includes(w));
+        }
+      }
+      return BLESSING_TYPES;
+    },
+    description: '祝福图案类型：goldCoin | moneyBag | luckyBag | redPacket'
+  },
+  imageWeight: {
+    type: 'number',
+    defaultValue: 0.3,
+    parser: (v) => parseFloat(v) || 0.3,
+    description: '图片出现权重（0-1，mixed 模式下有效）'
+  },
+  blessingStyle: {
     type: 'object',
-    defaultValue: null,
+    defaultValue: {
+      primaryColor: '#FFD700',
+      secondaryColor: '#FFA500',
+      enable3D: true,
+      enableGlow: true,
+      glowIntensity: 1.5
+    },
     parser: (v) => {
       if (!v) return null;
       if (typeof v === 'string') {
@@ -63,15 +98,27 @@ const params = {
       }
       return v;
     },
-    description: '定格位置配置'
+    description: '祝福图案样式配置'
   },
 
-  // ===== 字体配置 =====
+  // ===== 尺寸配置 =====
   fontSize: {
     type: 'number',
     defaultValue: 120,
     parser: (v) => parseInt(v) || 120,
     description: '字体大小'
+  },
+  imageSize: {
+    type: 'number',
+    defaultValue: 150,
+    parser: (v) => parseInt(v) || 150,
+    description: '图片大小'
+  },
+  blessingSize: {
+    type: 'number',
+    defaultValue: 120,
+    parser: (v) => parseInt(v) || 120,
+    description: '祝福图案大小'
   },
   fontFamily: {
     type: 'string',
@@ -168,19 +215,48 @@ const params = {
     description: '震动强度'
   },
 
-  // ===== 组间延迟 =====
-  groupInterval: {
+  // ===== 内容间隔 =====
+  contentInterval: {
     type: 'number',
     defaultValue: 50,
     parser: (v) => parseInt(v) || 50,
-    description: '组间延迟（帧）'
+    description: '内容间隔（帧）'
   },
 
   // ===== 运动方向 =====
   direction: {
     type: 'string',
     defaultValue: 'top-down',
-    description: '运动方向'
+    description: '运动方向：top-down | bottom-up'
+  },
+
+  // ===== 排列方式 =====
+  arrangement: {
+    type: 'string',
+    defaultValue: 'circular',
+    description: '排列方式：horizontal | vertical | circular | stacked'
+  },
+  arrangementSpacing: {
+    type: 'number',
+    defaultValue: 0.25,
+    parser: (v) => parseFloat(v) || 0.25,
+    description: '排列间距'
+  },
+
+  // ===== 位置偏移 =====
+  centerY: {
+    type: 'number',
+    defaultValue: 0,
+    parser: (v) => parseFloat(v) || 0,
+    description: 'Y轴中心偏移（-0.5到0.5）'
+  },
+
+  // ===== 循环播放 =====
+  enableLoop: {
+    type: 'boolean',
+    defaultValue: false,
+    parser: (v) => v === true || v === 'true',
+    description: '启用循环播放'
   },
 
   // ===== 下落消失 =====
@@ -205,10 +281,47 @@ const params = {
 };
 
 function validate(params) {
-  if ((!params.words || params.words.length === 0) && (!params.textGroups || params.textGroups.length === 0)) {
-    return { valid: false, error: '请提供文字列表 (words) 或文字组配置 (textGroups)' };
+  const hasText = params.words && params.words.length > 0;
+  const hasImages = params.images && params.images.length > 0;
+  
+  // blessing 模式始终可用
+  if (params.contentType === 'blessing') {
+    return { valid: true };
   }
+  
+  if (params.contentType === 'text' && !hasText) {
+    return { valid: false, error: 'text 模式需要提供文字列表 (words)' };
+  }
+  
+  if (params.contentType === 'image' && !hasImages) {
+    return { valid: false, error: 'image 模式需要提供图片列表 (images)' };
+  }
+  
+  if (params.contentType === 'mixed' && !hasText && !hasImages) {
+    return { valid: false, error: 'mixed 模式至少需要提供文字或图片' };
+  }
+  
   return { valid: true };
+}
+
+/**
+ * 计算内容数量
+ */
+function getContentCount(params) {
+  if (params.contentType === 'text') {
+    return params.words?.length || 0;
+  }
+  if (params.contentType === 'image') {
+    return params.images?.length || 0;
+  }
+  if (params.contentType === 'blessing') {
+    return params.blessingTypes?.length || BLESSING_TYPES.length;
+  }
+  // mixed 模式
+  const textCount = params.words?.length || 0;
+  const imageCount = params.images?.length || 0;
+  const blessingCount = params.blessingTypes?.length || BLESSING_TYPES.length;
+  return Math.max(textCount, imageCount, blessingCount, 4);
 }
 
 /**
@@ -217,11 +330,10 @@ function validate(params) {
 function calculateDuration(params) {
   if (params.duration && params.duration !== 10) return params.duration;
   
-  const groupInterval = params.groupInterval || 50;
+  const contentCount = getContentCount(params);
   const totalAnimation = params.approachDuration + params.breakthroughDuration + params.holdDuration;
-  const wordsCount = params.textGroups ? params.textGroups.length : (params.words ? params.words.length : 0);
-  const lastGroupStart = (wordsCount - 1) * groupInterval;
-  const totalFrames = lastGroupStart + totalAnimation + (params.enableFallDown ? params.fallDownDuration : 0) + 20;
+  const lastItemStart = (contentCount - 1) * params.contentInterval;
+  const totalFrames = lastItemStart + totalAnimation + (params.enableFallDown ? params.fallDownDuration : 0) + 20;
   return Math.ceil(totalFrames / params.fps);
 }
 
@@ -236,13 +348,8 @@ function buildRenderParams(reqParams, commonParams) {
     }
   }
 
-  // 构建 textGroups（如果没有提供）
-  if (!result.textGroups && result.words && result.words.length > 0) {
-    result.textGroups = result.words.map(w => ({ texts: [w], groupDelay: result.groupInterval }));
-  }
-
-  // 自动计算时长
-  if (!reqParams.duration) {
+  // 自动计算时长（非循环模式）
+  if (!reqParams.duration && !result.enableLoop) {
     result.duration = calculateDuration(result);
   }
 

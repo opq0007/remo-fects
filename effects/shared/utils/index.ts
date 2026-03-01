@@ -34,3 +34,21 @@ export {
   generateTextStyle,
   type TextStyleConfig,
 } from "./textStyle";
+
+// 混合输入工具函数
+export {
+  DEFAULT_BLESSING_TYPES,
+  DEFAULT_BLESSING_STYLE,
+  detectAvailableContent,
+  determineContentType,
+  getNextContent,
+  getSizeRange,
+  generateRandomSize,
+  generateRandomOpacity,
+  generateRandomRotation,
+  mergeBlessingStyle,
+  createMixedInputItem,
+  generateMixedInputItems,
+  hasAnyContent,
+  getEffectiveBlessingTypes,
+} from "./mixed-input";

@@ -25,3 +25,22 @@ export { BaseComposition } from "./BaseComposition";
 export type { BaseCompositionComponentProps } from "./BaseComposition";
 
 export { BlessingSymbol, SingleBlessingSymbol } from "./BlessingSymbol";
+
+// 混合输入渲染组件
+export {
+  TextItemRender,
+  ImageItemRender,
+  BlessingItemRender,
+  MixedInputItemRender,
+  MixedInputListRender,
+  isTextItem,
+  isImageItem,
+  isBlessingItem,
+} from "./MixedInputItem";
+export type {
+  TextItemRenderProps,
+  ImageItemRenderProps,
+  BlessingItemRenderProps,
+  MixedInputItemRenderProps,
+  MixedInputListRenderProps,
+} from "./MixedInputItem";

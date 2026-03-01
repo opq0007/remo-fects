@@ -21,6 +21,14 @@ const positionWords = [
   "幸福美满"
 ];
 
+// 混合输入默认参数
+const defaultMixedInput = {
+  contentType: "text" as const,
+  images: [],
+  blessingTypes: [],
+  imageWeight: 0.5,
+};
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -34,6 +42,7 @@ export const RemotionRoot: React.FC = () => {
           height={1280}
           schema={TextRingCompositionSchema}
           defaultProps={{
+            ...defaultMixedInput,
             words: defaultWords,
             fontSize: 70,
             opacity: 1,
@@ -92,6 +101,7 @@ export const RemotionRoot: React.FC = () => {
           height={1280}
           schema={TextRingCompositionSchema}
           defaultProps={{
+            ...defaultMixedInput,
             words: defaultWords,
             fontSize: 65,
             opacity: 1,
@@ -120,6 +130,7 @@ export const RemotionRoot: React.FC = () => {
           height={1920}
           schema={TextRingCompositionSchema}
           defaultProps={{
+            ...defaultMixedInput,
             words: defaultWords,
             fontSize: 90,
             opacity: 1,
@@ -148,6 +159,7 @@ export const RemotionRoot: React.FC = () => {
           height={1080}
           schema={TextRingCompositionSchema}
           defaultProps={{
+            ...defaultMixedInput,
             words: defaultWords,
             fontSize: 70,
             opacity: 1,
@@ -176,6 +188,7 @@ export const RemotionRoot: React.FC = () => {
           height={1920}
           schema={TextRingCompositionSchema}
           defaultProps={{
+            ...defaultMixedInput,
             words: [
               "身体健康",
               "平安喜乐",
@@ -214,6 +227,7 @@ export const RemotionRoot: React.FC = () => {
           height={1280}
           schema={TextRingCompositionSchema}
           defaultProps={{
+            ...defaultMixedInput,
             words: positionWords.slice(0, 4),
             fontSize: 70,
             opacity: 1,
@@ -242,6 +256,7 @@ export const RemotionRoot: React.FC = () => {
           height={1280}
           schema={TextRingCompositionSchema}
           defaultProps={{
+            ...defaultMixedInput,
             words: positionWords,
             fontSize: 60,
             opacity: 1,
