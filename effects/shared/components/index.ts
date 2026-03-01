@@ -36,6 +36,9 @@ export {
   isTextItem,
   isImageItem,
   isBlessingItem,
+  isNetworkUrl,
+  isDataUrl,
+  getImageSrc,
 } from "./MixedInputItem";
 export type {
   TextItemRenderProps,

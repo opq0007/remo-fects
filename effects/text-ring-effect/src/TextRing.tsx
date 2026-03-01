@@ -17,6 +17,7 @@ import {
   mergeBlessingStyle,
   BlessingStyleConfig,
   generateTextStyle,
+  getImageSrc,
 } from "../../shared/index";
 
 // ==================== 类型定义 ====================
@@ -231,7 +232,7 @@ const ImageRingItem: React.FC<{
       }}
     >
       <Img
-        src={staticFile(item.content)}
+        src={getImageSrc(item.content)}
         style={{
           width: "100%",
           height: "100%",

@@ -1,6 +1,6 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig, interpolate, Easing, Img, staticFile } from "remotion";
-import { SingleBlessingSymbol, BlessingSymbolType } from "../../shared/index";
+import { SingleBlessingSymbol, BlessingSymbolType, getImageSrc } from "../../shared/index";
 
 // ==================== 类型定义 ====================
 
@@ -575,7 +575,7 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
       return (
         <div style={{ ...baseStyle, filter: `drop-shadow(0 0 ${20 * glowIntensity * scale}px ${glowColor})` }}>
           <Img
-            src={staticFile(imageSrc)}
+            src={getImageSrc(imageSrc)}
             style={{ width: size, height: size, objectFit: "contain" }}
           />
         </div>

@@ -54,7 +54,7 @@ const params = {
       }
       return [];
     },
-    description: '图片列表（相对于 public 目录）'
+    description: '图片列表（支持：public目录相对路径、网络URL、Data URL）'
   },
   blessingTypes: {
     type: 'array',

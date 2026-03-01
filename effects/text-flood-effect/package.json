@@ -1,0 +1,12 @@
+{
+  "name": "text-flood-effect",
+  "version": "1.0.0",
+  "description": "文字洪水特效 - 模拟洪水从远及近、奔涌而来的震撼效果",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render src/index.ts TextFlood out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextFlood out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TextFlood out/preview.mp4 --frames=0-90 --chromium-flags=\"--headless=new\""
+  }
+}

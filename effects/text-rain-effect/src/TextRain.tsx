@@ -12,7 +12,8 @@ import {
 import {
   BlessingSymbol,
   BlessingSymbolType,
-} from "../../shared/components/BlessingSymbol";
+  getImageSrc,
+} from "../../shared/components";
 
 // ==================== 文字样式类型定义 ====================
 
@@ -798,7 +799,7 @@ const ImageRainDropItem: React.FC<{
         pointerEvents: "none",
       }}
     >
-      <Img src={staticFile(drop.imageSrc)} style={imgStyles} />
+      <Img src={getImageSrc(drop.imageSrc)} style={imgStyles} />
     </div>
   );
 };

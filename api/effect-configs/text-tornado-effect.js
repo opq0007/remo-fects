@@ -69,7 +69,7 @@ const params = {
     type: 'array',
     defaultValue: [],
     parser: arrayParser([]),
-    description: '图片路径列表 (相对于 public 目录)'
+    description: '图片路径列表（支持：1. public目录相对路径如"coin.png" 2. 网络URL如"https://example.com/img.png" 3. Data URL base64编码）'
   },
   imageWeight: {
     type: 'number',

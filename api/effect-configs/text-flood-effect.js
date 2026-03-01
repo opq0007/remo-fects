@@ -1,7 +1,7 @@
 /**
- * 文字雨特效参数配置
+ * 文字洪水特效参数配置
  * 
- * 定义 text-rain-effect 特效的所有参数
+ * 定义 text-flood-effect 特效的所有参数
  */
 
 const path = require('path');
@@ -10,10 +10,10 @@ const path = require('path');
  * 特效基础信息
  */
 const config = {
-  id: 'text-rain-effect',
-  name: '文字雨特效',
-  compositionId: 'TextRain',
-  path: path.join(__dirname, '../../effects/text-rain-effect')
+  id: 'text-flood-effect',
+  name: '文字洪水特效',
+  compositionId: 'TextFlood',
+  path: path.join(__dirname, '../../effects/text-flood-effect')
 };
 
 /**
@@ -59,8 +59,8 @@ const params = {
   // ===== 文字内容 =====
   words: {
     type: 'array',
-    defaultValue: [],
-    parser: arrayParser([]),
+    defaultValue: ['洪', '福', '财', '运', '吉', '祥'],
+    parser: arrayParser(['洪', '福', '财', '运', '吉', '祥']),
     description: '文字列表'
   },
 
@@ -73,8 +73,8 @@ const params = {
   },
   imageWeight: {
     type: 'number',
-    defaultValue: 0.5,
-    parser: (v) => Math.max(0, Math.min(1, parseFloat(v) || 0.5)),
+    defaultValue: 0.3,
+    parser: (v) => Math.max(0, Math.min(1, parseFloat(v) || 0.3)),
     description: 'mixed 模式下图片出现权重 (0-1)'
   },
 
@@ -92,39 +92,76 @@ const params = {
       secondaryColor: '#FFA500',
       enable3D: true,
       enableGlow: true,
-      glowIntensity: 1,
-      animated: false
+      glowIntensity: 1.2
     },
     parser: objectParser({
       primaryColor: '#FFD700',
       secondaryColor: '#FFA500',
       enable3D: true,
       enableGlow: true,
-      glowIntensity: 1,
-      animated: false
+      glowIntensity: 1.2
     }),
     description: '祝福图案样式配置'
   },
 
-  // ===== 文字方向 =====
-  textDirection: {
+  // ===== 洪水参数 =====
+  particleCount: {
+    type: 'number',
+    defaultValue: 60,
+    parser: (v) => Math.max(10, Math.min(200, parseInt(v) || 60)),
+    description: '粒子数量 (10-200)'
+  },
+  waveCount: {
+    type: 'number',
+    defaultValue: 5,
+    parser: (v) => Math.max(1, Math.min(10, parseInt(v) || 5)),
+    description: '波浪层数 (1-10)'
+  },
+  direction: {
     type: 'string',
-    defaultValue: 'horizontal',
-    description: '文字排列方向：horizontal(横排) | vertical(竖排)'
+    defaultValue: 'toward',
+    description: '洪水方向：toward(从远到近，冲击感) | away(从近到远，退去感)'
   },
 
-  // ===== 运动方向 =====
-  fallDirection: {
-    type: 'string',
-    defaultValue: 'down',
-    description: '雨滴运动方向：down(从上到下) | up(从下到上)'
+  // ===== 波浪配置 =====
+  waveConfig: {
+    type: 'object',
+    defaultValue: {
+      waveSpeed: 1.5,
+      waveAmplitude: 60,
+      waveFrequency: 2
+    },
+    parser: objectParser({
+      waveSpeed: 1.5,
+      waveAmplitude: 60,
+      waveFrequency: 2
+    }),
+    description: '波浪配置'
+  },
+
+  // ===== 冲击效果配置 =====
+  impactConfig: {
+    type: 'object',
+    defaultValue: {
+      impactStart: 0.7,
+      impactScale: 3,
+      impactBlur: 8,
+      impactShake: 15
+    },
+    parser: objectParser({
+      impactStart: 0.7,
+      impactScale: 3,
+      impactBlur: 8,
+      impactShake: 15
+    }),
+    description: '冲击效果配置'
   },
 
   // ===== 字体配置 =====
   fontSizeRange: {
     type: 'array',
-    defaultValue: [80, 160],
-    parser: arrayParser([80, 160]),
+    defaultValue: [60, 120],
+    parser: arrayParser([60, 120]),
     description: '字体大小范围 [min, max]'
   },
   imageSizeRange: {
@@ -133,68 +170,97 @@ const params = {
     parser: arrayParser([80, 150]),
     description: '图片大小范围 [min, max]'
   },
-
-  // ===== 运动参数 =====
-  fallSpeed: {
-    type: 'number',
-    defaultValue: 0.15,
-    parser: (v) => parseFloat(v) || 0.15,
-    description: '下落/上升速度系数'
-  },
-  density: {
-    type: 'number',
-    defaultValue: 2,
-    parser: (v) => parseFloat(v) || 2,
-    description: '雨滴密度'
-  },
-  laneCount: {
-    type: 'number',
-    defaultValue: 6,
-    parser: (v) => parseInt(v) || 6,
-    description: '列道数量'
-  },
-  minVerticalGap: {
-    type: 'number',
-    defaultValue: 100,
-    parser: (v) => parseInt(v) || 100,
-    description: '最小垂直间距'
+  blessingSizeRange: {
+    type: 'array',
+    defaultValue: [80, 150],
+    parser: arrayParser([80, 150]),
+    description: '祝福图案大小范围 [min, max]'
   },
 
-  // ===== 透明度和旋转 =====
+  // ===== 透明度 =====
   opacityRange: {
     type: 'array',
-    defaultValue: [0.6, 1],
-    parser: arrayParser([0.6, 1]),
+    defaultValue: [0.7, 1],
+    parser: arrayParser([0.7, 1]),
     description: '透明度范围 [min, max]'
-  },
-  rotationRange: {
-    type: 'array',
-    defaultValue: [-10, 10],
-    parser: arrayParser([-10, 10]),
-    description: '旋转角度范围 [min, max]'
   },
 
   // ===== 文字样式 =====
   textStyle: {
     type: 'object',
     defaultValue: {
-      color: '#ffd700',
-      effect: 'gold3d',
-      effectIntensity: 0.9,
-      fontWeight: 700,
-      letterSpacing: 4
+      color: '#00d4ff',
+      effect: 'glow',
+      effectIntensity: 1.2,
+      fontWeight: 900
     },
     parser: objectParser({
-      color: '#ffd700',
-      effect: 'gold3d',
-      effectIntensity: 0.9,
-      fontWeight: 700,
-      letterSpacing: 4
+      color: '#00d4ff',
+      effect: 'glow',
+      effectIntensity: 1.2,
+      fontWeight: 900
     }),
     description: '文字样式配置'
   },
 
-  // ===== 音频（覆盖默认值） =====
+  // ===== 图片样式 =====
+  imageStyle: {
+    type: 'object',
+    defaultValue: {
+      glow: true,
+      glowColor: '#00d4ff',
+      glowIntensity: 0.8,
+      shadow: true
+    },
+    parser: objectParser({
+      glow: true,
+      glowColor: '#00d4ff',
+      glowIntensity: 0.8,
+      shadow: true
+    }),
+    description: '图片样式配置'
+  },
+
+  // ===== 视觉效果 =====
+  enablePerspective: {
+    type: 'boolean',
+    defaultValue: true,
+    parser: (v) => v !== false && v !== 'false',
+    description: '是否启用3D透视效果'
+  },
+  perspectiveStrength: {
+    type: 'number',
+    defaultValue: 800,
+    parser: (v) => Math.max(100, Math.min(2000, parseFloat(v) || 800)),
+    description: '透视强度 (100-2000)'
+  },
+  enableWaveBackground: {
+    type: 'boolean',
+    defaultValue: true,
+    parser: (v) => v !== false && v !== 'false',
+    description: '是否启用波浪背景'
+  },
+  waveBackgroundColor: {
+    type: 'string',
+    defaultValue: '#0a3a5a',
+    description: '波浪背景颜色'
+  },
+  waveBackgroundOpacity: {
+    type: 'number',
+    defaultValue: 0.4,
+    parser: (v) => Math.max(0, Math.min(1, parseFloat(v) || 0.4)),
+    description: '波浪背景透明度 (0-1)'
+  },
+
+  // ===== 随机种子 =====
+  seed: {
+    type: 'number',
+    defaultValue: 42,
+    parser: (v) => parseInt(v) || 42,
+    description: '随机种子'
+  },
+
+  // ===== 音频 =====
   audioEnabled: {
     type: 'boolean',
     defaultValue: true,
@@ -226,8 +292,8 @@ function validate(params) {
     }
   } else if (contentType === 'mixed') {
     // mixed 模式至少需要提供一种内容
-    const hasContent = (words && words.length > 0) || 
-                       (images && images.length > 0) || 
+    const hasContent = (words && words.length > 0) ||
+                       (images && images.length > 0) ||
                        (blessingTypes && blessingTypes.length > 0);
     if (!hasContent) {
       return { valid: false, error: 'mixed 模式需要至少提供 words、images 或 blessingTypes 中的一种' };

@@ -7,6 +7,7 @@ import {
 } from "remotion";
 import { Video } from "@remotion/media";
 import { BackgroundType, BackgroundComponentProps } from "../schemas";
+import { getImageSrc } from "./MixedInputItem";
 
 /**
  * 默认背景渐变
@@ -61,7 +62,7 @@ export const Background: React.FC<BackgroundComponentProps> = ({
     return (
       <AbsoluteFill>
         <Img 
-          src={staticFile(source)} 
+          src={getImageSrc(source)} 
           style={{ width, height, objectFit: "cover" }} 
         />
       </AbsoluteFill>
@@ -70,10 +71,14 @@ export const Background: React.FC<BackgroundComponentProps> = ({
 
   // 视频背景
   if (type === "video" && source) {
+    // 视频只支持本地文件或网络 URL，不支持 Data URL
+    const videoSrc = source.startsWith('http://') || source.startsWith('https://') 
+      ? source 
+      : staticFile(source);
     return (
       <AbsoluteFill>
         <Video
-          src={staticFile(source)}
+          src={videoSrc}
           style={{ width, height, objectFit: "cover" }}
           loop={videoLoop}
           muted={videoMuted}

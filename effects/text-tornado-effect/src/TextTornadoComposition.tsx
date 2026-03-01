@@ -41,7 +41,7 @@ export const TextTornadoSchema = z.object({
   // 内容配置
   contentType: ContentTypeSchema,
   words: z.array(z.string()).optional().meta({ description: "文字列表" }),
-  images: z.array(z.string()).optional().meta({ description: "图片路径列表" }),
+  images: z.array(z.string()).optional().meta({ description: "图片路径列表（支持：public目录相对路径、网络URL、Data URL）" }),
   imageWeight: z.number().min(0).max(1).optional().meta({ description: "图片出现权重" }),
   blessingTypes: z.array(BlessingSymbolTypeSchema).optional().meta({ description: "祝福图案类型列表" }),
   blessingStyle: BlessingStyleSchema.optional().meta({ description: "祝福图案样式配置" }),

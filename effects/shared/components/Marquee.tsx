@@ -5,6 +5,7 @@ import {
   staticFile,
   Img,
 } from "remotion";
+import { getImageSrc } from "./MixedInputItem";
 
 /**
  * 文字样式配置
@@ -444,7 +445,7 @@ const MarqueeLayer: React.FC<{
         }
 
         items.push(
-          <Img key={`img-${index}-${startOffset}`} src={staticFile(item.src)} style={imgStyle} />
+          <Img key={`img-${index}-${startOffset}`} src={getImageSrc(item.src)} style={imgStyle} />
         );
       });
     }

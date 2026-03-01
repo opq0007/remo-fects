@@ -15,7 +15,8 @@ const effectConfigs = {
   'text-breakthrough-effect': require('./text-breakthrough-effect'),
   'tai-chi-bagua-effect': require('./tai-chi-bagua-effect'),
   'text-grow-explode-effect': require('./text-grow-explode-effect'),
-  'text-tornado-effect': require('./text-tornado-effect')
+  'text-tornado-effect': require('./text-tornado-effect'),
+  'text-flood-effect': require('./text-flood-effect')
 };
 
 // 导入公共参数处理

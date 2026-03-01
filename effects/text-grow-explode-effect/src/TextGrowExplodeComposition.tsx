@@ -23,6 +23,7 @@ import {
   Overlay,
   Watermark,
   Marquee,
+  getImageSrc,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -259,7 +260,7 @@ export const TextGrowExplodeComposition: React.FC<TextGrowExplodeCompositionProp
       
       {backgroundProgress > 0 && (
         <AbsoluteFill style={{ opacity: backgroundProgress * explodeBackgroundOpacity }}>
-          <Img src={staticFile(imageSource)} style={{ width, height, objectFit: "cover" }} />
+          <Img src={getImageSrc(imageSource)} style={{ width, height, objectFit: "cover" }} />
         </AbsoluteFill>
       )}
 

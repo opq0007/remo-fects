@@ -145,7 +145,7 @@ const params = {
   imageSource: {
     type: 'string',
     defaultValue: null,
-    description: '图片源'
+    description: '图片源（支持：public目录相对路径、网络URL）'
   },
 
   // ===== 循环播放 =====

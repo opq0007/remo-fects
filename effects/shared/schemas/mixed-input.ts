@@ -93,7 +93,7 @@ export const MixedInputSchema = z.object({
   contentType: MixedContentTypeSchema.optional().default("text"),
   /** 文字列表 */
   words: z.array(z.string()).optional().default([]),
-  /** 图片路径列表（相对于 public 目录） */
+  /** 图片路径列表（支持：public目录相对路径、网络URL、Data URL） */
   images: z.array(z.string()).optional().default([]),
   /** 祝福图案类型列表 */
   blessingTypes: z.array(z.enum(["goldCoin", "moneyBag", "luckyBag", "redPacket"])).optional().default([]),

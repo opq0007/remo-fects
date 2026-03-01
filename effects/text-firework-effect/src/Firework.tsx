@@ -1,6 +1,6 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig, interpolate, Img, staticFile } from "remotion";
-import { SingleBlessingSymbol, BlessingSymbolType } from "../../shared/index";
+import { SingleBlessingSymbol, BlessingSymbolType, getImageSrc } from "../../shared/index";
 
 // ==================== 类型定义 ====================
 
@@ -377,7 +377,7 @@ export const Firework: React.FC<FireworkProps> = ({
           }}
         >
           <Img
-            src={staticFile(imageSrc)}
+            src={getImageSrc(imageSrc)}
             style={{
               width: size,
               height: size,

@@ -76,6 +76,32 @@ export interface MixedInputItemRenderProps {
   animationProgress?: number;
 }
 
+// ==================== URL 判断工具 ====================
+
+/**
+ * 判断是否为网络 URL（http/https）
+ */
+export function isNetworkUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+/**
+ * 判断是否为 Data URL（base64）
+ */
+export function isDataUrl(url: string): boolean {
+  return url.startsWith('data:');
+}
+
+/**
+ * 获取图片源（支持本地文件、网络URL、Data URL）
+ */
+export function getImageSrc(content: string): string {
+  if (isNetworkUrl(content) || isDataUrl(content)) {
+    return content;
+  }
+  return staticFile(content);
+}
+
 // ==================== 样式生成函数 ====================
 
 /**
@@ -195,6 +221,11 @@ export const TextItemRender: React.FC<TextItemRenderProps> = ({
 
 /**
  * 图片项目渲染组件
+ * 
+ * 支持三种图片来源：
+ * 1. 本地 public 目录文件：使用相对路径，如 "coin.png"
+ * 2. 网络 URL：http:// 或 https:// 开头的完整 URL
+ * 3. Data URL：base64 编码的图片数据
  */
 export const ImageItemRender: React.FC<ImageItemRenderProps> = ({
   item,
@@ -225,6 +256,9 @@ export const ImageItemRender: React.FC<ImageItemRenderProps> = ({
     item.rotation ?? 0
   );
 
+  // 智能获取图片源（支持本地、网络URL、Data URL）
+  const imgSrc = getImageSrc(item.content);
+
   return (
     <div
       style={{
@@ -237,7 +271,7 @@ export const ImageItemRender: React.FC<ImageItemRenderProps> = ({
         ...containerStyle,
       }}
     >
-      <Img src={staticFile(item.content)} style={imgStyles} />
+      <Img src={imgSrc} style={imgStyles} />
     </div>
   );
 };

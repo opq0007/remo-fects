@@ -1,5 +1,10 @@
+/**
+ * 文字洪水组合组件
+ * 
+ * 集成 BaseComposition、水印、走马灯等公共功能
+ */
+
 import React from "react";
-import { TextRain, TextStyleConfig, ImageStyleConfig, RainContentType, TextDirection, FallDirection, BlessingStyleConfig } from "./TextRain";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
@@ -11,149 +16,160 @@ import {
   MarqueeSchema,
   BlessingSymbolTypeSchema,
 } from "../../shared/index";
+import {
+  TextFlood,
+  TextFloodProps,
+  FloodDirection,
+  FloodWaveConfig,
+  FloodImpactConfig,
+} from "./TextFlood";
 
 // ==================== 特有 Schema 定义 ====================
 
-const GradientSchema = z.object({
-  type: z.enum(["linear", "radial"]).meta({ description: "渐变类型" }),
-  colors: z.array(z.string()).meta({ description: "渐变颜色数组" }),
-  angle: z.number().optional().meta({ description: "线性渐变角度 (度)" }),
-  positions: z.array(z.number()).optional().meta({ description: "颜色位置 (0-1)" }),
+const FloodDirectionSchema = z.enum(["toward", "away"]).meta({
+  description: "洪水方向：toward(从远到近，冲击感) | away(从近到远，退去感)",
+});
+
+const WaveConfigSchema = z.object({
+  waveSpeed: z.number().min(0.1).max(5).optional().meta({ description: "波浪速度" }),
+  waveAmplitude: z.number().min(0).max(200).optional().meta({ description: "波浪振幅" }),
+  waveFrequency: z.number().min(0.1).max(10).optional().meta({ description: "波浪频率" }),
+});
+
+const ImpactConfigSchema = z.object({
+  impactStart: z.number().min(0).max(1).optional().meta({ description: "冲击效果开始时间（比例）" }),
+  impactScale: z.number().min(1).max(5).optional().meta({ description: "冲击放大倍数" }),
+  impactBlur: z.number().min(0).max(20).optional().meta({ description: "冲击模糊强度" }),
+  impactShake: z.number().min(0).max(50).optional().meta({ description: "冲击震动幅度" }),
 });
 
 const TextStyleSchema = z.object({
   color: zColor().optional().meta({ description: "文字颜色" }),
-  gradient: GradientSchema.optional().meta({ description: "渐变色配置" }),
-  fontFamily: z.string().optional().meta({ description: "字体" }),
-  fontWeight: z.number().min(100).max(900).optional().meta({ description: "字重" }),
-  letterSpacing: z.number().optional().meta({ description: "字间距 (像素)" }),
   effect: z.enum([
-    "none", "3d", "gold3d", "shadow", "emboss", 
-    "neon", "metallic", "retro", "glow", "outline"
+    "none", "shadow", "gold3d", "emboss",
+    "neon", "glow", "outline"
   ]).optional().meta({ description: "文字特效类型" }),
-  effectIntensity: z.number().min(0).max(1).optional().meta({ description: "特效强度" }),
-  shadowColor: zColor().optional().meta({ description: "阴影颜色" }),
-  shadowBlur: z.number().optional().meta({ description: "阴影模糊" }),
-  shadowOffset: z.tuple([z.number(), z.number()]).optional().meta({ description: "阴影偏移" }),
-  strokeColor: zColor().optional().meta({ description: "描边颜色" }),
-  strokeWidth: z.number().optional().meta({ description: "描边宽度" }),
+  effectIntensity: z.number().min(0).max(2).optional().meta({ description: "特效强度" }),
+  fontWeight: z.number().min(100).max(900).optional().meta({ description: "字重" }),
+  fontFamily: z.string().optional().meta({ description: "字体" }),
 });
 
 const ImageStyleSchema = z.object({
-  scale: z.number().optional().meta({ description: "基础缩放" }),
-  scaleRange: z.tuple([z.number(), z.number()]).optional().meta({ description: "随机缩放范围" }),
-  swing: z.boolean().optional().meta({ description: "是否摇摆" }),
-  swingAngle: z.number().optional().meta({ description: "摇摆角度" }),
-  swingSpeed: z.number().optional().meta({ description: "摇摆速度" }),
-  spin: z.boolean().optional().meta({ description: "是否旋转" }),
-  spinSpeed: z.number().optional().meta({ description: "旋转速度 (圈/秒)" }),
   glow: z.boolean().optional().meta({ description: "是否发光" }),
   glowColor: zColor().optional().meta({ description: "发光颜色" }),
-  glowIntensity: z.number().min(0).max(1).optional().meta({ description: "发光强度" }),
+  glowIntensity: z.number().min(0).max(2).optional().meta({ description: "发光强度" }),
   shadow: z.boolean().optional().meta({ description: "是否阴影" }),
-  shadowColor: zColor().optional().meta({ description: "阴影颜色" }),
   shadowBlur: z.number().optional().meta({ description: "阴影模糊" }),
-  shadowOffset: z.tuple([z.number(), z.number()]).optional().meta({ description: "阴影偏移" }),
-  tint: zColor().optional().meta({ description: "着色" }),
-  brightness: z.number().optional().meta({ description: "亮度 (0-2)" }),
-  saturate: z.number().optional().meta({ description: "饱和度 (0-2)" }),
+  swing: z.boolean().optional().meta({ description: "是否摇摆" }),
+  spin: z.boolean().optional().meta({ description: "是否旋转" }),
 });
 
-// 祝福图案样式 Schema
 const BlessingStyleSchema = z.object({
   primaryColor: zColor().optional().meta({ description: "主颜色" }),
   secondaryColor: zColor().optional().meta({ description: "次颜色" }),
   enable3D: z.boolean().optional().meta({ description: "是否启用3D效果" }),
   enableGlow: z.boolean().optional().meta({ description: "是否启用发光效果" }),
   glowIntensity: z.number().min(0).max(2).optional().meta({ description: "发光强度" }),
-  animated: z.boolean().optional().meta({ description: "是否启用动画" }),
 });
 
-// ==================== 主组件 Schema（使用公共 Schema）====================
+// ==================== 主组件 Schema ====================
 
-export const TextRainCompositionSchema = z.object({
+export const TextFloodCompositionSchema = z.object({
   // 内容配置
   words: z.array(z.string()).optional().meta({ description: "要显示的文字列表" }),
   images: z.array(z.string()).optional().meta({ description: "图片路径列表（支持：public目录相对路径、网络URL、Data URL）" }),
   contentType: z.enum(["text", "image", "mixed", "blessing"]).meta({ description: "内容类型" }),
   imageWeight: z.number().min(0).max(1).optional().meta({ description: "图片出现权重 (mixed模式下)" }),
-  
-  // 祝福图案配置 (blessing 模式)
+
+  // 祝福图案配置
   blessingTypes: z.array(BlessingSymbolTypeSchema).optional().meta({ description: "祝福图案类型列表" }),
   blessingStyle: BlessingStyleSchema.optional().meta({ description: "祝福图案样式配置" }),
-  
-  // 文字排列方向
-  textDirection: z.enum(["horizontal", "vertical"]).meta({ description: "文字排列方向：horizontal (从左到右) 或 vertical (从上到下)" }),
-  
-  // 运动方向
-  fallDirection: z.enum(["down", "up"]).optional().meta({ description: "雨滴运动方向：down (从上到下，默认) 或 up (从下到上)" }),
-  
-  // 雨滴配置
-  density: z.number().min(1).max(20).meta({ description: "雨滴密度" }),
-  fallSpeed: z.number().min(0.1).max(2).meta({ description: "下落速度系数" }),
+
+  // 洪水参数
+  particleCount: z.number().min(10).max(200).meta({ description: "粒子数量" }),
+  waveCount: z.number().min(1).max(10).meta({ description: "波浪层数" }),
+  direction: FloodDirectionSchema,
+
+  // 波浪配置
+  waveConfig: WaveConfigSchema.optional().meta({ description: "波浪配置" }),
+
+  // 冲击效果配置
+  impactConfig: ImpactConfigSchema.optional().meta({ description: "冲击效果配置" }),
+
+  // 尺寸范围
   fontSizeRange: z.tuple([z.number(), z.number()]).meta({ description: "字体大小范围" }),
   imageSizeRange: z.tuple([z.number(), z.number()]).meta({ description: "图片大小范围" }),
+  blessingSizeRange: z.tuple([z.number(), z.number()]).optional().meta({ description: "祝福图案大小范围" }),
+
+  // 透明度范围
   opacityRange: z.tuple([z.number(), z.number()]).meta({ description: "透明度范围" }),
-  rotationRange: z.tuple([z.number(), z.number()]).meta({ description: "旋转角度范围" }),
-  seed: z.number().meta({ description: "随机种子" }),
-  
-  // 防重叠配置
-  laneCount: z.number().min(4).max(24).meta({ description: "列道数量" }),
-  minVerticalGap: z.number().min(20).max(300).meta({ description: "最小垂直间距" }),
 
   // 样式配置
   textStyle: TextStyleSchema.optional().meta({ description: "文字样式配置" }),
   imageStyle: ImageStyleSchema.optional().meta({ description: "图片样式配置" }),
 
-  // 音效配置（使用公共嵌套 Schema）
+  // 视觉效果
+  enablePerspective: z.boolean().optional().meta({ description: "是否启用3D透视效果" }),
+  perspectiveStrength: z.number().min(100).max(2000).optional().meta({ description: "透视强度" }),
+  enableWaveBackground: z.boolean().optional().meta({ description: "是否启用波浪背景" }),
+  waveBackgroundColor: zColor().optional().meta({ description: "波浪背景颜色" }),
+  waveBackgroundOpacity: z.number().min(0).max(1).optional().meta({ description: "波浪背景透明度" }),
+
+  // 随机种子
+  seed: z.number().meta({ description: "随机种子" }),
+
+  // 音效配置
   audio: NestedAudioSchema.optional().meta({ description: "音效配置" }),
 
-  // 背景配置（使用公共 Schema，包含视频选项）
+  // 背景配置
   ...FullBackgroundSchema.shape,
-  
-  // 遮罩效果（使用公共 Schema）
+
+  // 遮罩效果
   ...OverlaySchema.shape,
 
-  // 水印配置（使用公共 Schema）
+  // 水印配置
   ...WatermarkSchema.shape,
 
-  // 走马灯配置（使用公共 Schema）
+  // 走马灯配置
   ...MarqueeSchema.shape,
 });
 
-export type TextRainCompositionProps = z.infer<typeof TextRainCompositionSchema>;
+export type TextFloodCompositionProps = z.infer<typeof TextFloodCompositionSchema>;
 
 // ==================== 主组件 ====================
 
-export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
+export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
   words = [],
   images = [],
   contentType = "text",
   imageWeight = 0.5,
-  textDirection = "horizontal",
-  fallDirection = "down",  // 默认从上到下
-  density = 2,
-  fallSpeed = 0.2,
-  fontSizeRange = [72, 140],
-  imageSizeRange = [80, 180],
-  opacityRange = [0.6, 1],
-  rotationRange = [-10, 10],
-  seed = 42,
-  laneCount = 8,
-  minVerticalGap = 140,
+  particleCount = 80,
+  waveCount = 5,
+  direction = "toward",
+  waveConfig,
+  impactConfig,
+  fontSizeRange = [50, 100],
+  imageSizeRange = [60, 120],
+  blessingSizeRange = [60, 120],
+  opacityRange = [0.7, 1],
   textStyle,
   imageStyle,
-  // 祝福图案参数
   blessingTypes,
   blessingStyle,
+  enablePerspective = true,
+  perspectiveStrength = 800,
+  enableWaveBackground = true,
+  waveBackgroundColor = "#1a4a7a",
+  waveBackgroundOpacity = 0.3,
+  seed = 42,
   audio,
   backgroundType = "color",
   backgroundSource,
-  backgroundColor = "#1a1a2e",
+  backgroundColor = "#0a1a2e",
   backgroundVideoLoop = true,
   backgroundVideoMuted = true,
   overlayColor = "#000000",
-  overlayOpacity = 0.2,
+  overlayOpacity = 0.15,
   // 水印参数
   watermarkEnabled = false,
   watermarkText,
@@ -186,35 +202,33 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
 }) => {
-  const defaultTextStyle: TextStyleConfig = {
-    color: "#ffd700",
-    effect: "gold3d",
-    effectIntensity: 0.8,
-    fontWeight: 700,
+  // 默认文字样式
+  const defaultTextStyle = {
+    color: "#00d4ff",
+    effect: "glow" as const,
+    effectIntensity: 1,
+    fontWeight: 800,
     fontFamily: "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
-    letterSpacing: 2,
     ...textStyle,
   };
 
-  const defaultImageStyle: ImageStyleConfig = {
+  // 默认图片样式
+  const defaultImageStyle = {
     glow: true,
-    glowColor: "#ffd700",
-    glowIntensity: 0.6,
+    glowColor: "#00d4ff",
+    glowIntensity: 0.8,
     shadow: true,
-    shadowBlur: 15,
-    swing: true,
-    swingAngle: 10,
-    swingSpeed: 2,
+    shadowBlur: 20,
     ...imageStyle,
   };
 
-  const defaultBlessingStyle: BlessingStyleConfig = {
-    primaryColor: "#FFD700",
-    secondaryColor: "#FFA500",
+  // 默认祝福图案样式
+  const defaultBlessingStyle = {
+    primaryColor: "#00d4ff",
+    secondaryColor: "#0088cc",
     enable3D: true,
     enableGlow: true,
-    glowIntensity: 1,
-    animated: false,
+    glowIntensity: 1.2,
     ...blessingStyle,
   };
 
@@ -229,17 +243,17 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
     ? {
         enabled: true,
         foreground: {
-          texts: (marqueeForegroundTexts ?? ["新年快乐", "万事如意", "恭喜发财"]).map(text => ({ text })),
+          texts: (marqueeForegroundTexts ?? ["洪水来袭", "势不可挡", "奔涌向前"]).map(text => ({ text })),
           fontSize: marqueeForegroundFontSize ?? 32,
           opacity: marqueeForegroundOpacity ?? 0.9,
           spacing: marqueeSpacing ?? 80,
           textStyle: {
-            color: marqueeForegroundColor ?? "#ffd700",
-            effect: marqueeForegroundEffect ?? "none",
+            color: marqueeForegroundColor ?? "#00d4ff",
+            effect: marqueeForegroundEffect ?? "glow",
           },
         },
         background: {
-          texts: (marqueeBackgroundTexts ?? ["新春大吉", "财源广进", "龙年行大运"]).map(text => ({ text })),
+          texts: (marqueeBackgroundTexts ?? ["滚滚洪流", "气势磅礴", "惊天动地"]).map(text => ({ text })),
           fontSize: marqueeBackgroundFontSize ?? 24,
           opacity: marqueeBackgroundOpacity ?? 0.5,
           spacing: marqueeSpacing ?? 80,
@@ -250,8 +264,8 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
         },
         orientation: marqueeOrientation ?? "horizontal",
         textOrientation: marqueeTextOrientation ?? "horizontal",
-        direction: marqueeDirection ?? "left-to-right",
-        speed: marqueeSpeed ?? 50,
+        direction: marqueeDirection ?? "right-to-left",
+        speed: marqueeSpeed ?? 60,
         foregroundOffsetX: marqueeForegroundOffsetX ?? 0,
         foregroundOffsetY: marqueeForegroundOffsetY ?? 0,
         backgroundOffsetX: marqueeBackgroundOffsetX ?? 0,
@@ -289,27 +303,33 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
       }
       marquee={marqueeConfig}
     >
-      <TextRain
+      <TextFlood
         words={words}
         images={images}
+        blessingTypes={blessingTypes}
         contentType={contentType}
         imageWeight={imageWeight}
-        textDirection={textDirection}
-        fallDirection={fallDirection}
-        density={density}
-        fallSpeed={fallSpeed}
+        particleCount={particleCount}
+        waveCount={waveCount}
+        direction={direction}
+        waveConfig={waveConfig}
+        impactConfig={impactConfig}
         fontSizeRange={fontSizeRange}
         imageSizeRange={imageSizeRange}
+        blessingSizeRange={blessingSizeRange}
         opacityRange={opacityRange}
-        rotationRange={rotationRange}
-        seed={seed}
-        laneCount={laneCount}
-        minVerticalGap={minVerticalGap}
         textStyle={defaultTextStyle}
         imageStyle={defaultImageStyle}
-        blessingTypes={blessingTypes}
         blessingStyle={defaultBlessingStyle}
+        enablePerspective={enablePerspective}
+        perspectiveStrength={perspectiveStrength}
+        enableWaveBackground={enableWaveBackground}
+        waveBackgroundColor={waveBackgroundColor}
+        waveBackgroundOpacity={waveBackgroundOpacity}
+        seed={seed}
       />
     </BaseComposition>
   );
 };
+
+export default TextFloodComposition;

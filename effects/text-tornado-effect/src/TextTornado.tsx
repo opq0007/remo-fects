@@ -8,7 +8,7 @@ import {
   Img,
   staticFile,
 } from "remotion";
-import { SingleBlessingSymbol, BlessingSymbolType } from "../../shared/components/BlessingSymbol";
+import { SingleBlessingSymbol, BlessingSymbolType, getImageSrc } from "../../shared/components";
 import { generateTextStyle } from "../../shared/utils";
 
 /**
@@ -306,7 +306,7 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
           }}
         >
           <Img
-            src={staticFile(particle.content)}
+            src={getImageSrc(particle.content)}
             style={{
               width: "100%",
               height: "100%",
