@@ -14,7 +14,6 @@ import {
   MixedInputSchema,
   BlessingSymbolType,
   DEFAULT_BLESSING_TYPES,
-  seededRandom,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema ====================
@@ -264,17 +263,15 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   const { width, height, durationInFrames } = useVideoConfig();
   const frame = useCurrentFrame();
 
-  // 计算有效的祝福图案类型
-  const effectiveBlessingTypes = blessingTypes && blessingTypes.length > 0 ? blessingTypes : DEFAULT_BLESSING_TYPES;
+  // 检测用户是否提供了祝福图案
+  const userProvidedBlessing = blessingTypes && blessingTypes.length > 0;
+  
+  // 计算有效的祝福图案类型（非 mixed 模式用于回退）
+  const effectiveBlessingTypes = userProvidedBlessing ? blessingTypes : DEFAULT_BLESSING_TYPES;
 
-  // 检测可用内容
+  // 检测可用内容类型
   const hasText = words.length > 0;
   const hasImages = images.length > 0;
-  const hasBlessing = effectiveBlessingTypes.length > 0;
-  const availableTypes: ("text" | "image" | "blessing")[] = [];
-  if (hasText) availableTypes.push("text");
-  if (hasImages) availableTypes.push("image");
-  if (hasBlessing) availableTypes.push("blessing");
 
   // 生成内容项列表
   const contentItems = React.useMemo((): ContentItem[] => {
@@ -283,71 +280,37 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
     if (contentType === "text") {
       if (hasText) {
         words.forEach(w => items.push({ type: "text", content: w }));
-      } else if (hasBlessing) {
+      } else {
+        // 回退到默认祝福图案
         effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
       }
     } else if (contentType === "image") {
       if (hasImages) {
         images.forEach(img => items.push({ type: "image", content: img }));
-      } else if (hasBlessing) {
+      } else {
+        // 回退到默认祝福图案
         effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
       }
     } else if (contentType === "blessing") {
       effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
     } else {
-      // mixed 模式：根据权重随机分配类型
-      const totalItems = Math.max(words.length, images.length, effectiveBlessingTypes.length, 4);
-      const counters = { text: 0, image: 0, blessing: 0 };
-
-      for (let i = 0; i < totalItems; i++) {
-        const seedValue = i * 1000;
-        let type: "text" | "image" | "blessing" = "blessing";
-
-        // 根据可用类型和权重决定类型
-        if (availableTypes.length === 1) {
-          type = availableTypes[0];
-        } else if (availableTypes.length === 2) {
-          const rand = seededRandom(`type-${seedValue}`);
-          if (hasText && hasImages) {
-            type = rand < imageWeight ? "image" : "text";
-          } else if (hasText && hasBlessing) {
-            type = rand < 0.5 ? "text" : "blessing";
-          } else if (hasImages && hasBlessing) {
-            type = rand < 0.5 ? "image" : "blessing";
-          }
-        } else if (availableTypes.length === 3) {
-          const blessingWeight = 0.3;
-          const textWeight = 1 - imageWeight - blessingWeight;
-          const rand = seededRandom(`type-${seedValue}`);
-          if (rand < textWeight) {
-            type = "text";
-          } else if (rand < textWeight + imageWeight) {
-            type = "image";
-          } else {
-            type = "blessing";
-          }
-        }
-
-        // 获取实际内容
-        let content = "";
-        if (type === "text" && hasText) {
-          content = words[counters.text % words.length];
-          counters.text++;
-        } else if (type === "image" && hasImages) {
-          content = images[counters.image % images.length];
-          counters.image++;
-        } else {
-          type = "blessing";
-          content = effectiveBlessingTypes[counters.blessing % effectiveBlessingTypes.length];
-          counters.blessing++;
-        }
-
-        items.push({ type, content });
+      // mixed 模式：只显示用户实际提供的内容
+      // 先添加所有文字
+      if (hasText) {
+        words.forEach(w => items.push({ type: "text", content: w }));
+      }
+      // 再添加所有图片
+      if (hasImages) {
+        images.forEach(img => items.push({ type: "image", content: img }));
+      }
+      // 只有用户提供了祝福图案才添加
+      if (userProvidedBlessing) {
+        blessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
       }
     }
 
     return items;
-  }, [contentType, words, images, effectiveBlessingTypes, imageWeight, availableTypes, hasText, hasImages, hasBlessing]);
+  }, [contentType, words, images, blessingTypes, effectiveBlessingTypes, hasText, hasImages, userProvidedBlessing]);
 
   // 计算单个动画周期的总帧数
   const cycleDuration = React.useMemo(() => {

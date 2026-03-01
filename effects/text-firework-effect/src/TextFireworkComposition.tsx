@@ -11,8 +11,6 @@ import {
   MixedInputSchema,
   seededRandom,
   BlessingSymbolType,
-  detectAvailableContent,
-  determineContentType,
   DEFAULT_BLESSING_TYPES,
 } from "../../shared/index";
 
@@ -139,30 +137,28 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
 }) => {
   const { width, height, durationInFrames } = useVideoConfig();
 
-  // 计算有效的祝福图案类型（如果有默认值则使用默认值）
-  const effectiveBlessingTypes = blessingTypes && blessingTypes.length > 0 ? blessingTypes : DEFAULT_BLESSING_TYPES;
+  // 检测用户是否提供了祝福图案
+  const userProvidedBlessing = blessingTypes && blessingTypes.length > 0;
   
-  // 检测可用内容（使用有效的祝福图案列表）
-  const available = detectAvailableContent({ 
-    contentType, 
-    words, 
-    images, 
-    blessingTypes: effectiveBlessingTypes,
-    imageWeight 
-  });
+  // 计算有效的祝福图案类型（非 mixed 模式用于回退）
+  const effectiveBlessingTypes = userProvidedBlessing ? blessingTypes : DEFAULT_BLESSING_TYPES;
+
+  // 检测可用内容类型
+  const hasText = words.length > 0;
+  const hasImages = images.length > 0;
 
   // 生成内容列表
   const contentItems = React.useMemo((): ContentItem[] => {
     const items: ContentItem[] = [];
     
     if (contentType === "text") {
-      if (words.length > 0) {
+      if (hasText) {
         words.forEach(word => items.push({ type: "text", content: word }));
       } else {
         effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
       }
     } else if (contentType === "image") {
-      if (images.length > 0) {
+      if (hasImages) {
         images.forEach(img => items.push({ type: "image", content: img }));
       } else {
         effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
@@ -170,42 +166,23 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
     } else if (contentType === "blessing") {
       effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
     } else {
-      // mixed 模式
-      const totalItems = Math.max(
-        available.hasText ? words.length : 0,
-        available.hasImages ? images.length : 0,
-        available.hasBlessing ? effectiveBlessingTypes.length : 0,
-        4
-      );
-      
-      const counters = { text: 0, image: 0, blessing: 0 };
-      
-      for (let i = 0; i < totalItems; i++) {
-        const seedValue = i * 1000;
-        const { type, content } = determineContentType(
-          { contentType, words, images, blessingTypes: effectiveBlessingTypes, imageWeight },
-          available,
-          seedValue
-        );
-        
-        let actualContent = content;
-        if (type === "text" && words.length > 0) {
-          actualContent = words[counters.text % words.length];
-          counters.text++;
-        } else if (type === "image" && images.length > 0) {
-          actualContent = images[counters.image % images.length];
-          counters.image++;
-        } else if (type === "blessing") {
-          actualContent = effectiveBlessingTypes[counters.blessing % effectiveBlessingTypes.length];
-          counters.blessing++;
-        }
-        
-        items.push({ type, content: actualContent });
+      // mixed 模式：只显示用户实际提供的内容
+      // 先添加所有文字
+      if (hasText) {
+        words.forEach(word => items.push({ type: "text", content: word }));
+      }
+      // 再添加所有图片
+      if (hasImages) {
+        images.forEach(img => items.push({ type: "image", content: img }));
+      }
+      // 只有用户提供了祝福图案才添加
+      if (userProvidedBlessing) {
+        blessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
       }
     }
     
     return items;
-  }, [contentType, words, images, effectiveBlessingTypes, imageWeight, available]);
+  }, [contentType, words, images, blessingTypes, effectiveBlessingTypes, hasText, hasImages, userProvidedBlessing]);
 
   // 计算单个烟花周期时长
   const cycleDuration = React.useMemo(() => {
