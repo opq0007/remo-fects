@@ -1,0 +1,12 @@
+{
+  "name": "text-windmill-effect",
+  "version": "1.0.0",
+  "description": "文字大风车特效视频生成器 - Remotion 项目",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render src/index.ts TextWindmill out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextWindmill out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TextWindmill out/preview.mp4 --frames=0-90 --chromium-flags=\"--headless=new\""
+  }
+}

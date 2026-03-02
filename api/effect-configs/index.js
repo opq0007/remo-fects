@@ -17,7 +17,9 @@ const effectConfigs = {
   'text-grow-explode-effect': require('./text-grow-explode-effect'),
   'text-tornado-effect': require('./text-tornado-effect'),
   'text-flood-effect': require('./text-flood-effect'),
-  'text-vortex-effect': require('./text-vortex-effect')
+  'text-vortex-effect': require('./text-vortex-effect'),
+  'text-kaleidoscope-effect': require('./text-kaleidoscope-effect'),
+  'text-windmill-effect': require('./text-windmill-effect')
 };
 
 // 导入公共参数处理

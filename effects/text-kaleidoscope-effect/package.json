@@ -1,0 +1,12 @@
+{
+  "name": "text-kaleidoscope-effect",
+  "version": "1.0.0",
+  "description": "文字万花筒特效 - 3D立体扑面而来效果",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render src/index.ts TextKaleidoscope out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextKaleidoscope out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TextKaleidoscope out/preview.mp4 --frames=0-120 --chromium-flags=\"--headless=new\""
+  }
+}
