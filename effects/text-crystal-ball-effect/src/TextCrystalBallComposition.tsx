@@ -16,6 +16,8 @@ import {
   extractForegroundProps,
   extractWatermarkProps,
   extractMarqueeProps,
+  mergeTextStyle,
+  mergeBlessingStyle,
 } from "../../shared/index";
 import { CrystalBall } from "./CrystalBall";
 
@@ -121,24 +123,9 @@ export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = (props
     seed,
   } = props;
 
-  // 默认文字样式
-  const defaultTextStyle = {
-    color: "#FFD700",
-    effect: "gold3d" as const,
-    effectIntensity: 0.9,
-    fontWeight: 700,
-    ...textStyle,
-  };
-
-  // 默认祝福图案样式
-  const defaultBlessingStyle = {
-    primaryColor: "#FFD700",
-    secondaryColor: "#FFA500",
-    enable3D: true,
-    enableGlow: true,
-    glowIntensity: 1,
-    ...blessingStyle,
-  };
+  // 使用公共函数合并样式
+  const mergedTextStyle = mergeTextStyle(textStyle);
+  const mergedBlessingStyle = mergeBlessingStyle(blessingStyle);
 
   // 提取公共组件参数
   const radialBurstConfig = extractRadialBurstProps(props);
@@ -160,7 +147,7 @@ export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = (props
         images={images}
         imageWeight={imageWeight}
         blessingTypes={blessingTypes as any}
-        blessingStyle={defaultBlessingStyle}
+        blessingStyle={mergedBlessingStyle}
         ballRadius={ballRadius}
         ballColor={ballColor}
         ballOpacity={ballOpacity}
@@ -177,7 +164,7 @@ export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = (props
         fontSizeRange={fontSizeRange as [number, number]}
         imageSizeRange={imageSizeRange as [number, number]}
         blessingSizeRange={blessingSizeRange as [number, number]}
-        textStyle={defaultTextStyle}
+        textStyle={mergedTextStyle}
         perspective={perspective}
         entranceDuration={entranceDuration}
         seed={seed ?? Date.now()}

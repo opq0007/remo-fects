@@ -17,6 +17,7 @@ import {
   extractForegroundProps,
   extractWatermarkProps,
   extractMarqueeProps,
+  mergeBlessingStyle,
 } from "../../shared/index";
 import {
   TextFlood,
@@ -148,15 +149,15 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = (props)
     ...imageStyle,
   };
 
-  // 默认祝福图案样式
-  const defaultBlessingStyle = {
+  // 使用公共函数合并祝福图案样式
+  const mergedBlessingStyle = mergeBlessingStyle({
     primaryColor: "#00d4ff",
     secondaryColor: "#0088cc",
     enable3D: true,
     enableGlow: true,
     glowIntensity: 1.2,
     ...blessingStyle,
-  };
+  });
 
   // 提取公共组件参数
   const radialBurstConfig = extractRadialBurstProps(props);
@@ -189,7 +190,7 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = (props)
         opacityRange={opacityRange}
         textStyle={defaultTextStyle}
         imageStyle={defaultImageStyle}
-        blessingStyle={defaultBlessingStyle}
+        blessingStyle={mergedBlessingStyle}
         enablePerspective={enablePerspective}
         perspectiveStrength={perspectiveStrength}
         enableWaveBackground={enableWaveBackground}

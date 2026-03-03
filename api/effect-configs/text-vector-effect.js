@@ -5,7 +5,18 @@
  */
 
 const path = require('path');
+const {
+  MIXED_INPUT_PARAMS,
+  DEFAULT_COLORS,
+  BLESSING_TYPES,
+  numberRangeParser,
+  booleanParser,
+  intRangeParser,
+} = require('./shared-params');
 
+/**
+ * 特效基础信息
+ */
 const config = {
   id: 'text-vector-effect',
   name: '文字矢量动画特效',
@@ -14,23 +25,13 @@ const config = {
 };
 
 /**
- * 默认颜色配置
- */
-const DEFAULT_COLORS = [
-  '#FFD700', // 金色
-  '#FF6B6B', // 珊瑚红
-  '#4ECDC4', // 青绿
-  '#45B7D1', // 天蓝
-  '#96CEB4', // 薄荷绿
-  '#FFEAA7', // 淡金
-  '#DDA0DD', // 梅红
-];
-
-/**
  * 默认祝福图案类型
  */
-const DEFAULT_BLESSING_TYPES = ['goldCoin', 'moneyBag', 'luckyBag', 'redPacket'];
+const VECTOR_BLESSING_TYPES = [...BLESSING_TYPES];
 
+/**
+ * 特效特有参数定义
+ */
 const params = {
   // ===== 核心文字配置 =====
   text: {
@@ -60,13 +61,11 @@ const params = {
   
   // ===== 混合输入配置 =====
   contentType: {
-    type: 'string',
+    ...MIXED_INPUT_PARAMS.contentType,
     defaultValue: 'mixed',
-    description: '内容类型：text | image | blessing | mixed'
   },
   words: {
-    type: 'array',
-    defaultValue: [],
+    ...MIXED_INPUT_PARAMS.words,
     parser: (v) => {
       if (Array.isArray(v)) return v;
       if (typeof v === 'string') {
@@ -78,11 +77,9 @@ const params = {
       }
       return [];
     },
-    description: '填充文字列表'
   },
   images: {
-    type: 'array',
-    defaultValue: [],
+    ...MIXED_INPUT_PARAMS.images,
     parser: (v) => {
       if (Array.isArray(v)) return v;
       if (typeof v === 'string') {
@@ -94,31 +91,28 @@ const params = {
       }
       return [];
     },
-    description: '填充图片列表'
   },
   blessingTypes: {
     type: 'array',
-    defaultValue: DEFAULT_BLESSING_TYPES,
+    defaultValue: VECTOR_BLESSING_TYPES,
     parser: (v) => {
-      if (Array.isArray(v)) return v.length > 0 ? v : DEFAULT_BLESSING_TYPES;
+      if (Array.isArray(v)) return v.length > 0 ? v : VECTOR_BLESSING_TYPES;
       if (typeof v === 'string') {
         try {
           const arr = JSON.parse(v);
-          return arr.length > 0 ? arr : DEFAULT_BLESSING_TYPES;
+          return arr.length > 0 ? arr : VECTOR_BLESSING_TYPES;
         } catch {
           const arr = v.split(',').map(w => w.trim()).filter(w => w);
-          return arr.length > 0 ? arr : DEFAULT_BLESSING_TYPES;
+          return arr.length > 0 ? arr : VECTOR_BLESSING_TYPES;
         }
       }
-      return DEFAULT_BLESSING_TYPES;
+      return VECTOR_BLESSING_TYPES;
     },
     description: '祝福图案类型：goldCoin | moneyBag | luckyBag | redPacket'
   },
   imageWeight: {
-    type: 'number',
-    defaultValue: 0.5,
+    ...MIXED_INPUT_PARAMS.imageWeight,
     parser: (v) => parseFloat(v) || 0.5,
-    description: '图片出现权重（0-1）'
   },
   blessingStyle: {
     type: 'object',
@@ -182,7 +176,7 @@ const params = {
   glowIntensity: {
     type: 'number',
     defaultValue: 1.2,
-    parser: (v) => parseFloat(v) || 1.2,
+    parser: numberRangeParser(0, 3, 1.2),
     description: '发光强度（0-3）'
   },
   colors: {
@@ -234,7 +228,7 @@ const params = {
   entranceDuration: {
     type: 'number',
     defaultValue: 12,
-    parser: (v) => parseInt(v) || 12,
+    parser: intRangeParser(1, 60, 12),
     description: '入场动画时长（帧）'
   },
   fillDuration: {
@@ -282,7 +276,7 @@ const params = {
   enable3D: {
     type: 'boolean',
     defaultValue: true,
-    parser: (v) => v !== false && v !== 'false',
+    parser: booleanParser(true),
     description: '启用3D效果'
   },
   rotation3D: {
@@ -296,7 +290,7 @@ const params = {
   enableStarField: {
     type: 'boolean',
     defaultValue: true,
-    parser: (v) => v !== false && v !== 'false',
+    parser: booleanParser(true),
     description: '启用星空背景'
   },
   starCount: {

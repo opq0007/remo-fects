@@ -14,6 +14,7 @@ import {
   extractForegroundProps,
   extractWatermarkProps,
   extractMarqueeProps,
+  mergeBlessingStyle,
 } from "../../shared/index";
 import { TextVortex } from "./TextVortex";
 
@@ -133,7 +134,7 @@ export const TextVortexComposition: React.FC<TextVortexProps> = (props) => {
     seed,
   } = props;
 
-  // 默认文字样式
+  // 默认文字样式（保持原有类型兼容性）
   const defaultTextStyle = {
     color: "#FFD700",
     effect: "gold3d" as const,
@@ -142,15 +143,8 @@ export const TextVortexComposition: React.FC<TextVortexProps> = (props) => {
     ...textStyle,
   };
 
-  // 默认祝福图案样式
-  const defaultBlessingStyle = {
-    primaryColor: "#FFD700",
-    secondaryColor: "#FFA500",
-    enable3D: true,
-    enableGlow: true,
-    glowIntensity: 1,
-    ...blessingStyle,
-  };
+  // 使用公共函数合并祝福图案样式
+  const mergedBlessingStyle = mergeBlessingStyle(blessingStyle);
 
   // 提取公共组件参数
   const radialBurstConfig = extractRadialBurstProps(props);
@@ -172,7 +166,7 @@ export const TextVortexComposition: React.FC<TextVortexProps> = (props) => {
         images={images}
         imageWeight={imageWeight}
         blessingTypes={blessingTypes as any}
-        blessingStyle={defaultBlessingStyle}
+        blessingStyle={mergedBlessingStyle}
         particleCount={particleCount}
         ringCount={ringCount}
         rotationDirection={rotationDirection}

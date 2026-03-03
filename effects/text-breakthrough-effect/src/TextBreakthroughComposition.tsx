@@ -13,7 +13,8 @@ import {
   CompleteCompositionSchema,
   MixedInputSchema,
   BlessingSymbolType,
-  DEFAULT_BLESSING_TYPES,
+  getEffectiveBlessingTypes,
+  mergeBlessingStyle,
   extractForegroundProps,
 } from "../../shared/index";
 
@@ -296,11 +297,11 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   const { width, height, durationInFrames } = useVideoConfig();
   const frame = useCurrentFrame();
 
-  // 检测用户是否提供了祝福图案
-  const userProvidedBlessing = blessingTypes && blessingTypes.length > 0;
+  // 使用公共函数获取有效的祝福图案类型
+  const effectiveBlessingTypes = getEffectiveBlessingTypes({ blessingTypes });
   
-  // 计算有效的祝福图案类型（非 mixed 模式用于回退）
-  const effectiveBlessingTypes = userProvidedBlessing ? blessingTypes : DEFAULT_BLESSING_TYPES;
+  // 合并祝福图案样式
+  const mergedBlessingStyle = mergeBlessingStyle(blessingStyle);
 
   // 检测可用内容类型
   const hasText = words.length > 0;
@@ -314,36 +315,30 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
       if (hasText) {
         words.forEach(w => items.push({ type: "text", content: w }));
       } else {
-        // 回退到默认祝福图案
         effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
       }
     } else if (contentType === "image") {
       if (hasImages) {
         images.forEach(img => items.push({ type: "image", content: img }));
       } else {
-        // 回退到默认祝福图案
         effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
       }
     } else if (contentType === "blessing") {
       effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
     } else {
       // mixed 模式：只显示用户实际提供的内容
-      // 先添加所有文字
       if (hasText) {
         words.forEach(w => items.push({ type: "text", content: w }));
       }
-      // 再添加所有图片
       if (hasImages) {
         images.forEach(img => items.push({ type: "image", content: img }));
       }
-      // 只有用户提供了祝福图案才添加
-      if (userProvidedBlessing) {
-        blessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
-      }
+      // 使用 effectiveBlessingTypes（包含默认值）
+      effectiveBlessingTypes.forEach(t => items.push({ type: "blessing", content: t }));
     }
 
     return items;
-  }, [contentType, words, images, blessingTypes, effectiveBlessingTypes, hasText, hasImages, userProvidedBlessing]);
+  }, [contentType, words, images, effectiveBlessingTypes, hasText, hasImages]);
 
   // 计算单个动画周期的总帧数
   const cycleDuration = React.useMemo(() => {
@@ -566,7 +561,7 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
             text={timing.item.type === "text" ? timing.item.content : undefined}
             imageSrc={timing.item.type === "image" ? timing.item.content : undefined}
             blessingType={timing.item.type === "blessing" ? timing.item.content as BlessingSymbolType : undefined}
-            blessingStyle={blessingStyle}
+            blessingStyle={mergedBlessingStyle}
             startFrame={timing.startFrame}
             startZ={startZ}
             endZ={endZ}

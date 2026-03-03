@@ -6,6 +6,14 @@
  */
 
 const path = require('path');
+const {
+  MIXED_INPUT_PARAMS,
+  BLESSING_TYPES,
+  DEFAULT_BLESSING_STYLE,
+  objectParser,
+  validateMixedInput,
+  createBuildRenderParams,
+} = require('./shared-params');
 
 /**
  * 特效基础信息
@@ -18,83 +26,21 @@ const config = {
 };
 
 /**
- * 祝福图案类型
- */
-const BLESSING_TYPES = ['goldCoin', 'moneyBag', 'luckyBag', 'redPacket'];
-
-/**
  * 特效特有参数定义
  */
 const params = {
-  // ===== 混合输入配置 =====
-  contentType: {
-    type: 'string',
-    defaultValue: 'text',
-    description: '内容类型：text | image | blessing | mixed'
-  },
-  words: {
-    type: 'array',
-    defaultValue: [],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return v.split(',').map(w => w.trim()).filter(w => w);
-        }
-      }
-      return [];
-    },
-    description: '文字列表'
-  },
-  images: {
-    type: 'array',
-    defaultValue: [],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return v.split(',').map(w => w.trim()).filter(w => w);
-        }
-      }
-      return [];
-    },
-    description: '图片列表（支持：public目录相对路径、网络URL、Data URL）'
-  },
+  // ===== 混合输入配置（复用公共定义，覆盖部分默认值） =====
+  contentType: MIXED_INPUT_PARAMS.contentType,
+  words: MIXED_INPUT_PARAMS.words,
+  images: MIXED_INPUT_PARAMS.images,
   blessingTypes: {
-    type: 'array',
-    defaultValue: BLESSING_TYPES,
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return v.split(',').map(w => w.trim()).filter(w => BLESSING_TYPES.includes(w));
-        }
-      }
-      return BLESSING_TYPES;
-    },
-    description: '祝福图案类型：goldCoin | moneyBag | luckyBag | redPacket'
+    ...MIXED_INPUT_PARAMS.blessingTypes,
+    defaultValue: [...BLESSING_TYPES],
   },
-  imageWeight: {
-    type: 'number',
-    defaultValue: 0.5,
-    parser: (v) => parseFloat(v) || 0.5,
-    description: '图片出现权重（0-1，mixed 模式下有效）'
-  },
+  imageWeight: MIXED_INPUT_PARAMS.imageWeight,
   blessingStyle: {
     type: 'object',
-    defaultValue: {
-      primaryColor: '#FFD700',
-      secondaryColor: '#FFA500',
-      enable3D: true,
-      enableGlow: true,
-      glowIntensity: 1
-    },
+    defaultValue: DEFAULT_BLESSING_STYLE,
     parser: (v) => {
       if (!v) return null;
       if (typeof v === 'string') {
@@ -194,12 +140,11 @@ const params = {
 };
 
 /**
- * 参数验证函数
+ * 参数验证函数（带兼容逻辑）
  */
 function validate(params) {
   const hasText = params.words && params.words.length > 0;
   const hasImages = params.images && params.images.length > 0;
-  const hasBlessing = params.blessingTypes && params.blessingTypes.length > 0;
   
   // blessing 模式始终可用，因为默认有祝福图案
   if (params.contentType === 'blessing') {
@@ -227,7 +172,7 @@ function validate(params) {
 }
 
 /**
- * 构建渲染参数
+ * 构建渲染参数（带兼容逻辑）
  */
 function buildRenderParams(reqParams, commonParams) {
   const result = { ...commonParams };

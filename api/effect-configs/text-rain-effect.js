@@ -5,6 +5,18 @@
  */
 
 const path = require('path');
+const {
+  MIXED_INPUT_PARAMS,
+  SIZE_RANGE_PARAMS,
+  TEXT_STYLE_PARAM,
+  DEFAULT_BLESSING_STYLE,
+  numberRangeParser,
+  booleanParser,
+  objectParser,
+  arrayParser,
+  validateMixedInput,
+  createBuildRenderParams,
+} = require('./shared-params');
 
 /**
  * 特效基础信息
@@ -17,92 +29,59 @@ const config = {
 };
 
 /**
- * 数组解析器工厂函数
+ * 默认祝福图案样式（文字雨特有）
  */
-const arrayParser = (defaultValue = []) => (v) => {
-  if (Array.isArray(v)) return v;
-  if (typeof v === 'string') {
-    try {
-      return JSON.parse(v);
-    } catch {
-      return v.split(',').map(w => w.trim()).filter(w => w);
-    }
-  }
-  return defaultValue;
+const RAIN_BLESSING_STYLE = {
+  ...DEFAULT_BLESSING_STYLE,
+  animated: false,
 };
 
 /**
- * 对象解析器工厂函数
+ * 默认文字样式（文字雨特有）
  */
-const objectParser = (defaultValue = {}) => (v) => {
-  if (typeof v === 'string') {
-    try {
-      return JSON.parse(v);
-    } catch {
-      return defaultValue;
-    }
-  }
-  return v || defaultValue;
+const RAIN_TEXT_STYLE = {
+  color: '#ffd700',
+  effect: 'gold3d',
+  effectIntensity: 0.9,
+  fontWeight: 700,
+  letterSpacing: 4,
 };
 
 /**
  * 特效特有参数定义
  */
 const params = {
-  // ===== 内容类型 =====
-  contentType: {
-    type: 'string',
-    defaultValue: 'text',
-    description: '内容类型：text(纯文字) | image(纯图片) | blessing(祝福图案) | mixed(混合模式)'
+  // ===== 混合输入配置（复用公共定义） =====
+  ...MIXED_INPUT_PARAMS,
+
+  // ===== 尺寸范围配置（文字雨特有默认值） =====
+  fontSizeRange: {
+    type: 'array',
+    defaultValue: [80, 160],
+    parser: arrayParser([80, 160]),
+    description: '字体大小范围 [min, max]'
+  },
+  imageSizeRange: {
+    type: 'array',
+    defaultValue: [80, 150],
+    parser: arrayParser([80, 150]),
+    description: '图片大小范围 [min, max]'
+  },
+  blessingSizeRange: SIZE_RANGE_PARAMS.blessingSizeRange,
+
+  // ===== 文字样式（文字雨特有） =====
+  textStyle: {
+    type: 'object',
+    defaultValue: RAIN_TEXT_STYLE,
+    parser: objectParser(RAIN_TEXT_STYLE),
+    description: '文字样式配置'
   },
 
-  // ===== 文字内容 =====
-  words: {
-    type: 'array',
-    defaultValue: [],
-    parser: arrayParser([]),
-    description: '文字列表'
-  },
-
-  // ===== 图片内容 =====
-  images: {
-    type: 'array',
-    defaultValue: [],
-    parser: arrayParser([]),
-    description: '图片路径列表（支持：1. public目录相对路径如"coin.png" 2. 网络URL如"https://example.com/img.png" 3. Data URL base64编码）'
-  },
-  imageWeight: {
-    type: 'number',
-    defaultValue: 0.5,
-    parser: (v) => Math.max(0, Math.min(1, parseFloat(v) || 0.5)),
-    description: 'mixed 模式下图片出现权重 (0-1)'
-  },
-
-  // ===== 祝福图案配置 =====
-  blessingTypes: {
-    type: 'array',
-    defaultValue: [],
-    parser: arrayParser([]),
-    description: '祝福图案类型列表：goldCoin(金币) | moneyBag(金钱袋) | luckyBag(福袋) | redPacket(红包)'
-  },
+  // ===== 祝福图案样式 =====
   blessingStyle: {
     type: 'object',
-    defaultValue: {
-      primaryColor: '#FFD700',
-      secondaryColor: '#FFA500',
-      enable3D: true,
-      enableGlow: true,
-      glowIntensity: 1,
-      animated: false
-    },
-    parser: objectParser({
-      primaryColor: '#FFD700',
-      secondaryColor: '#FFA500',
-      enable3D: true,
-      enableGlow: true,
-      glowIntensity: 1,
-      animated: false
-    }),
+    defaultValue: RAIN_BLESSING_STYLE,
+    parser: objectParser(RAIN_BLESSING_STYLE),
     description: '祝福图案样式配置'
   },
 
@@ -118,20 +97,6 @@ const params = {
     type: 'string',
     defaultValue: 'down',
     description: '雨滴运动方向：down(从上到下) | up(从下到上)'
-  },
-
-  // ===== 字体配置 =====
-  fontSizeRange: {
-    type: 'array',
-    defaultValue: [80, 160],
-    parser: arrayParser([80, 160]),
-    description: '字体大小范围 [min, max]'
-  },
-  imageSizeRange: {
-    type: 'array',
-    defaultValue: [80, 150],
-    parser: arrayParser([80, 150]),
-    description: '图片大小范围 [min, max]'
   },
 
   // ===== 运动参数 =====
@@ -174,90 +139,20 @@ const params = {
     description: '旋转角度范围 [min, max]'
   },
 
-  // ===== 文字样式 =====
-  textStyle: {
-    type: 'object',
-    defaultValue: {
-      color: '#ffd700',
-      effect: 'gold3d',
-      effectIntensity: 0.9,
-      fontWeight: 700,
-      letterSpacing: 4
-    },
-    parser: objectParser({
-      color: '#ffd700',
-      effect: 'gold3d',
-      effectIntensity: 0.9,
-      fontWeight: 700,
-      letterSpacing: 4
-    }),
-    description: '文字样式配置'
-  },
-
   // ===== 音频（覆盖默认值） =====
   audioEnabled: {
     type: 'boolean',
     defaultValue: true,
-    parser: (v) => v !== false && v !== 'false',
+    parser: booleanParser(true),
     description: '是否启用音频'
   }
 };
 
-/**
- * 参数验证函数
- * @param {Object} params - 解析后的参数
- * @returns {{ valid: boolean, error?: string }}
- */
-function validate(params) {
-  const { contentType, words, images, blessingTypes } = params;
+// 使用公共验证函数
+const validate = validateMixedInput;
 
-  // 根据内容类型验证必要参数
-  if (contentType === 'text') {
-    if (!words || words.length === 0) {
-      return { valid: false, error: 'text 模式需要提供文字列表 (words)' };
-    }
-  } else if (contentType === 'image') {
-    if (!images || images.length === 0) {
-      return { valid: false, error: 'image 模式需要提供图片列表 (images)' };
-    }
-  } else if (contentType === 'blessing') {
-    if (!blessingTypes || blessingTypes.length === 0) {
-      return { valid: false, error: 'blessing 模式需要提供祝福图案类型列表 (blessingTypes)' };
-    }
-  } else if (contentType === 'mixed') {
-    // mixed 模式至少需要提供一种内容
-    const hasContent = (words && words.length > 0) || 
-                       (images && images.length > 0) || 
-                       (blessingTypes && blessingTypes.length > 0);
-    if (!hasContent) {
-      return { valid: false, error: 'mixed 模式需要至少提供 words、images 或 blessingTypes 中的一种' };
-    }
-  }
-
-  return { valid: true };
-}
-
-/**
- * 构建渲染参数
- * 从请求参数构建完整的渲染参数
- * @param {Object} reqParams - 请求参数
- * @param {Object} commonParams - 已处理的公共参数
- * @returns {Object}
- */
-function buildRenderParams(reqParams, commonParams) {
-  const result = { ...commonParams };
-
-  // 处理特有参数
-  for (const [name, def] of Object.entries(params)) {
-    if (reqParams[name] !== undefined && reqParams[name] !== null && reqParams[name] !== '') {
-      result[name] = def.parser ? def.parser(reqParams[name]) : reqParams[name];
-    } else if (def.defaultValue !== undefined) {
-      result[name] = typeof def.defaultValue === 'function' ? def.defaultValue() : def.defaultValue;
-    }
-  }
-
-  return result;
-}
+// 使用公共 buildRenderParams 生成器
+const buildRenderParams = createBuildRenderParams(params);
 
 module.exports = {
   config,

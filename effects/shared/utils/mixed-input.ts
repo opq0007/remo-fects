@@ -16,6 +16,7 @@ import {
   ContentTypeResult,
 } from "../types/mixed-input";
 import { BlessingSymbolType } from "../schemas";
+import { TextStyleConfig } from "./textStyle";
 
 /**
  * 默认祝福图案类型列表
@@ -373,4 +374,273 @@ export function getEffectiveBlessingTypes(config: MixedInputConfig): BlessingSym
   return config.blessingTypes && config.blessingTypes.length > 0
     ? config.blessingTypes
     : DEFAULT_BLESSING_TYPES;
+}
+
+// ==================== 高级工具函数 ====================
+
+/**
+ * 根据内容类型获取可用类型列表
+ * 
+ * 这是组件中最常用的逻辑，用于确定哪些内容类型可用
+ * 
+ * @param config 混合输入配置
+ * @returns 可用类型列表
+ * 
+ * @example
+ * const availableTypes = getAvailableTypes({
+ *   contentType: "mixed",
+ *   words: ["福", "禄"],
+ *   images: [],
+ *   blessingTypes: [],
+ * });
+ * // 返回 ["text", "blessing"] - blessing 始终可用作为回退
+ */
+export function getAvailableTypes(config: MixedInputConfig): MixedItemType[] {
+  const { contentType = "text" } = config;
+  const available = detectAvailableContent(config);
+  const { hasText, hasImages, availableTypes } = available;
+
+  // 非 mixed 模式：根据指定的类型返回
+  if (contentType === "text") {
+    return hasText ? ["text"] : ["blessing"];
+  }
+  if (contentType === "image") {
+    return hasImages ? ["image"] : ["blessing"];
+  }
+  if (contentType === "blessing") {
+    return ["blessing"];
+  }
+
+  // mixed 模式：返回所有可用类型
+  // blessing 始终作为可用选项（回退）
+  const types: MixedItemType[] = [];
+  if (hasText) types.push("text");
+  if (hasImages) types.push("image");
+  types.push("blessing"); // blessing 始终可用
+
+  return types;
+}
+
+/**
+ * 创建种子随机数生成器
+ * 
+ * 返回一个函数，每次调用返回 0-1 之间的随机数，相同种子产生相同序列
+ * 
+ * @param seed 随机种子
+ * @returns 随机数生成函数
+ * 
+ * @example
+ * const random = createSeededRandomGenerator(42);
+ * const value1 = random(); // 始终相同
+ * const value2 = random(); // 始终相同
+ */
+export function createSeededRandomGenerator(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
+}
+
+/**
+ * 随机选择内容类型
+ * 
+ * 根据可用类型和权重随机选择一个类型
+ * 
+ * @param availableTypes 可用类型列表
+ * @param random 随机数生成函数
+ * @param imageWeight 图片权重（仅在 mixed 模式下有效）
+ * @returns 选中的类型
+ */
+export function selectRandomType(
+  availableTypes: MixedItemType[],
+  random: () => number,
+  imageWeight: number = 0.5
+): MixedItemType {
+  if (availableTypes.length === 0) {
+    return "blessing";
+  }
+  if (availableTypes.length === 1) {
+    return availableTypes[0];
+  }
+  if (availableTypes.length === 2) {
+    const hasText = availableTypes.includes("text");
+    const hasImage = availableTypes.includes("image");
+    if (hasText && hasImage) {
+      return random() < imageWeight ? "image" : "text";
+    }
+    // 其他组合各 50%
+    return random() < 0.5 ? availableTypes[0] : availableTypes[1];
+  }
+  // 三种类型都有
+  const blessingWeight = 0.3;
+  const textWeight = 1 - imageWeight - blessingWeight;
+  const r = random();
+  if (r < textWeight) return "text";
+  if (r < textWeight + imageWeight) return "image";
+  return "blessing";
+}
+
+/**
+ * 随机选择内容
+ * 
+ * 根据类型从配置中选择一个内容
+ * 
+ * @param type 内容类型
+ * @param config 混合输入配置
+ * @param random 随机数生成函数
+ * @returns 选中的内容
+ */
+export function selectRandomContent(
+  type: MixedItemType,
+  config: MixedInputConfig,
+  random: () => number
+): string {
+  const { words = [], images = [], blessingTypes = [] } = config;
+  const effectiveBlessingTypes = getEffectiveBlessingTypes(config);
+
+  switch (type) {
+    case "text":
+      if (words.length > 0) {
+        return words[Math.floor(random() * words.length)];
+      }
+      // 回退到 blessing
+      return effectiveBlessingTypes[Math.floor(random() * effectiveBlessingTypes.length)];
+    case "image":
+      if (images.length > 0) {
+        return images[Math.floor(random() * images.length)];
+      }
+      // 回退到 blessing
+      return effectiveBlessingTypes[Math.floor(random() * effectiveBlessingTypes.length)];
+    case "blessing":
+    default:
+      return effectiveBlessingTypes[Math.floor(random() * effectiveBlessingTypes.length)];
+  }
+}
+
+/**
+ * 默认文字样式
+ */
+export const DEFAULT_TEXT_STYLE: TextStyleConfig = {
+  color: "#FFD700",
+  effect: "gold3d",
+  effectIntensity: 0.9,
+  fontWeight: 700,
+};
+
+/**
+ * 合并文字样式（带默认值）
+ */
+export function mergeTextStyle(style: TextStyleConfig = {}): TextStyleConfig {
+  return {
+    ...DEFAULT_TEXT_STYLE,
+    ...style,
+  };
+}
+
+/**
+ * 粒子基础属性
+ */
+export interface ParticleBaseProps {
+  id: number;
+  type: MixedItemType;
+  content: string;
+  size: number;
+  opacity: number;
+  rotation: number;
+}
+
+/**
+ * 生成粒子基础属性
+ * 
+ * @param id 粒子ID
+ * @param config 混合输入配置
+ * @param options 生成选项
+ * @param random 随机数生成函数
+ * @returns 粒子基础属性
+ */
+export function generateParticleBaseProps(
+  id: number,
+  config: MixedInputConfig,
+  options: {
+    fontSizeRange?: [number, number];
+    imageSizeRange?: [number, number];
+    blessingSizeRange?: [number, number];
+    opacityRange?: [number, number];
+    rotationRange?: [number, number];
+    imageWeight?: number;
+  },
+  random: () => number
+): ParticleBaseProps {
+  const {
+    fontSizeRange = [40, 80],
+    imageSizeRange = [50, 100],
+    blessingSizeRange = [40, 80],
+    opacityRange = [0.6, 1],
+    rotationRange = [-15, 15],
+    imageWeight = 0.5,
+  } = options;
+
+  const availableTypes = getAvailableTypes(config);
+  const type = selectRandomType(availableTypes, random, imageWeight);
+  const content = selectRandomContent(type, config, random);
+
+  // 根据类型选择大小范围
+  let sizeRange: [number, number];
+  switch (type) {
+    case "text":
+      sizeRange = fontSizeRange;
+      break;
+    case "image":
+      sizeRange = imageSizeRange;
+      break;
+    case "blessing":
+    default:
+      sizeRange = blessingSizeRange;
+  }
+
+  const size = sizeRange[0] + random() * (sizeRange[1] - sizeRange[0]);
+  const opacity = opacityRange[0] + random() * (opacityRange[1] - opacityRange[0]);
+  const rotation = rotationRange[0] + random() * (rotationRange[1] - rotationRange[0]);
+
+  return {
+    id,
+    type,
+    content,
+    size,
+    opacity,
+    rotation,
+  };
+}
+
+/**
+ * 批量生成粒子基础属性
+ * 
+ * @param count 粒子数量
+ * @param config 混合输入配置
+ * @param options 生成选项
+ * @param seed 随机种子
+ * @returns 粒子基础属性数组
+ */
+export function generateParticleBasePropsBatch(
+  count: number,
+  config: MixedInputConfig,
+  options: {
+    fontSizeRange?: [number, number];
+    imageSizeRange?: [number, number];
+    blessingSizeRange?: [number, number];
+    opacityRange?: [number, number];
+    rotationRange?: [number, number];
+    imageWeight?: number;
+  },
+  seed: number
+): ParticleBaseProps[] {
+  const random = createSeededRandomGenerator(seed);
+  const particles: ParticleBaseProps[] = [];
+
+  for (let i = 0; i < count; i++) {
+    particles.push(generateParticleBaseProps(i, config, options, random));
+  }
+
+  return particles;
 }

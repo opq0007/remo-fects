@@ -15,7 +15,9 @@ import {
   extractForegroundProps,
   seededRandom,
   BlessingSymbolType,
-  DEFAULT_BLESSING_TYPES,
+  getEffectiveBlessingTypes,
+  getAvailableTypes,
+  mergeBlessingStyle,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema ====================
@@ -174,15 +176,18 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
 }) => {
   const { width, height, durationInFrames } = useVideoConfig();
 
-  // 检测用户是否提供了祝福图案
-  const userProvidedBlessing = blessingTypes && blessingTypes.length > 0;
+  // 使用公共函数获取有效的祝福图案类型
+  const effectiveBlessingTypes = getEffectiveBlessingTypes({ blessingTypes });
   
-  // 计算有效的祝福图案类型（非 mixed 模式用于回退）
-  const effectiveBlessingTypes = userProvidedBlessing ? blessingTypes : DEFAULT_BLESSING_TYPES;
+  // 使用公共函数获取可用类型列表
+  const availableTypes = getAvailableTypes({ contentType, words, images, blessingTypes });
 
   // 检测可用内容类型
   const hasText = words.length > 0;
   const hasImages = images.length > 0;
+  
+  // 合并祝福图案样式
+  const mergedBlessingStyle = mergeBlessingStyle(blessingStyle);
 
   // 生成内容列表
   const contentItems = React.useMemo((): ContentItem[] => {
@@ -204,22 +209,18 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
       effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
     } else {
       // mixed 模式：只显示用户实际提供的内容
-      // 先添加所有文字
       if (hasText) {
         words.forEach(word => items.push({ type: "text", content: word }));
       }
-      // 再添加所有图片
       if (hasImages) {
         images.forEach(img => items.push({ type: "image", content: img }));
       }
-      // 只有用户提供了祝福图案才添加
-      if (userProvidedBlessing) {
-        blessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
-      }
+      // 使用 effectiveBlessingTypes（包含默认值）
+      effectiveBlessingTypes.forEach(type => items.push({ type: "blessing", content: type }));
     }
     
     return items;
-  }, [contentType, words, images, blessingTypes, effectiveBlessingTypes, hasText, hasImages, userProvidedBlessing]);
+  }, [contentType, words, images, effectiveBlessingTypes, hasText, hasImages]);
 
   // 计算单个烟花周期时长
   const cycleDuration = React.useMemo(() => {
@@ -440,7 +441,7 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
           text={firework.item.type === "text" ? firework.item.content : undefined}
           imageSrc={firework.item.type === "image" ? firework.item.content : undefined}
           blessingType={firework.item.type === "blessing" ? firework.item.content as BlessingSymbolType : undefined}
-          blessingStyle={blessingStyle}
+          blessingStyle={mergedBlessingStyle}
           startX={firework.startX}
           startY={firework.startY}
           targetX={firework.targetX}

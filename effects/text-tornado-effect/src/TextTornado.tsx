@@ -10,7 +10,15 @@ import {
 } from "remotion";
 import { SingleBlessingSymbol, getImageSrc } from "../../shared/components";
 import { BlessingSymbolType } from "../../shared/schemas";
-import { generateTextStyle } from "../../shared/utils";
+import {
+  generateTextStyle,
+  getAvailableTypes,
+  createSeededRandomGenerator,
+  getEffectiveBlessingTypes,
+  mergeBlessingStyle,
+  mergeTextStyle,
+  DEFAULT_TEXT_STYLE,
+} from "../../shared/utils";
 
 /**
  * 内容类型
@@ -89,16 +97,6 @@ export interface TextTornadoProps {
 }
 
 /**
- * 伪随机数生成器
- */
-function seededRandom(seed: number): () => number {
-  return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
-}
-
-/**
  * 文字龙卷风组件
  */
 export const TextTornado: React.FC<TextTornadoProps> = ({
@@ -126,34 +124,20 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
 
-  const random = useMemo(() => seededRandom(seed), [seed]);
+  const random = useMemo(() => createSeededRandomGenerator(seed), [seed]);
 
-  // 默认祝福图案类型
-  const DEFAULT_BLESSING_TYPES: BlessingSymbolType[] = ["goldCoin", "moneyBag", "luckyBag", "redPacket"];
-  
-  // 实际使用的祝福图案类型（如果为空则使用默认值）
-  const effectiveBlessingTypes = blessingTypes.length > 0 ? blessingTypes : DEFAULT_BLESSING_TYPES;
+  // 使用公共函数获取有效的祝福图案类型
+  const effectiveBlessingTypes = getEffectiveBlessingTypes({ blessingTypes });
 
-  // 判断可用内容
-  const hasText = words.length > 0;
-  const hasImages = images.length > 0;
-  const hasBlessing = effectiveBlessingTypes.length > 0; // 始终为 true
+  // 使用公共函数获取可用类型列表
+  const availableTypes = useMemo(
+    () => getAvailableTypes({ contentType, words, images, blessingTypes }),
+    [contentType, words, images, blessingTypes]
+  );
 
-  // 根据内容类型生成可用类型列表
-  const availableTypes: ("text" | "image" | "blessing")[] = useMemo(() => {
-    if (contentType !== "mixed") {
-      if (contentType === "text") return hasText ? ["text"] : ["blessing"]; // 如果没有文字则回退到祝福
-      if (contentType === "image") return hasImages ? ["image"] : ["blessing"]; // 如果没有图片则回退到祝福
-      if (contentType === "blessing") return ["blessing"]; // blessing 模式始终可用
-      return ["blessing"];
-    }
-    // mixed 模式
-    const types: ("text" | "image" | "blessing")[] = [];
-    if (hasText) types.push("text");
-    if (hasImages) types.push("image");
-    types.push("blessing"); // blessing 始终可用
-    return types.length > 0 ? types : ["blessing"];
-  }, [contentType, hasText, hasImages]);
+  // 合并样式
+  const mergedTextStyle = mergeTextStyle(textStyle);
+  const mergedBlessingStyle = mergeBlessingStyle(blessingStyle);
 
   // 生成粒子数据
   const particles = useMemo<TornadoParticle[]>(() => {
@@ -165,13 +149,15 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
       let type: "text" | "image" | "blessing";
       if (contentType === "mixed") {
         // 考虑图片权重
-        if (hasImages && hasText && !hasBlessing) {
+        const hasText = words.length > 0;
+        const hasImages = images.length > 0;
+        if (hasImages && hasText) {
           type = random() < imageWeight ? "image" : "text";
         } else {
           type = availableTypes[Math.floor(random() * availableTypes.length)];
         }
       } else {
-        type = availableTypes[0] || "text";
+        type = availableTypes[0] || "blessing";
       }
 
       // 随机选择内容
@@ -210,7 +196,7 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
       });
     }
     return result;
-  }, [availableTypes, particleCount, words, images, effectiveBlessingTypes, random, contentType, imageWeight, hasImages, hasText, fontSizeRange, imageSizeRange, blessingSizeRange, baseRadius, topRadius, entranceDuration]);
+  }, [availableTypes, particleCount, words, images, effectiveBlessingTypes, random, contentType, imageWeight, fontSizeRange, imageSizeRange, blessingSizeRange, baseRadius, topRadius, entranceDuration]);
 
   // 镜头拉近效果
   const zoomProgress = interpolate(frame, [0, fps * 8], [0, 1], {
@@ -267,12 +253,7 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
 
     // 根据类型渲染
     if (particle.type === "text") {
-      const textStyles = generateTextStyle(particle.size, {
-        color: textStyle.color || "#FFD700",
-        effect: textStyle.effect || "gold3d",
-        effectIntensity: textStyle.effectIntensity ?? 0.9,
-        fontWeight: textStyle.fontWeight || 700,
-      });
+      const textStyles = generateTextStyle(particle.size, mergedTextStyle);
 
       return (
         <div
@@ -333,11 +314,11 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
           <SingleBlessingSymbol
             type={particle.content as BlessingSymbolType}
             size={particle.size}
-            primaryColor={blessingStyle.primaryColor || "#FFD700"}
-            secondaryColor={blessingStyle.secondaryColor || "#FFA500"}
-            enable3D={blessingStyle.enable3D !== false}
-            enableGlow={blessingStyle.enableGlow !== false}
-            glowIntensity={blessingStyle.glowIntensity ?? 1}
+            primaryColor={mergedBlessingStyle.primaryColor}
+            secondaryColor={mergedBlessingStyle.secondaryColor}
+            enable3D={mergedBlessingStyle.enable3D !== false}
+            enableGlow={mergedBlessingStyle.enableGlow !== false}
+            glowIntensity={mergedBlessingStyle.glowIntensity ?? 1}
           />
         </div>
       );

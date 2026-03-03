@@ -4,7 +4,16 @@
  */
 
 const path = require('path');
+const {
+  MIXED_INPUT_PARAMS,
+  DEFAULT_COLORS,
+  DEFAULT_BLESSING_STYLE,
+  booleanParser,
+} = require('./shared-params');
 
+/**
+ * 特效基础信息
+ */
 const config = {
   id: 'text-kaleidoscope-effect',
   name: '文字万花筒特效',
@@ -13,27 +22,13 @@ const config = {
 };
 
 /**
- * 默认颜色配置
+ * 特效特有参数定义
  */
-const DEFAULT_COLORS = [
-  '#FFD700', // 金色
-  '#FF6B6B', // 珊瑚红
-  '#4ECDC4', // 青绿
-  '#45B7D1', // 天蓝
-  '#96CEB4', // 薄荷绿
-  '#FFEAA7', // 淡金
-];
-
 const params = {
-  // ===== 混合输入配置 =====
-  contentType: {
-    type: 'string',
-    defaultValue: 'text',
-    description: '内容类型：text | image | blessing | mixed'
-  },
+  // ===== 混合输入配置（复用公共定义） =====
+  contentType: MIXED_INPUT_PARAMS.contentType,
   words: {
-    type: 'array',
-    defaultValue: [],
+    ...MIXED_INPUT_PARAMS.words,
     parser: (v) => {
       if (Array.isArray(v)) return v;
       if (typeof v === 'string') {
@@ -45,11 +40,9 @@ const params = {
       }
       return [];
     },
-    description: '文字列表'
   },
   images: {
-    type: 'array',
-    defaultValue: [],
+    ...MIXED_INPUT_PARAMS.images,
     parser: (v) => {
       if (Array.isArray(v)) return v;
       if (typeof v === 'string') {
@@ -61,11 +54,9 @@ const params = {
       }
       return [];
     },
-    description: '图片列表'
   },
   blessingTypes: {
-    type: 'array',
-    defaultValue: [],
+    ...MIXED_INPUT_PARAMS.blessingTypes,
     parser: (v) => {
       if (Array.isArray(v)) return v;
       if (typeof v === 'string') {
@@ -77,14 +68,8 @@ const params = {
       }
       return [];
     },
-    description: '祝福图案类型：goldCoin | moneyBag | luckyBag | redPacket'
   },
-  imageWeight: {
-    type: 'number',
-    defaultValue: 0.5,
-    parser: (v) => parseFloat(v) || 0.5,
-    description: '图片出现权重'
-  },
+  imageWeight: MIXED_INPUT_PARAMS.imageWeight,
   blessingStyle: {
     type: 'object',
     defaultValue: null,
@@ -206,7 +191,7 @@ const params = {
   enableCenterBurst: {
     type: 'boolean',
     defaultValue: true,
-    parser: (v) => v === true || v === 'true',
+    parser: booleanParser(true),
     description: '启用中心爆发效果'
   },
   burstParticleCount: {
@@ -240,7 +225,7 @@ const params = {
   enable3D: {
     type: 'boolean',
     defaultValue: true,
-    parser: (v) => v !== false && v !== 'false',
+    parser: booleanParser(true),
     description: '启用3D效果'
   },
 
@@ -248,11 +233,14 @@ const params = {
   enablePulse: {
     type: 'boolean',
     defaultValue: true,
-    parser: (v) => v !== false && v !== 'false',
+    parser: booleanParser(true),
     description: '启用脉冲效果'
   }
 };
 
+/**
+ * 参数验证
+ */
 function validate(params) {
   const hasText = params.words && params.words.length > 0;
   const hasImages = params.images && params.images.length > 0;
@@ -296,6 +284,9 @@ function calculateDuration(params) {
   return Math.ceil(baseDuration / params.fps);
 }
 
+/**
+ * 构建渲染参数
+ */
 function buildRenderParams(reqParams, commonParams) {
   const result = { ...commonParams };
 

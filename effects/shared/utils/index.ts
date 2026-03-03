@@ -51,4 +51,15 @@ export {
   generateMixedInputItems,
   hasAnyContent,
   getEffectiveBlessingTypes,
+  // 高级工具函数
+  getAvailableTypes,
+  createSeededRandomGenerator,
+  selectRandomType,
+  selectRandomContent,
+  DEFAULT_TEXT_STYLE,
+  mergeTextStyle,
+  generateParticleBaseProps,
+  generateParticleBasePropsBatch,
+  // 类型
+  type ParticleBaseProps,
 } from "./mixed-input";

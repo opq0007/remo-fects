@@ -10,6 +10,7 @@ import {
   extractForegroundProps,
   extractWatermarkProps,
   extractMarqueeProps,
+  mergeBlessingStyle,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -166,15 +167,8 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
     ...imageStyle,
   };
 
-  const defaultBlessingStyle: BlessingStyleConfig = {
-    primaryColor: "#FFD700",
-    secondaryColor: "#FFA500",
-    enable3D: true,
-    enableGlow: true,
-    glowIntensity: 1,
-    animated: false,
-    ...blessingStyle,
-  };
+  // 使用公共函数合并祝福图案样式
+  const mergedBlessingStyle: BlessingStyleConfig = mergeBlessingStyle(blessingStyle);
 
   // 提取公共配置
   const watermarkConfig = extractWatermarkProps(props);
@@ -206,7 +200,7 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
         contentType={contentType as RainContentType}
         imageWeight={imageWeight}
         blessingTypes={blessingTypes}
-        blessingStyle={defaultBlessingStyle}
+        blessingStyle={mergedBlessingStyle}
         textDirection={textDirection as TextDirection}
         fallDirection={(fallDirection ?? "down") as FallDirection}
         density={density}

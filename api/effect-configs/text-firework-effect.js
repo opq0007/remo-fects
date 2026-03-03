@@ -4,7 +4,18 @@
  */
 
 const path = require('path');
+const {
+  MIXED_INPUT_PARAMS,
+  BLESSING_TYPES,
+  DEFAULT_BLESSING_STYLE,
+  booleanParser,
+  validateMixedInput,
+  getContentCount,
+} = require('./shared-params');
 
+/**
+ * 特效基础信息
+ */
 const config = {
   id: 'text-firework-effect',
   name: '文字烟花特效',
@@ -13,80 +24,28 @@ const config = {
 };
 
 /**
- * 祝福图案类型
+ * 默认祝福图案样式
  */
-const BLESSING_TYPES = ['goldCoin', 'moneyBag', 'luckyBag', 'redPacket'];
+const FIREWORK_BLESSING_STYLE = {
+  ...DEFAULT_BLESSING_STYLE,
+};
 
+/**
+ * 特效特有参数定义
+ */
 const params = {
-  // ===== 混合输入配置 =====
-  contentType: {
-    type: 'string',
-    defaultValue: 'text',
-    description: '内容类型：text | image | blessing | mixed'
-  },
-  words: {
-    type: 'array',
-    defaultValue: [],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return v.split(',').map(w => w.trim()).filter(w => w);
-        }
-      }
-      return [];
-    },
-    description: '文字列表'
-  },
-  images: {
-    type: 'array',
-    defaultValue: [],
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return v.split(',').map(w => w.trim()).filter(w => w);
-        }
-      }
-      return [];
-    },
-    description: '图片列表（支持：public目录相对路径、网络URL、Data URL）'
-  },
+  // ===== 混合输入配置（复用公共定义，覆盖部分默认值） =====
+  contentType: MIXED_INPUT_PARAMS.contentType,
+  words: MIXED_INPUT_PARAMS.words,
+  images: MIXED_INPUT_PARAMS.images,
   blessingTypes: {
-    type: 'array',
-    defaultValue: BLESSING_TYPES,
-    parser: (v) => {
-      if (Array.isArray(v)) return v;
-      if (typeof v === 'string') {
-        try {
-          return JSON.parse(v);
-        } catch {
-          return v.split(',').map(w => w.trim()).filter(w => BLESSING_TYPES.includes(w));
-        }
-      }
-      return BLESSING_TYPES;
-    },
-    description: '祝福图案类型：goldCoin | moneyBag | luckyBag | redPacket'
+    ...MIXED_INPUT_PARAMS.blessingTypes,
+    defaultValue: [...BLESSING_TYPES],
   },
-  imageWeight: {
-    type: 'number',
-    defaultValue: 0.5,
-    parser: (v) => parseFloat(v) || 0.5,
-    description: '图片出现权重（0-1，mixed 模式下有效）'
-  },
+  imageWeight: MIXED_INPUT_PARAMS.imageWeight,
   blessingStyle: {
     type: 'object',
-    defaultValue: {
-      primaryColor: '#FFD700',
-      secondaryColor: '#FFA500',
-      enable3D: true,
-      enableGlow: true,
-      glowIntensity: 1
-    },
+    defaultValue: FIREWORK_BLESSING_STYLE,
     parser: (v) => {
       if (!v) return null;
       if (typeof v === 'string') {
@@ -197,11 +156,14 @@ const params = {
   enableLoop: {
     type: 'boolean',
     defaultValue: false,
-    parser: (v) => v === true || v === 'true',
+    parser: booleanParser(false),
     description: '启用循环播放'
   }
 };
 
+/**
+ * 参数验证函数（带兼容逻辑）
+ */
 function validate(params) {
   const hasText = params.words && params.words.length > 0;
   const hasImages = params.images && params.images.length > 0;
@@ -232,26 +194,6 @@ function validate(params) {
 }
 
 /**
- * 计算内容数量
- */
-function getContentCount(params) {
-  if (params.contentType === 'text') {
-    return params.words?.length || 0;
-  }
-  if (params.contentType === 'image') {
-    return params.images?.length || 0;
-  }
-  if (params.contentType === 'blessing') {
-    return params.blessingTypes?.length || BLESSING_TYPES.length;
-  }
-  // mixed 模式
-  const textCount = params.words?.length || 0;
-  const imageCount = params.images?.length || 0;
-  const blessingCount = params.blessingTypes?.length || BLESSING_TYPES.length;
-  return Math.max(textCount, imageCount, blessingCount, 4);
-}
-
-/**
  * 时长计算函数
  */
 function calculateDuration(params) {
@@ -263,6 +205,9 @@ function calculateDuration(params) {
   return Math.ceil(totalFrames / params.fps);
 }
 
+/**
+ * 构建渲染参数
+ */
 function buildRenderParams(reqParams, commonParams) {
   const result = { ...commonParams };
 
