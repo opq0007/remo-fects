@@ -12,6 +12,7 @@
 4. **组合特效**：支持将多个特效按顺序拼接、叠加或转场合并成一个最终视频
 5. **独立开发**：每个特效项目可以独立运行和调试
 6. **Chrome Headless Shell 共享**：所有项目共享一个 Chrome Headless Shell，避免重复下载
+7. **混合输入支持**：支持文字、图片、祝福图案等多种内容类型的混合输入
 
 ### 技术栈
 
@@ -36,7 +37,14 @@ remo-fects/
 │   │   ├── text-ring-effect.js       # 文字环绕特效配置
 │   │   ├── text-firework-effect.js   # 文字烟花特效配置
 │   │   ├── text-breakthrough-effect.js # 文字破屏特效配置
-│   │   └── tai-chi-bagua-effect.js   # 太极八卦特效配置
+│   │   ├── tai-chi-bagua-effect.js   # 太极八卦特效配置
+│   │   ├── text-tornado-effect.js    # 文字龙卷风特效配置
+│   │   ├── text-flood-effect.js      # 文字洪水特效配置
+│   │   ├── text-vortex-effect.js     # 文字旋涡特效配置
+│   │   ├── text-kaleidoscope-effect.js # 文字万花筒特效配置
+│   │   ├── text-windmill-effect.js   # 文字大风车特效配置
+│   │   ├── text-vector-effect.js     # 文字矢量动画特效配置
+│   │   └── text-crystal-ball-effect.js # 文字水晶球特效配置
 │   ├── outputs/                      # 输出视频目录
 │   ├── uploads/                      # 上传文件目录
 │   └── package.json                  # API 项目配置
@@ -48,18 +56,44 @@ remo-fects/
 │   │   │   ├── AudioPlayer.tsx       # 音频播放组件
 │   │   │   ├── BaseComposition.tsx   # 基础组合组件（核心）
 │   │   │   ├── CenterGlow.tsx        # 中心发光效果
-│   │   │   └── StarField.tsx         # 星空背景
+│   │   │   ├── StarField.tsx         # 星空背景
+│   │   │   ├── Watermark.tsx         # 水印组件
+│   │   │   ├── Marquee.tsx           # 走马灯组件
+│   │   │   ├── BlessingSymbol.tsx    # 祝福图案组件（金币、福袋等）
+│   │   │   ├── RadialBurst.tsx       # 中心发散粒子效果
+│   │   │   ├── Foreground.tsx        # 前景效果组件
+│   │   │   └── MixedInputItem.tsx    # 混合输入渲染组件
 │   │   ├── schemas/                  # 公共 Schema 定义
 │   │   │   ├── background.ts         # 背景 Schema
 │   │   │   ├── overlay.ts            # 遮罩 Schema
 │   │   │   ├── audio.ts              # 音频 Schema
-│   │   │   └── common.ts             # 通用 Schema + BaseCompositionProps
+│   │   │   ├── common.ts             # 通用 Schema + BaseCompositionProps
+│   │   │   ├── watermark.ts          # 水印 Schema
+│   │   │   ├── marquee.ts            # 走马灯 Schema
+│   │   │   ├── blessing-symbol.ts    # 祝福图案 Schema
+│   │   │   ├── mixed-input.ts        # 混合输入 Schema
+│   │   │   ├── radial-burst.ts       # 中心发散粒子 Schema
+│   │   │   └── foreground.ts         # 前景效果 Schema
+│   │   ├── types/                    # 类型定义
+│   │   │   ├── common.ts             # 通用类型
+│   │   │   └── mixed-input.ts        # 混合输入类型
 │   │   └── utils/                    # 工具函数
+│   │       ├── easing.ts             # 缓动函数
+│   │       ├── random.ts             # 随机数生成
+│   │       ├── textStyle.ts          # 文字样式工具
+│   │       └── mixed-input.ts        # 混合输入工具函数
 │   ├── text-rain-effect/             # 文字雨特效
 │   ├── text-ring-effect/             # 金色文字环绕特效
 │   ├── text-firework-effect/         # 文字烟花特效
 │   ├── text-breakthrough-effect/     # 文字破屏特效
-│   └── tai-chi-bagua-effect/         # 太极八卦图特效
+│   ├── tai-chi-bagua-effect/         # 太极八卦图特效
+│   ├── text-tornado-effect/          # 文字龙卷风特效
+│   ├── text-flood-effect/            # 文字洪水特效
+│   ├── text-vortex-effect/           # 文字旋涡特效
+│   ├── text-kaleidoscope-effect/     # 文字万花筒特效
+│   ├── text-windmill-effect/         # 文字大风车特效
+│   ├── text-vector-effect/           # 文字矢量动画特效
+│   └── text-crystal-ball-effect/     # 文字水晶球特效
 ├── scripts/                          # 工具脚本
 │   └── install-chrome.js             # Chrome 管理工具
 ├── node_modules/                     # 共享依赖包
@@ -185,7 +219,14 @@ GET http://localhost:3001/api/projects
   { "id": "text-ring-effect", "name": "金色发光立体字环绕特效", "compositionId": "TextRing" },
   { "id": "text-firework-effect", "name": "文字烟花特效", "compositionId": "TextFirework" },
   { "id": "text-breakthrough-effect", "name": "文字破屏特效", "compositionId": "TextBreakthrough" },
-  { "id": "tai-chi-bagua-effect", "name": "太极八卦图特效", "compositionId": "TaiChiBagua" }
+  { "id": "tai-chi-bagua-effect", "name": "太极八卦图特效", "compositionId": "TaiChiBagua" },
+  { "id": "text-tornado-effect", "name": "文字龙卷风特效", "compositionId": "TextTornado" },
+  { "id": "text-flood-effect", "name": "文字洪水特效", "compositionId": "TextFlood" },
+  { "id": "text-vortex-effect", "name": "文字旋涡特效", "compositionId": "TextVortex" },
+  { "id": "text-kaleidoscope-effect", "name": "文字万花筒特效", "compositionId": "TextKaleidoscope" },
+  { "id": "text-windmill-effect", "name": "文字大风车特效", "compositionId": "TextWindmill" },
+  { "id": "text-vector-effect", "name": "文字矢量动画特效", "compositionId": "TextVector" },
+  { "id": "text-crystal-ball-effect", "name": "文字水晶球特效", "compositionId": "TextCrystalBall" }
 ]
 ```
 
@@ -270,13 +311,14 @@ Content-Type: application/json
 ```
 
 ## 添加新特效项目
-### 基本要求
-1. 使用remotion skills框架来实现动画效果
-2. 尽可能复用shared目录下已有的公共组件（例如背景、音效、走马灯、水印等），避免重复开发
-3. 新特效默认需要支持Mixed类型输入（包含文字、图片、blessing等）
-4. 动画需要符合近大远小的真实3D立体透视物理规律
-5. 新创建的特效项目，需要添加README.md说明文档，方便快速入手
 
+### 基本要求
+
+1. 使用 Remotion 框架来实现动画效果
+2. 尽可能复用 shared 目录下已有的公共组件（例如背景、音效、走马灯、水印等），避免重复开发
+3. 新特效默认需要支持 Mixed 类型输入（包含文字、图片、blessing 等）
+4. 动画需要符合近大远小的真实3D立体透视物理规律
+5. 新创建的特效项目，需要添加 README.md 说明文档，方便快速入手
 
 ### 步骤 1：创建特效项目目录
 
@@ -476,6 +518,176 @@ const effectConfigs = {
 | enableGoldenSparkle | boolean | true | 金光闪闪 |
 | audioEnabled | boolean | false | 是否启用音频 |
 
+### text-tornado-effect（文字龙卷风特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| contentType | string | 'text' | 内容类型：text \| image \| blessing \| mixed |
+| words | array | [] | 文字列表 |
+| images | array | [] | 图片路径列表 |
+| blessingTypes | array | [] | 祝福图案类型列表 |
+| particleCount | number | 60 | 粒子数量 (10-200) |
+| baseRadius | number | 300 | 龙卷风底部半径 |
+| topRadius | number | 50 | 龙卷风顶部半径 |
+| rotationSpeed | number | 2 | 旋转速度 |
+| liftSpeed | number | 0.3 | 上升速度 (0-1) |
+| funnelHeight | number | 0.85 | 漏斗高度比例 (0.3-1) |
+| zoomIntensity | number | 0.5 | 镜头拉近强度 (0-2) |
+
+### text-flood-effect（文字洪水特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| contentType | string | 'text' | 内容类型：text \| image \| blessing \| mixed |
+| words | array | ['洪', '福', '财', '运', '吉', '祥'] | 文字列表 |
+| particleCount | number | 60 | 粒子数量 (10-200) |
+| waveCount | number | 5 | 波浪层数 (1-10) |
+| direction | string | 'toward' | 洪水方向：toward \| away |
+| waveConfig.waveSpeed | number | 1.5 | 波浪速度 |
+| waveConfig.waveAmplitude | number | 60 | 波浪振幅 |
+| impactConfig.impactStart | number | 0.7 | 冲击开始时间 |
+| impactConfig.impactScale | number | 3 | 冲击缩放 |
+| enablePerspective | boolean | true | 启用3D透视效果 |
+
+### text-vortex-effect（文字旋涡特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| contentType | string | 'text' | 内容类型：text \| image \| blessing \| mixed |
+| words | array | [] | 文字列表 |
+| particleCount | number | 80 | 粒子数量 (20-200) |
+| ringCount | number | 6 | 环的数量 (2-12) |
+| rotationDirection | string | 'clockwise' | 旋转方向：clockwise \| counterclockwise |
+| rotationSpeed | number | 1.5 | 旋转速度 (0.5-4) |
+| expansionDuration | number | 6 | 散开动画时长（秒） |
+| initialRadius | number | 30 | 初始中心半径 |
+| maxRadius | number | 350 | 最大扩散半径 |
+| depth3D | boolean | true | 是否启用3D效果 |
+| shockwaveEnabled | boolean | true | 启用冲击波效果 |
+
+### text-kaleidoscope-effect（文字万花筒特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| contentType | string | 'text' | 内容类型：text \| image \| blessing \| mixed |
+| words | array | [] | 文字列表 |
+| focusWords | array | null | 中心焦点文字列表（可选） |
+| fontSize | number | 60 | 基础字体大小 |
+| colors | array | ['#FFD700', '#FF6B6B', ...] | 文字颜色列表 |
+| itemCount | number | 60 | 万花筒元素数量 |
+| ringCount | number | 5 | 圆环数量 |
+| rotationSpeed | number | 0.3 | 旋转速度（圈/秒） |
+| expansionDuration | number | 120 | 扩散动画时长（帧） |
+| enableCenterBurst | boolean | true | 启用中心爆发效果 |
+| enable3D | boolean | true | 启用3D效果 |
+| enablePulse | boolean | true | 启用脉冲效果 |
+
+### text-windmill-effect（文字大风车特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| bladesData | array | [[{type:'text',content:'福'},...],...] | 叶片数据（二维数组） |
+| words | array | [] | 文字列表（简化模式） |
+| fontSize | number | 60 | 基础字体大小 |
+| colors | array | ['#FFD700', '#FF6B6B', ...] | 叶片颜色列表 |
+| rotationSpeed | number | 0.3 | 旋转速度（圈/秒） |
+| rotationDirection | string | 'clockwise' | 旋转方向 |
+| tiltAngle | number | 30 | 3D视角倾斜角度（度） |
+| perspective | number | 1000 | 透视距离 |
+| bladeLengthRatio | number | 0.7 | 叶片长度比例 (0.3-1.0) |
+| itemRotateWithBlade | boolean | false | 叶片内部元素是否随叶片旋转 |
+
+### text-vector-effect（文字矢量动画特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| text | string | '福' | 要显示的核心文字 |
+| fontSize | number | 300 | 核心文字字体大小 |
+| contentType | string | 'mixed' | 内容类型：text \| image \| blessing \| mixed |
+| words | array | [] | 填充文字列表 |
+| images | array | [] | 填充图片列表 |
+| blessingTypes | array | ['goldCoin', 'moneyBag', 'luckyBag', 'redPacket'] | 祝福图案类型 |
+| elementSize | number | 20 | 填充元素大小 |
+| colors | array | ['#FFD700', '#FF6B6B', ...] | 颜色列表 |
+| charAnimationMode | string | 'together' | 多字动画模式：together \| sequential |
+| fillType | string | 'sequential' | 填充动画类型：sequential \| random \| radial \| wave |
+| stayAnimation | string | 'pulse' | 停留动画类型：pulse \| glow \| float \| none |
+| enable3D | boolean | true | 启用3D效果 |
+| enableStarField | boolean | true | 启用星空背景 |
+
+### text-crystal-ball-effect（文字水晶球特效）
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| contentType | string | 'text' | 内容类型：text \| image \| blessing \| mixed |
+| words | array | [] | 文字列表 |
+| images | array | [] | 图片路径列表 |
+| blessingTypes | array | [] | 祝福图案类型列表 |
+| ballRadius | number | 200 | 水晶球半径 (50-400) |
+| ballColor | string | '#4169E1' | 水晶球颜色 |
+| ballOpacity | number | 0.3 | 水晶球透明度 (0-1) |
+| glowColor | string | '#87CEEB' | 发光颜色 |
+| glowIntensity | number | 1 | 发光强度 (0-2) |
+| rotationSpeedX | number | 0.2 | X轴旋转速度 (0-2) |
+| rotationSpeedY | number | 0.6 | Y轴旋转速度 (0-2) |
+| rotationSpeedZ | number | 0.1 | Z轴旋转速度 (0-2) |
+| zoomEnabled | boolean | false | 是否启用镜头推进效果 |
+| particleCount | number | 30 | 粒子数量 (10-100) |
+| perspective | number | 1000 | 透视距离 (200-2000) |
+
+## 混合输入系统
+
+### 概述
+
+混合输入系统支持在单个特效中同时使用文字、图片和祝福图案，提供统一的数据结构和渲染接口。
+
+### 内容类型
+
+- **text**：纯文字模式，仅使用 `words` 参数
+- **image**：纯图片模式，仅使用 `images` 参数
+- **blessing**：祝福图案模式，使用 `blessingTypes` 参数
+- **mixed**：混合模式，可同时使用多种内容类型
+
+### 祝福图案类型
+
+| 类型 | 名称 | 说明 |
+|------|------|------|
+| goldCoin | 金币 | 金色圆形金币 |
+| moneyBag | 金钱袋 | 装满金币的袋子 |
+| luckyBag | 福袋 | 红色福袋 |
+| redPacket | 红包 | 红色红包 |
+
+### 祝福图案样式配置
+
+```typescript
+interface BlessingStyle {
+  primaryColor: string;      // 主色调
+  secondaryColor: string;    // 次要颜色
+  enable3D: boolean;         // 启用3D效果
+  enableGlow: boolean;       // 启用发光效果
+  glowIntensity: number;     // 发光强度 (0-2)
+}
+```
+
+### 使用示例
+
+```json
+{
+  "contentType": "mixed",
+  "words": ["福", "禄", "寿"],
+  "images": ["coin.png", "https://example.com/img.png"],
+  "blessingTypes": ["goldCoin", "moneyBag"],
+  "imageWeight": 0.3,
+  "blessingStyle": {
+    "primaryColor": "#FFD700",
+    "secondaryColor": "#FFA500",
+    "enable3D": true,
+    "enableGlow": true,
+    "glowIntensity": 1
+  }
+}
+```
+
 ## 开发规范
 
 ### 代码风格
@@ -487,14 +699,14 @@ const effectConfigs = {
 
 ### BaseComposition 基础组件
 
-`BaseComposition` 是所有特效组合组件的基础类，统一处理背景、遮罩、音效渲染，减少重复代码。
+`BaseComposition` 是所有特效组合组件的基础类，统一处理背景、遮罩、音效、水印、走马灯等渲染，减少重复代码。
 
 #### 基本用法
 
 ```tsx
-import { BaseComposition, StarField, FullCompositionSchema } from "../../shared/index";
+import { BaseComposition, StarField, CompleteCompositionSchema } from "../../shared/index";
 
-export const MyEffectSchema = FullCompositionSchema.extend({
+export const MyEffectSchema = CompleteCompositionSchema.extend({
   // 特有参数
   words: z.array(z.string()),
   speed: z.number(),
@@ -510,6 +722,8 @@ export const MyEffect: React.FC<MyEffectProps> = ({
   audioEnabled = false,
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
+  watermarkEnabled = false,
+  marqueeEnabled = false,
 }) => {
   return (
     <BaseComposition
@@ -519,6 +733,8 @@ export const MyEffect: React.FC<MyEffectProps> = ({
       audioEnabled={audioEnabled}
       audioSource={audioSource}
       audioVolume={audioVolume}
+      watermarkEnabled={watermarkEnabled}
+      marqueeEnabled={marqueeEnabled}
       extraLayers={<StarField count={100} opacity={0.5} />}
     >
       {/* 特效内容 */}
@@ -547,21 +763,16 @@ export const MyEffect: React.FC<MyEffectProps> = ({
 | audioSource | string | 'coin-sound.mp3' | 音频文件 |
 | audioVolume | number | 0.5 | 音量 |
 | audioLoop | boolean | true | 是否循环 |
+| watermarkEnabled | boolean | false | 是否启用水印 |
+| marqueeEnabled | boolean | false | 是否启用走马灯 |
 
 #### Schema 扩展方式
 
 ```tsx
-import { FullCompositionSchema } from "../../shared/index";
+import { CompleteCompositionSchema } from "../../shared/index";
 
-// 方式1：使用 FullCompositionSchema（包含背景+遮罩+音频）
-export const MySchema = FullCompositionSchema.extend({
-  myParam: z.string(),
-});
-
-// 方式2：使用 FullBackgroundSchema（仅背景+遮罩，不含音频）
-import { FullBackgroundSchema, AudioSchema } from "../../shared/index";
-export const MySchema = FullBackgroundSchema.extend({
-  ...AudioSchema.shape,  // 单独添加音频
+// 使用 CompleteCompositionSchema（包含背景+遮罩+音频+水印+走马灯+前景）
+export const MySchema = CompleteCompositionSchema.extend({
   myParam: z.string(),
 });
 ```
@@ -576,7 +787,46 @@ BaseComposition 按以下顺序渲染各层：
 4. **内容层**（children）
 5. **遮罩层**（Overlay，after 时）
 6. **额外层**（extraLayers，after-content 时）
-7. **音频层**（Audio）
+7. **水印层**（Watermark）
+8. **走马灯层**（Marquee）
+9. **前景层**（Foreground）
+10. **音频层**（Audio）
+
+### 公共组件
+
+#### StarField 星空背景
+
+```tsx
+<StarField count={100} opacity={0.5} />
+```
+
+#### CenterGlow 中心发光
+
+```tsx
+<CenterGlow color="#FFD700" intensity={0.8} size={300} />
+```
+
+#### BlessingSymbol 祝福图案
+
+```tsx
+<BlessingSymbol
+  type="goldCoin"
+  size={50}
+  primaryColor="#FFD700"
+  enable3D={true}
+  enableGlow={true}
+/>
+```
+
+#### RadialBurst 中心发散粒子
+
+```tsx
+<RadialBurst
+  effectType="burst"
+  particleCount={20}
+  colors={['#FFD700', '#FF6B6B']}
+/>
+```
 
 ### 响应式设计
 
