@@ -1,0 +1,12 @@
+{
+  "name": "text-vector-effect",
+  "version": "1.0.0",
+  "description": "文字矢量动画特效 - 将文字转为SVG路径并用混合元素填充轨迹",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render src/index.ts TextVector out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render": "remotion render src/index.ts TextVector out/video.mp4 --chromium-flags=\"--headless=new\"",
+    "render-preview": "remotion render src/index.ts TextVector out/preview.mp4 --frames=0-120 --chromium-flags=\"--headless=new\""
+  }
+}
