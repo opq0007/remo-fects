@@ -1,7 +1,7 @@
 import React from "react";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
-import { BaseComposition, FullBackgroundSchema, OverlaySchema, NestedAudioSchema, BlessingSymbolTypeSchema } from "../../shared/index";
+import { BaseComposition, FullBackgroundSchema, OverlaySchema, NestedAudioSchema, BlessingSymbolTypeSchema, RadialBurstSchema, extractRadialBurstProps } from "../../shared/index";
 import { TextTornado } from "./TextTornado";
 
 // ==================== 特有 Schema 定义 ====================
@@ -78,6 +78,9 @@ export const TextTornadoSchema = z.object({
 
   // 遮罩效果
   ...OverlaySchema.shape,
+
+  // 发散粒子效果配置
+  ...RadialBurstSchema.shape,
 });
 
 export type TextTornadoProps = z.infer<typeof TextTornadoSchema>;
@@ -121,6 +124,19 @@ export const TextTornadoComposition: React.FC<TextTornadoProps> = ({
   // 遮罩参数
   overlayColor = "#000000",
   overlayOpacity = 0.2,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   // 默认文字样式
   const defaultTextStyle = {
@@ -147,6 +163,22 @@ export const TextTornadoComposition: React.FC<TextTornadoProps> = ({
   const audioVolume = audio?.volume ?? 0.5;
   const audioLoop = audio?.loop ?? true;
 
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
+
   return (
     <BaseComposition
       backgroundType={backgroundType}
@@ -160,6 +192,7 @@ export const TextTornadoComposition: React.FC<TextTornadoProps> = ({
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
     >
       <TextTornado
         contentType={contentType}

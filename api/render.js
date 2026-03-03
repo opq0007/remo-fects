@@ -106,27 +106,6 @@ function processBackgroundFile(params, projectPath) {
  * 用于处理一些特殊的参数转换需求
  */
 const effectPostProcessors = {
-  'text-grow-explode-effect': (params, jobId) => {
-    // 预计算轮廓点数据
-    if (params.backgroundFile && params.width && params.height) {
-      try {
-        const imagePath = path.join(__dirname, 'uploads', params.backgroundFile);
-        if (fs.existsSync(imagePath)) {
-          const contourPoints = extractContourPointsFromImage(
-            imagePath,
-            params.width,
-            params.height,
-            params.threshold,
-            params.sampleDensity
-          );
-          params.contourPointsData = contourPoints;
-          console.log('[text-grow-explode-effect] 预计算轮廓点数量:', contourPoints.length);
-        }
-      } catch (err) {
-        console.error('[text-grow-explode-effect] 轮廓点预计算失败:', err.message);
-      }
-    }
-  }
 };
 
 /**

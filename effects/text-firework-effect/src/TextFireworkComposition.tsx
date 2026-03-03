@@ -9,6 +9,9 @@ import {
   StarField,
   CompleteCompositionSchema,
   MixedInputSchema,
+  RadialBurstSchema,
+  RadialBurst,
+  extractRadialBurstProps,
   seededRandom,
   BlessingSymbolType,
   DEFAULT_BLESSING_TYPES,
@@ -16,7 +19,7 @@ import {
 
 // ==================== 主组件 Schema ====================
 
-export const TextFireworkCompositionSchema = CompleteCompositionSchema.merge(MixedInputSchema).extend({
+export const TextFireworkCompositionSchema = CompleteCompositionSchema.merge(MixedInputSchema).merge(RadialBurstSchema).extend({
   // 文字配置（兼容旧版本）
   words: z.array(z.string()).optional().meta({ description: "要显示的文字列表（每个文字一个烟花）" }),
   
@@ -134,6 +137,20 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  
+  // 中心发散粒子效果参数
+  radialBurstEnabled = false,
+  radialBurstEffectType = "goldenRays",
+  radialBurstColor = "#FFD700",
+  radialBurstSecondaryColor = "#FFA500",
+  radialBurstIntensity = 1,
+  radialBurstVerticalOffset = 0.3,
+  radialBurstCount = 12,
+  radialBurstSpeed = 1,
+  radialBurstOpacity = 0.8,
+  radialBurstSeed = 42,
+  radialBurstRotate = true,
+  radialBurstRotationSpeed = 1,
 }) => {
   const { width, height, durationInFrames } = useVideoConfig();
 
@@ -410,6 +427,22 @@ export const TextFireworkComposition: React.FC<TextFireworkCompositionProps> = (
           glowIntensity={glowIntensity}
         />
       ))}
+
+      {/* 中心发散粒子效果 */}
+      <RadialBurst
+        enabled={radialBurstEnabled}
+        effectType={radialBurstEffectType}
+        color={radialBurstColor}
+        secondaryColor={radialBurstSecondaryColor}
+        intensity={radialBurstIntensity}
+        verticalOffset={radialBurstVerticalOffset}
+        count={radialBurstCount}
+        speed={radialBurstSpeed}
+        opacity={radialBurstOpacity}
+        seed={radialBurstSeed}
+        rotate={radialBurstRotate}
+        rotationSpeed={radialBurstRotationSpeed}
+      />
     </BaseComposition>
   );
 };

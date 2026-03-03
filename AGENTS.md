@@ -36,8 +36,7 @@ remo-fects/
 │   │   ├── text-ring-effect.js       # 文字环绕特效配置
 │   │   ├── text-firework-effect.js   # 文字烟花特效配置
 │   │   ├── text-breakthrough-effect.js # 文字破屏特效配置
-│   │   ├── tai-chi-bagua-effect.js   # 太极八卦特效配置
-│   │   └── text-grow-explode-effect.js # 生长爆炸特效配置
+│   │   └── tai-chi-bagua-effect.js   # 太极八卦特效配置
 │   ├── outputs/                      # 输出视频目录
 │   ├── uploads/                      # 上传文件目录
 │   └── package.json                  # API 项目配置
@@ -60,8 +59,7 @@ remo-fects/
 │   ├── text-ring-effect/             # 金色文字环绕特效
 │   ├── text-firework-effect/         # 文字烟花特效
 │   ├── text-breakthrough-effect/     # 文字破屏特效
-│   ├── tai-chi-bagua-effect/         # 太极八卦图特效
-│   └── text-grow-explode-effect/     # 姓名生长爆炸特效
+│   └── tai-chi-bagua-effect/         # 太极八卦图特效
 ├── scripts/                          # 工具脚本
 │   └── install-chrome.js             # Chrome 管理工具
 ├── node_modules/                     # 共享依赖包
@@ -187,8 +185,7 @@ GET http://localhost:3001/api/projects
   { "id": "text-ring-effect", "name": "金色发光立体字环绕特效", "compositionId": "TextRing" },
   { "id": "text-firework-effect", "name": "文字烟花特效", "compositionId": "TextFirework" },
   { "id": "text-breakthrough-effect", "name": "文字破屏特效", "compositionId": "TextBreakthrough" },
-  { "id": "tai-chi-bagua-effect", "name": "太极八卦图特效", "compositionId": "TaiChiBagua" },
-  { "id": "text-grow-explode-effect", "name": "姓名生长爆炸特效", "compositionId": "TextGrowExplode" }
+  { "id": "tai-chi-bagua-effect", "name": "太极八卦图特效", "compositionId": "TaiChiBagua" }
 ]
 ```
 
@@ -477,16 +474,6 @@ const effectConfigs = {
 | baguaRadius | number | 280 | 八卦半径 |
 | enable3D | boolean | false | 启用3D效果 |
 | enableGoldenSparkle | boolean | true | 金光闪闪 |
-| audioEnabled | boolean | false | 是否启用音频 |
-
-### text-grow-explode-effect（生长爆炸特效）
-
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| name | string | '福' | 核心文字 |
-| words | array | [...] | 爆炸碎片文字 |
-| growDuration | number | 90 | 生长时长（帧） |
-| explodeDuration | number | 30 | 爆炸时长（帧） |
 | audioEnabled | boolean | false | 是否启用音频 |
 
 ## 开发规范

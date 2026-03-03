@@ -26,6 +26,8 @@ export type { BaseCompositionComponentProps } from "./BaseComposition";
 
 export { BlessingSymbol, SingleBlessingSymbol } from "./BlessingSymbol";
 
+export { RadialBurst } from "./RadialBurst";
+
 // 混合输入渲染组件
 export {
   TextItemRender,

@@ -95,6 +95,16 @@ export {
   extractFullMixedInputProps,
 } from "./mixed-input";
 
+// 中心发散粒子效果配置
+export {
+  RadialBurstEffectTypeSchema,
+  RadialBurstSchema,
+  type RadialBurstEffectType,
+  type RadialBurstProps,
+  type RadialBurstComponentProps,
+  extractRadialBurstProps,
+} from "./radial-burst";
+
 // 重新导出完整背景 Schema（合并背景和遮罩）
 import { z } from "zod";
 import { BackgroundSchema } from "./background";
@@ -102,12 +112,13 @@ import { OverlaySchema } from "./overlay";
 import { AudioSchema } from "./audio";
 import { WatermarkSchema } from "./watermark";
 import { MarqueeSchema } from "./marquee";
+import { RadialBurstSchema } from "./radial-burst";
 
 /**
- * 完整背景 Schema（背景 + 遮罩）
+ * 完整背景 Schema（背景 + 遮罩 + 发散粒子）
  * 适用于大多数需要背景和遮罩的场景
  */
-export const FullBackgroundSchema = BackgroundSchema.merge(OverlaySchema);
+export const FullBackgroundSchema = BackgroundSchema.merge(OverlaySchema).merge(RadialBurstSchema);
 
 /**
  * 基础组合 Schema

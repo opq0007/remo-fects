@@ -9,6 +9,7 @@ import {
   MixedInputSchema,
   BlessingSymbolType,
   DEFAULT_BLESSING_TYPES,
+  extractRadialBurstProps,
 } from "../../shared/index";
 import { Kaleidoscope } from "./Kaleidoscope";
 import { CenterBurst } from "./CenterBurst";
@@ -171,12 +172,42 @@ export const TextKaleidoscopeComposition: React.FC<TextKaleidoscopeCompositionPr
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   const { width, height, durationInFrames } = useVideoConfig();
   const frame = useCurrentFrame();
   
   // 有效颜色列表
   const effectiveColors = colors && colors.length > 0 ? colors : DEFAULT_COLORS;
+  
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
   
   // 检测可用内容
   const hasText = words && words.length > 0;
@@ -306,6 +337,7 @@ export const TextKaleidoscopeComposition: React.FC<TextKaleidoscopeCompositionPr
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
       extraLayers={<StarField count={80} opacity={0.4} />}
       watermark={
         watermarkEnabled

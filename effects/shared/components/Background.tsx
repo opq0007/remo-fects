@@ -7,7 +7,7 @@ import {
 } from "remotion";
 import { Video } from "@remotion/media";
 import { BackgroundType, BackgroundComponentProps } from "../schemas";
-import { getImageSrc } from "./MixedInputItem";
+import { getImageSrc, isNetworkUrl, isDataUrl } from "./MixedInputItem";
 
 /**
  * 默认背景渐变
@@ -29,7 +29,7 @@ const DEFAULT_GRADIENT = "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f34
  * <Background type="video" source="bg.mp4" videoLoop videoMuted />
  * 
  * // 使用渐变背景
- * <Background type="gradient" gradient="radial-gradient(circle, #1a1a2e, #000)" />
+ * <Background type="gradient" gradient="radial-gradient(circle, #1a1a2e, #0f3460)" />
  */
 export const Background: React.FC<BackgroundComponentProps> = ({
   type = "color",
@@ -63,7 +63,11 @@ export const Background: React.FC<BackgroundComponentProps> = ({
       <AbsoluteFill>
         <Img 
           src={getImageSrc(source)} 
-          style={{ width, height, objectFit: "cover" }} 
+          style={{
+            width,
+            height,
+            objectFit: "cover",
+          }}
         />
       </AbsoluteFill>
     );
@@ -71,15 +75,16 @@ export const Background: React.FC<BackgroundComponentProps> = ({
 
   // 视频背景
   if (type === "video" && source) {
-    // 视频只支持本地文件或网络 URL，不支持 Data URL
-    const videoSrc = source.startsWith('http://') || source.startsWith('https://') 
-      ? source 
-      : staticFile(source);
+    const videoSrc = isNetworkUrl(source) || isDataUrl(source) ? source : staticFile(source);
     return (
       <AbsoluteFill>
         <Video
           src={videoSrc}
-          style={{ width, height, objectFit: "cover" }}
+          style={{
+            width,
+            height,
+            objectFit: "cover",
+          }}
           loop={videoLoop}
           muted={videoMuted}
         />

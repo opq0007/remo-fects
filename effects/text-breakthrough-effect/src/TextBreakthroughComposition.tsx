@@ -259,6 +259,19 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   const { width, height, durationInFrames } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -450,6 +463,24 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
       }
     : undefined;
 
+  // 构建发散粒子效果配置
+  const radialBurstConfig = radialBurstEnabled
+    ? {
+        enabled: true,
+        effectType: radialBurstEffectType,
+        color: radialBurstColor,
+        secondaryColor: radialBurstSecondaryColor,
+        intensity: radialBurstIntensity,
+        verticalOffset: radialBurstVerticalOffset,
+        count: radialBurstCount,
+        speed: radialBurstSpeed,
+        opacity: radialBurstOpacity,
+        seed: radialBurstSeed,
+        rotate: radialBurstRotate,
+        rotationSpeed: radialBurstRotationSpeed,
+      }
+    : undefined;
+
   return (
     <BaseComposition
       backgroundType={backgroundType}
@@ -479,6 +510,7 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
           : undefined
       }
       marquee={marqueeConfig}
+      radialBurst={radialBurstConfig}
     >
       {contentTimings.map((timing, index) => {
         const pos = contentPositions[timing.itemIndex] ?? contentPositions[0] ?? { x: 0, y: 0 };

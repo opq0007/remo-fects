@@ -7,6 +7,7 @@ import {
   CompleteCompositionSchema,
   MixedInputSchema,
   BlessingStyleSchema,
+  extractRadialBurstProps,
 } from "../../shared/index";
 import { MarqueeComponentProps } from "../../shared/schemas/marquee";
 
@@ -114,7 +115,36 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
+
   // 构建走马灯配置
   const marqueeConfig: MarqueeComponentProps | undefined = marqueeEnabled
     ? {
@@ -167,6 +197,7 @@ export const TextRingComposition: React.FC<TextRingCompositionProps> = ({
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
       extraLayers={<CenterGlow intensity={glowIntensity} />}
       watermark={
         watermarkEnabled

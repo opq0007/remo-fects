@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { AbsoluteFill, Audio, staticFile } from "remotion";
-import { Background, Overlay, Watermark, Marquee } from "./index";
-import { BackgroundType, BaseCompositionProps } from "../schemas";
+import { Background, Overlay, Watermark, Marquee, RadialBurst } from "./index";
+import { BackgroundType, BaseCompositionProps, RadialBurstComponentProps } from "../schemas";
 import { Watermark as WatermarkComponent, WatermarkProps } from "./Watermark";
 import { Marquee as MarqueeComponent, MarqueeProps } from "./Marquee";
 
@@ -47,6 +47,9 @@ export interface BaseCompositionComponentProps extends BaseCompositionProps {
   
   /** 走马灯配置对象（可选，用于批量传入） */
   marquee?: MarqueeConfig;
+  
+  /** 发散粒子效果配置 */
+  radialBurst?: RadialBurstComponentProps;
 }
 
 /**
@@ -117,6 +120,8 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
   watermark,
   // 走马灯参数
   marquee,
+  // 发散粒子效果参数
+  radialBurst,
 }) => {
   // 渲染遮罩层
   const renderOverlay = () => {
@@ -157,6 +162,28 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
     return <MarqueeComponent {...marquee} />;
   };
 
+  // 渲染发散粒子效果
+  const renderRadialBurst = () => {
+    if (!radialBurst || !radialBurst.enabled) return null;
+    
+    return (
+      <RadialBurst
+        enabled={radialBurst.enabled}
+        effectType={radialBurst.effectType}
+        color={radialBurst.color}
+        secondaryColor={radialBurst.secondaryColor}
+        intensity={radialBurst.intensity}
+        verticalOffset={radialBurst.verticalOffset}
+        count={radialBurst.count}
+        speed={radialBurst.speed}
+        opacity={radialBurst.opacity}
+        seed={radialBurst.seed}
+        rotate={radialBurst.rotate}
+        rotationSpeed={radialBurst.rotationSpeed}
+      />
+    );
+  };
+
   return (
     <AbsoluteFill>
       {/* 背景层 */}
@@ -170,6 +197,9 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
           videoMuted={backgroundVideoMuted}
         />
       )}
+
+      {/* 发散粒子效果层 - 在背景之后、内容之前 */}
+      {renderRadialBurst()}
 
       {/* 额外层（内容前） */}
       {extraLayersPosition === "before-content" && renderExtraLayers()}

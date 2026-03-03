@@ -10,6 +10,8 @@ import {
   WatermarkSchema,
   MarqueeSchema,
   BlessingSymbolTypeSchema,
+  RadialBurstSchema,
+  extractRadialBurstProps,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -119,6 +121,9 @@ export const TextRainCompositionSchema = z.object({
 
   // 走马灯配置（使用公共 Schema）
   ...MarqueeSchema.shape,
+
+  // 发散粒子效果配置
+  ...RadialBurstSchema.shape,
 });
 
 export type TextRainCompositionProps = z.infer<typeof TextRainCompositionSchema>;
@@ -185,6 +190,19 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   const defaultTextStyle: TextStyleConfig = {
     color: "#ffd700",
@@ -223,6 +241,22 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   const audioSource = audio?.src ?? audio?.source ?? "coin-sound.mp3";
   const audioVolume = audio?.volume ?? 0.5;
   const audioLoop = audio?.loop ?? true;
+
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
 
   // 构建走马灯配置
   const marqueeConfig = marqueeEnabled
@@ -272,6 +306,7 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
       watermark={
         watermarkEnabled
           ? {

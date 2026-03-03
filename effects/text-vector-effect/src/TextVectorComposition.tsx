@@ -12,6 +12,7 @@ import {
   StarField,
   CompleteCompositionSchema,
   MixedInputSchema,
+  extractRadialBurstProps,
 } from "../../shared/index";
 import { TextVectorAnimation } from "./TextVectorAnimation";
 
@@ -152,9 +153,7 @@ export const TextVectorComposition: React.FC<TextVectorCompositionProps> = ({
   audioEnabled = false,
   audioSource = "coin-sound.mp3",
   audioVolume = 0.5,
-  audioLoop = true,
-  seed = 12345,
-  
+  audioLoop = true,  
   // 水印参数
   watermarkEnabled = false,
   watermarkText,
@@ -187,9 +186,38 @@ export const TextVectorComposition: React.FC<TextVectorCompositionProps> = ({
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   // 有效颜色
   const effectiveColors = colors && colors.length > 0 ? colors : DEFAULT_COLORS;
+  
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
   
   // 构建走马灯配置
   const marqueeConfig = marqueeEnabled
@@ -239,6 +267,7 @@ export const TextVectorComposition: React.FC<TextVectorCompositionProps> = ({
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
       extraLayers={
         enableStarField ? <StarField count={starCount} opacity={starOpacity} /> : undefined
       }
@@ -291,7 +320,6 @@ export const TextVectorComposition: React.FC<TextVectorCompositionProps> = ({
         floatSpeed={floatSpeed}
         enable3D={enable3D}
         rotation3D={rotation3D}
-        seed={seed}
       />
     </BaseComposition>
   );

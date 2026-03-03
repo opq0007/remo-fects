@@ -6,6 +6,7 @@ import {
   StarField,
   CompleteCompositionSchema,
   BlessingSymbolType,
+  extractRadialBurstProps,
 } from "../../shared/index";
 import { Windmill, BladesData } from "./Windmill";
 import { BladeContentType } from "./WindmillBlade";
@@ -201,9 +202,38 @@ export const TextWindmillComposition: React.FC<TextWindmillCompositionProps> = (
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   // 有效颜色列表
   const effectiveColors = colors && colors.length > 0 ? colors : DEFAULT_COLORS;
+  
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
   
   // 生成叶片数据
   const bladesData = React.useMemo((): BladesData => {
@@ -276,6 +306,7 @@ export const TextWindmillComposition: React.FC<TextWindmillCompositionProps> = (
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
       extraLayers={<StarField count={60} opacity={0.3} />}
       watermark={
         watermarkEnabled

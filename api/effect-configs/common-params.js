@@ -302,6 +302,77 @@ const commonParams = {
     defaultValue: 0,
     parser: (v) => parseInt(v) || 0,
     description: '背景层垂直偏移'
+  },
+  
+  // ===== 中心发散粒子效果配置 =====
+  radialBurstEnabled: {
+    type: 'boolean',
+    defaultValue: false,
+    parser: (v) => v === 'true' || v === true,
+    description: '是否启用发散粒子效果'
+  },
+  radialBurstEffectType: {
+    type: 'string',
+    defaultValue: 'goldenRays',
+    description: '发散效果类型：buddhaLight | goldenRays | meteorShower | sparkleBurst'
+  },
+  radialBurstColor: {
+    type: 'string',
+    defaultValue: '#FFD700',
+    description: '发散效果主颜色'
+  },
+  radialBurstSecondaryColor: {
+    type: 'string',
+    defaultValue: '#FFA500',
+    description: '发散效果次颜色'
+  },
+  radialBurstIntensity: {
+    type: 'number',
+    defaultValue: 1,
+    parser: (v) => parseFloat(v) || 1,
+    description: '发散效果强度（0-2）'
+  },
+  radialBurstVerticalOffset: {
+    type: 'number',
+    defaultValue: 0.5,
+    parser: (v) => parseFloat(v) || 0.5,
+    description: '发散效果中心垂直偏移（0=顶部, 0.5=居中, 1=底部）'
+  },
+  radialBurstCount: {
+    type: 'number',
+    defaultValue: 8,
+    parser: (v) => parseInt(v) || 8,
+    description: '发散粒子/光线数量'
+  },
+  radialBurstSpeed: {
+    type: 'number',
+    defaultValue: 1,
+    parser: (v) => parseFloat(v) || 1,
+    description: '发散粒子动画速度系数'
+  },
+  radialBurstOpacity: {
+    type: 'number',
+    defaultValue: 1,
+    parser: (v) => parseFloat(v) || 1,
+    description: '发散粒子整体透明度（0-1）'
+  },
+  radialBurstSeed: {
+    type: 'number',
+    defaultValue: 42,
+    parser: (v) => parseInt(v) || 42,
+    description: '发散粒子随机种子'
+  },
+  radialBurstRotate: {
+    type: 'boolean',
+    defaultValue: true,
+    parser: (v) => v !== 'false' && v !== false,
+    description: '发散粒子是否旋转'
+  },
+  radialBurstRotationSpeed: {
+    type: 'number',
+    defaultValue: 1,
+    parser: (v) => parseFloat(v) || 1,
+    description: '发散粒子旋转速度'
   }
 };
 

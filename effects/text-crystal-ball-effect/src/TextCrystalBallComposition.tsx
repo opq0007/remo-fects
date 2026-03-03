@@ -13,6 +13,8 @@ import {
   OverlaySchema,
   NestedAudioSchema,
   BlessingSymbolTypeSchema,
+  RadialBurstSchema,
+  extractRadialBurstProps,
 } from "../../shared/index";
 import { CrystalBall } from "./CrystalBall";
 
@@ -103,6 +105,9 @@ export const TextCrystalBallSchema = z.object({
 
   // 遮罩效果
   ...OverlaySchema.shape,
+
+  // 发散粒子效果配置
+  ...RadialBurstSchema.shape,
 });
 
 export type TextCrystalBallProps = z.infer<typeof TextCrystalBallSchema>;
@@ -157,6 +162,19 @@ export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = ({
   // 遮罩参数
   overlayColor = "#000000",
   overlayOpacity = 0.2,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   // 默认文字样式
   const defaultTextStyle = {
@@ -183,6 +201,22 @@ export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = ({
   const audioVolume = audio?.volume ?? 0.5;
   const audioLoop = audio?.loop ?? true;
 
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
+
   return (
     <BaseComposition
       backgroundType={backgroundType}
@@ -196,6 +230,7 @@ export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = ({
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
     >
       <CrystalBall
         contentType={contentType}

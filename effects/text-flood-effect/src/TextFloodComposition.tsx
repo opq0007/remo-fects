@@ -15,6 +15,8 @@ import {
   WatermarkSchema,
   MarqueeSchema,
   BlessingSymbolTypeSchema,
+  RadialBurstSchema,
+  extractRadialBurstProps,
 } from "../../shared/index";
 import {
   TextFlood,
@@ -132,6 +134,9 @@ export const TextFloodCompositionSchema = z.object({
 
   // 走马灯配置
   ...MarqueeSchema.shape,
+
+  // 发散粒子效果配置
+  ...RadialBurstSchema.shape,
 });
 
 export type TextFloodCompositionProps = z.infer<typeof TextFloodCompositionSchema>;
@@ -201,6 +206,19 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   // 默认文字样式
   const defaultTextStyle = {
@@ -237,6 +255,22 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
   const audioSource = audio?.src ?? audio?.source ?? "coin-sound.mp3";
   const audioVolume = audio?.volume ?? 0.5;
   const audioLoop = audio?.loop ?? true;
+
+  // 提取发散粒子效果参数
+  const radialBurstConfig = extractRadialBurstProps({
+    radialBurstEnabled,
+    radialBurstEffectType,
+    radialBurstColor,
+    radialBurstSecondaryColor,
+    radialBurstIntensity,
+    radialBurstVerticalOffset,
+    radialBurstCount,
+    radialBurstSpeed,
+    radialBurstOpacity,
+    radialBurstSeed,
+    radialBurstRotate,
+    radialBurstRotationSpeed,
+  });
 
   // 构建走马灯配置
   const marqueeConfig = marqueeEnabled
@@ -286,6 +320,7 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
       audioSource={audioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      radialBurst={radialBurstConfig}
       watermark={
         watermarkEnabled
           ? {

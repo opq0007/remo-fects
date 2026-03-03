@@ -107,6 +107,19 @@ export const RemotionRoot: React.FC = () => {
           watermarkIntensity: 0.8,
           watermarkVelocityX: 180,
           watermarkVelocityY: 120,
+
+          // 发散粒子效果配置
+          radialBurstEnabled: true,
+          radialBurstEffectType: "goldenRays",
+          radialBurstColor: "#FFD700",
+          radialBurstSecondaryColor: "#FFA500",
+          radialBurstIntensity: 1.2,
+          radialBurstVerticalOffset: 0.5,
+          radialBurstCount: 12,
+          radialBurstSpeed: 1,
+          radialBurstOpacity: 0.8,
+          radialBurstRotate: true,
+          radialBurstRotationSpeed: 0.5,
         }}
       />
     </>

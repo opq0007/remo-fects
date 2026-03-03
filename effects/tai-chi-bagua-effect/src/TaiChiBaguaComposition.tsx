@@ -20,8 +20,10 @@ import {
   AudioSchema,
   WatermarkSchema,
   MarqueeSchema,
+  RadialBurstSchema,
   Watermark,
   Marquee,
+  RadialBurst,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -83,6 +85,9 @@ export const TaiChiBaguaSchema = BackgroundSchema.extend({
 
   // 走马灯配置（使用公共 Schema）
   ...MarqueeSchema.shape,
+
+  // 发散粒子效果配置（使用公共 Schema）
+  ...RadialBurstSchema.shape,
 });
 
 export type TaiChiBaguaProps = z.infer<typeof TaiChiBaguaSchema>;
@@ -342,6 +347,19 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   marqueeForegroundOffsetY,
   marqueeBackgroundOffsetX,
   marqueeBackgroundOffsetY,
+  // 发散粒子效果参数
+  radialBurstEnabled,
+  radialBurstEffectType,
+  radialBurstColor,
+  radialBurstSecondaryColor,
+  radialBurstIntensity,
+  radialBurstVerticalOffset,
+  radialBurstCount,
+  radialBurstSpeed,
+  radialBurstOpacity,
+  radialBurstSeed,
+  radialBurstRotate,
+  radialBurstRotationSpeed,
 }) => {
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -391,6 +409,24 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
         videoLoop={backgroundVideoLoop}
         videoMuted={backgroundVideoMuted}
       />
+
+      {/* 发散粒子效果层 */}
+      {radialBurstEnabled && (
+        <RadialBurst
+          enabled={radialBurstEnabled}
+          effectType={radialBurstEffectType}
+          color={radialBurstColor}
+          secondaryColor={radialBurstSecondaryColor}
+          intensity={radialBurstIntensity}
+          verticalOffset={radialBurstVerticalOffset}
+          count={radialBurstCount}
+          speed={radialBurstSpeed}
+          opacity={radialBurstOpacity}
+          seed={radialBurstSeed}
+          rotate={radialBurstRotate}
+          rotationSpeed={radialBurstRotationSpeed}
+        />
+      )}
 
       <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", ...perspective3D }}>
         <svg width={width} height={height} style={{ position: "absolute", top: 0, left: 0, ...transform3D, opacity: entranceProgress }}>

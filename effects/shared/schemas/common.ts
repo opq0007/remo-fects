@@ -2,6 +2,7 @@ import { z } from "zod";
 import { BackgroundSchema } from "./background";
 import { OverlaySchema } from "./overlay";
 import { AudioSchema } from "./audio";
+import { RadialBurstSchema } from "./radial-burst";
 
 /**
  * 基础视频参数 Schema
@@ -31,6 +32,6 @@ export type BaseCompositionProps = z.infer<typeof BaseCompositionPropsSchema>;
 
 /**
  * 基础组合 Schema
- * 包含背景 + 遮罩 + 音频的完整配置
+ * 包含背景 + 遮罩 + 音频 + 发散粒子的完整配置
  */
-export const BaseCompositionPropsSchema = BackgroundSchema.merge(OverlaySchema).merge(AudioSchema);
+export const BaseCompositionPropsSchema = BackgroundSchema.merge(OverlaySchema).merge(AudioSchema).merge(RadialBurstSchema);
