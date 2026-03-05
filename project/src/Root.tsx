@@ -52,7 +52,7 @@ export const RemotionRoot: React.FC = () => {
             confettiLevel: 'high',
             animationSpeed: 'normal',
             musicEnabled: true,
-            musicTrack: 'kids_party_01',
+            musicTrack: 'JoyfulChildren',
             birthdaySongSource: 'birthday_audio.mp3',
             birthdaySongVolume: 0.6
           }}
@@ -89,7 +89,7 @@ export const RemotionRoot: React.FC = () => {
             confettiLevel: 'high',
             animationSpeed: 'normal',
             musicEnabled: true,
-            musicTrack: 'kids_party_01',
+            musicTrack: 'JoyfulChildren',
             birthdaySongSource: 'birthday_audio.mp3',
             birthdaySongVolume: 0.6
           }}
@@ -126,7 +126,7 @@ export const RemotionRoot: React.FC = () => {
             confettiLevel: 'high',
             animationSpeed: 'normal',
             musicEnabled: true,
-            musicTrack: 'kids_party_01',
+            musicTrack: 'JoyfulChildren',
             birthdaySongVolume: 0.6
           }}
         />
@@ -165,7 +165,7 @@ export const RemotionRoot: React.FC = () => {
             confettiLevel: 'high',
             animationSpeed: 'normal',
             musicEnabled: true,
-            musicTrack: 'kids_party_01',
+            musicTrack: 'JoyfulChildren',
             birthdaySongSource: 'birthday_audio.mp3',
             birthdaySongVolume: 0.6
           }}
@@ -202,7 +202,7 @@ export const RemotionRoot: React.FC = () => {
             confettiLevel: 'high',
             animationSpeed: 'normal',
             musicEnabled: true,
-            musicTrack: 'kids_party_01',
+            musicTrack: 'JoyfulChildren',
             birthdaySongSource: 'birthday_audio.mp3',
             birthdaySongVolume: 0.6
           }}
@@ -242,7 +242,7 @@ export const RemotionRoot: React.FC = () => {
             confettiLevel: 'high',
             animationSpeed: 'normal',
             musicEnabled: true,
-            musicTrack: 'kids_party_01',
+            musicTrack: 'JoyfulChildren',
             birthdaySongSource: 'birthday_audio.mp3',
             birthdaySongVolume: 0.6
           }}

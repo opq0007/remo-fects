@@ -162,7 +162,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     // 音频参数
     audioEnabled,
     audioSource,
-    audioVolume = 0.5,
+    audioVolume,
     audioLoop = true,
   } = props;
   
@@ -176,7 +176,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
   const effectiveBackgroundColor = backgroundColor || theme.background;
   
   // 音频配置
-  const effectiveAudioEnabled = audioEnabled ?? musicEnabled;
+  const effectiveAudioEnabled = audioEnabled;
   const effectiveAudioSource = audioSource || `${musicTrack}.mp3`;
   
   // 类型断言
@@ -569,17 +569,6 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       audioSource={effectiveAudioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
-      // 背景音乐配置
-      backgroundMusic={
-        musicEnabled
-          ? {
-              enabled: true,
-              source: `${musicTrack}.mp3`,
-              volume: 0.3,
-              loop: true,
-            }
-          : undefined
-      }
       // 面板级覆盖内容：卡通元素
       overlayContent={
         cartoonElements ? (

@@ -9,7 +9,7 @@ import { z } from "zod";
 export const AudioSchema = z.object({
   audioEnabled: z.boolean().optional(),
   audioSource: z.string().optional(),
-  audioVolume: z.number().min(0).max(1).optional(),
+  audioVolume: z.number().min(0).max(1).step(0.01).optional(),
   audioLoop: z.boolean().optional(),
 });
 
