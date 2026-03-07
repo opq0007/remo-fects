@@ -6,6 +6,7 @@ import { Watermark as WatermarkComponent, WatermarkProps } from './Watermark';
 import { Marquee as MarqueeComponent, MarqueeProps } from './Marquee';
 import { RadialBurst } from './RadialBurst';
 import { Foreground } from './Foreground';
+import { PlusEffectItemProps } from '../schemas/story';
 
 // ==================== 类型定义 ====================
 
@@ -78,6 +79,16 @@ export interface StoryPanelProps extends Omit<BaseCompositionComponentProps, 'ch
     volume?: number;
     loop?: boolean;
   };
+  
+  /**
+   * 渲染 PlusEffects 的回调函数
+   * 用于渲染委托，在 project 层实现具体的特效渲染逻辑
+   * 
+   * @param effects - PlusEffectItemProps 数组
+   * @param fallbackWords - 默认文字列表（当 effect.words 为空时使用）
+   * @returns ReactNode
+   */
+  renderPlusEffects?: (effects: PlusEffectItemProps[], fallbackWords: string[]) => ReactNode;
 }
 
 /**
@@ -218,6 +229,8 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
   watermark,
   marquee,
   backgroundMusic,
+  // PlusEffects 渲染委托
+  renderPlusEffects,
   // BaseComposition 参数
   showBackground = true,
   showOverlay = true,
@@ -329,6 +342,7 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
             <StoryChapter
               {...chapterProps}
               durationInFrames={durationInFrames}
+              renderPlusEffects={chapterProps.renderPlusEffects ?? renderPlusEffects}
             >
               {children}
             </StoryChapter>

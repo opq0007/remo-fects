@@ -128,7 +128,52 @@ export const RemotionRoot: React.FC = () => {
             animationSpeed: 'normal',
             musicEnabled: true,
             musicTrack: 'JoyfulChildren',
-            birthdaySongVolume: 0.6
+            birthdaySongVolume: 0.6,
+            // 自定义章节列表：为生日歌章节添加多个特效
+            chapterList: [
+              {
+                id: 'G_birthdaySong',
+                plusEffects: [
+                  // 文字烟花特效
+                  {
+                    effectType: 'textFirework',
+                    contentType: 'mixed',
+                    words: ['生日快乐', 'Happy Birthday', '快乐成长', '梦想成真'],
+                    images: [],
+                    imageWeight: 0.3,
+                    blessingTypes: ['goldCoin', 'star', 'heart'],
+                    fontSize: 80,
+                    colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'],
+                    glowColor: '#FFD700',
+                    glowIntensity: 1.2,
+                    x: 0.5,
+                    y: 0.4,
+                    scale: 1,
+                    opacity: 0.9,
+                    seed: 12345,
+                  },
+                  // 文字雨特效
+                  {
+                    effectType: 'textRain',
+                    contentType: 'mixed',
+                    words: ['福', '寿', '喜', '乐'],
+                    images: [],
+                    imageWeight: 0.3,
+                    blessingTypes: ['goldCoin', 'star'],
+                    fontSize: 60,
+                    colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#96CEB4'],
+                    glowColor: '#FFD700',
+                    glowIntensity: 0.8,
+                    x: 0.5,
+                    y: 0.5,
+                    scale: 1,
+                    opacity: 0.7,
+                    animationSpeed: 0.3,
+                    seed: 54321,
+                  },
+                ],
+              },
+            ],
           }}
         />
       </Folder>
@@ -229,7 +274,7 @@ export const RemotionRoot: React.FC = () => {
             height: 1280,
             subStyle: 'general',
             characterSeries: 'image',
-            // characterType 在 image 模式下可忽略
+            characterType: 'tiger', // image 模式下使用默认值
             characterImageSrc: '熊猫.png', // 本地图片路径（相对于 public 目录）
             photos: [],
             dreams: ['artist', 'musician', 'teacher'],

@@ -442,6 +442,130 @@ export const TransparentVideoItemSchema = z.object({
 });
 export type TransparentVideoItemProps = z.infer<typeof TransparentVideoItemSchema>;
 
+// ==================== PlusEffects 特效扩展 Schema ====================
+
+/**
+ * 支持的特效类型枚举
+ * 对应 effects/ 目录下各特效项目的核心组件
+ */
+export const EffectTypeSchema = z.enum([
+  // 文字矢量动画
+  'textVector',
+  // 大风车
+  'windmill',
+  // 太极八卦
+  'taiChiBagua',
+  // 文字雨
+  'textRain',
+  // 文字环绕
+  'textRing',
+  // 文字烟花
+  'textFirework',
+  // 文字破屏
+  'textBreakthrough',
+  // 文字龙卷风
+  'textTornado',
+  // 文字洪水
+  'textFlood',
+  // 文字旋涡
+  'textVortex',
+  // 文字万花筒
+  'textKaleidoscope',
+  // 文字水晶球
+  'textCrystalBall',
+]);
+export type EffectType = z.infer<typeof EffectTypeSchema>;
+
+/**
+ * PlusEffectItem Schema
+ * 
+ * 基于 MixedInputSchema 扩展，添加 effectType 字段
+ * 用于在 StoryChapter 中渲染额外的特效组件
+ */
+export const PlusEffectItemSchema = z.object({
+  /** 特效类型，决定渲染哪个特效组件 */
+  effectType: EffectTypeSchema,
+  
+  // ===== 继承自 MixedInputSchema 的字段 =====
+  /** 内容类型 */
+  contentType: z.enum(["text", "image", "blessing", "mixed"]).optional().default("text"),
+  /** 文字列表 */
+  words: z.array(z.string()).optional().default([]),
+  /** 图片路径列表 */
+  images: z.array(z.string()).optional().default([]),
+  /** 祝福图案类型列表 */
+  blessingTypes: z.array(z.enum(["goldCoin", "moneyBag", "luckyBag", "redPacket", "star", "heart", "balloon"])).optional().default([]),
+  /** 图片出现权重 */
+  imageWeight: z.number().min(0).max(1).optional().default(0.5),
+  
+  // ===== 特效特定参数 =====
+  /** 核心文字/文本内容 */
+  text: z.string().optional(),
+  /** 字体大小 */
+  fontSize: z.number().min(12).max(500).optional(),
+  /** 颜色列表 */
+  colors: z.array(z.string()).optional(),
+  /** 主颜色 */
+  primaryColor: z.string().optional(),
+  /** 次颜色 */
+  secondaryColor: z.string().optional(),
+  /** 发光颜色 */
+  glowColor: z.string().optional(),
+  /** 发光强度 */
+  glowIntensity: z.number().min(0).max(2).optional(),
+  
+  // ===== 动画配置 =====
+  /** 动画速度 */
+  animationSpeed: z.number().min(0.1).max(5).optional(),
+  /** 入场动画时长（帧） */
+  entranceDuration: z.number().min(5).max(120).optional(),
+  /** 停留动画类型 */
+  stayAnimation: z.enum(['pulse', 'glow', 'float', 'none']).optional(),
+  
+  // ===== 3D效果 =====
+  /** 是否启用3D效果 */
+  enable3D: z.boolean().optional(),
+  /** 3D旋转角度 */
+  rotation3D: z.number().optional(),
+  /** 透视角度 */
+  perspective: z.number().optional(),
+  
+  // ===== 布局配置 =====
+  /** 水平位置（0-1） */
+  x: z.number().min(0).max(1).optional(),
+  /** 垂直位置（0-1） */
+  y: z.number().min(0).max(1).optional(),
+  /** 缩放比例 */
+  scale: z.number().min(0.1).max(3).optional(),
+  /** 透明度 */
+  opacity: z.number().min(0).max(1).optional(),
+  
+  // ===== 额外配置（用于特定特效） =====
+  /** 旋转速度（圈/秒） */
+  rotationSpeed: z.number().min(0.1).max(5).optional(),
+  /** 元素数量 */
+  elementCount: z.number().min(1).max(500).optional(),
+  /** 随机种子 */
+  seed: z.number().optional(),
+  
+  // ===== 自定义样式 =====
+  /** 祝福图案样式 */
+  blessingStyle: z.object({
+    primaryColor: z.string().optional(),
+    secondaryColor: z.string().optional(),
+    enable3D: z.boolean().optional(),
+    enableGlow: z.boolean().optional(),
+    glowIntensity: z.number().min(0).max(3).optional(),
+  }).optional(),
+});
+export type PlusEffectItemProps = z.infer<typeof PlusEffectItemSchema>;
+
+/**
+ * PlusEffects 配置 Schema（数组）
+ */
+export const PlusEffectsSchema = z.array(PlusEffectItemSchema);
+export type PlusEffectsProps = z.infer<typeof PlusEffectsSchema>;
+
 // ==================== 故事章节 Schema ====================
 
 /**
@@ -495,6 +619,9 @@ export const StoryChapterSchema = z.object({
   
   // 透明视频列表
   transparentVideos: z.array(TransparentVideoItemSchema).optional(),
+  
+  // PlusEffects 特效列表
+  plusEffects: PlusEffectsSchema.optional(),
 });
 export type StoryChapterSchemaType = z.infer<typeof StoryChapterSchema>;
 
@@ -527,6 +654,24 @@ export const StoryPanelChapterSchema = StoryChapterSchema.extend({
   transition: ChapterTransitionSchema.optional(),
 });
 export type StoryPanelChapterProps = z.infer<typeof StoryPanelChapterSchema>;
+
+/**
+ * 自定义章节输入 Schema
+ * 
+ * 用于用户自定义章节配置，支持部分覆盖：
+ * - id: 必需，用于匹配预设章节
+ * - durationInFrames: 可选，匹配预设章节时自动继承，新增章节时必需
+ * - 其他字段: 可选，按需覆盖
+ */
+export const CustomChapterInputSchema = StoryChapterSchema.extend({
+  /** 章节唯一标识（必需，用于匹配预设章节） */
+  id: z.string(),
+  /** 章节持续时间（可选，匹配预设章节时自动继承） */
+  durationInFrames: z.number().min(1).optional(),
+  /** 章节过渡配置 */
+  transition: ChapterTransitionSchema.optional(),
+});
+export type CustomChapterInputProps = z.infer<typeof CustomChapterInputSchema>;
 
 /**
  * 背景音乐配置 Schema

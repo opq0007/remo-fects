@@ -189,6 +189,7 @@ export {
   StoryPanelChapterSchema,
   BackgroundMusicSchema,
   StoryPanelSchema,
+  CustomChapterInputSchema,
   extractStoryChapterProps,
   extractStoryPanelProps,
   type ChapterTransitionTypeType,
@@ -196,6 +197,17 @@ export {
   type StoryPanelChapterProps,
   type BackgroundMusicProps,
   type StoryPanelProps as StoryPanelSchemaType,
+  type CustomChapterInputProps,
+} from "./story";
+
+// PlusEffects 特效扩展
+export {
+  EffectTypeSchema,
+  PlusEffectItemSchema,
+  PlusEffectsSchema,
+  type EffectType,
+  type PlusEffectItemProps,
+  type PlusEffectsProps,
 } from "./story";
 
 // 重新导出完整背景 Schema（合并背景和遮罩）

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CompleteCompositionSchema } from '../../../effects/shared/schemas';
+import { CompleteCompositionSchema, CustomChapterInputSchema } from '../../../effects/shared/schemas';
 
 // ==================== 枚举类型 Schema ====================
 
@@ -159,7 +159,12 @@ export const KidsBirthdaySchema = CompleteCompositionSchema.extend({
   }),
   
   // ========== 随机种子 ==========
-  seed: z.number().optional()
+  seed: z.number().optional(),
+  
+  // ========== 自定义章节列表 ==========
+  chapterList: z.array(CustomChapterInputSchema).optional().meta({
+    description: '自定义章节配置列表。如果提供，将与默认模块配置按 id 合并，实现部分覆盖。'
+  }),
 });
 
 export type KidsBirthdayProps = z.infer<typeof KidsBirthdaySchema>;

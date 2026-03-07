@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo, useRef, useCallback } from 'react';
+import React, { ReactNode, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, Sequence, interpolate, spring, staticFile, OffthreadVideo } from 'remotion';
 import { Background, Overlay, RadialBurst } from './index';
 import { BackgroundType } from '../schemas';
@@ -30,6 +30,7 @@ import {
   PetType,
   HeroType,
 } from '../types/character';
+import { PlusEffectItemProps } from '../schemas/story';
 
 // ==================== 类型定义 ====================
 
@@ -573,6 +574,30 @@ export interface StoryChapterProps {
    * 可叠加多个透明视频层
    */
   transparentVideos?: TransparentVideoItem[];
+  
+  // ===== PlusEffects 特效扩展配置 =====
+  
+  /**
+   * 额外特效列表
+   * 支持在章节中渲染多个特效组件（如文字矢量动画、大风车等）
+   * 每个特效项包含 MixedInput 属性 + effectType
+   */
+  plusEffects?: PlusEffectItemProps[];
+  
+  /**
+   * 渲染 PlusEffects 的回调函数
+   * 用于渲染委托，在 project 层实现具体的特效渲染逻辑
+   * 
+   * @param effects - PlusEffectItemProps 数组
+   * @param fallbackWords - 默认文字列表（当 effect.words 为空时使用）
+   * @param options - 渲染选项（包含 width 和 height）
+   * @returns ReactNode
+   */
+  renderPlusEffects?: (
+    effects: PlusEffectItemProps[],
+    fallbackWords: string[],
+    options?: { width: number; height: number }
+  ) => ReactNode;
 }
 
 /**
@@ -657,6 +682,9 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
   starFieldBackground,
   // 透明视频配置
   transparentVideos,
+  // PlusEffects 特效扩展配置
+  plusEffects,
+  renderPlusEffects,
   // 上下文数据
   name,
   age,
@@ -1214,6 +1242,21 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
+  // 渲染 PlusEffects 特效（通过渲染委托回调）
+  const renderPlusEffectsContent = () => {
+    if (!plusEffects || plusEffects.length === 0) return null;
+    if (!renderPlusEffects) {
+      console.warn('StoryChapter: plusEffects provided but renderPlusEffects callback is missing');
+      return null;
+    }
+    
+    // 回退文字
+    const fallbackText = name ?? '福';
+    const fallbackWords = [fallbackText, '禄', '寿', '喜'];
+    
+    return renderPlusEffects(plusEffects, fallbackWords, { width, height });
+  };
+  
   return (
     <AbsoluteFill>
       {/* 背景层 */}
@@ -1245,6 +1288,9 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
       
       {/* 透明视频层 */}
       {renderTransparentVideos()}
+      
+      {/* PlusEffects 特效层 */}
+      {renderPlusEffectsContent()}
       
       {/* 漂浮元素层 */}
       {renderFloatingElements()}

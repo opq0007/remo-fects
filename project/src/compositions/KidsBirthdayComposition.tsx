@@ -6,6 +6,7 @@ import {
   StoryChapterConfig,
   StoryCharacterConfig,
   StarFieldBackground,
+  StoryPanelChapterProps,
 } from '../../../effects/shared/index';
 import {
   CartoonElements,
@@ -15,7 +16,9 @@ import {
   BouncingName,
   BlessingText,
 } from '../components';
+import { renderPlusEffects } from '../components/EffectRenderer';
 import { getColorTheme } from '../utils/colors';
+import { mergeChapterConfigs } from '../utils/mergeChapterConfig';
 import { 
   KidsSubStyle, 
   CharacterSeries,
@@ -165,6 +168,8 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     audioSource,
     audioVolume,
     audioLoop = true,
+    // 自定义章节列表
+    chapterList: customChapterList,
   } = props;
   
   const theme = getColorTheme(subStyle);
@@ -185,8 +190,10 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
   
   // 构建章节配置
   const chapters = useMemo((): StoryChapterConfig[] => {
-    const chapterList: StoryChapterConfig[] = [];
     const modules = getModulesByVersion(videoVersion);
+    const chapterList: StoryChapterConfig[] = [];
+    
+    // ==================== 构建默认章节配置 ====================
     
     // 模块 A：魔法开场（2秒 = 48帧）
     // 完全配置驱动：黑屏过渡 + 角色入场 + 对话时序
@@ -420,6 +427,46 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         durationInFrames: 30 * fps,
         backgroundType: 'gradient',
         backgroundGradient: effectiveGradient,
+        plusEffects: [
+                  // 文字烟花特效
+                  {
+                    effectType: 'textFirework',
+                    contentType: 'mixed',
+                    words: ['生日快乐', 'Happy Birthday', '快乐成长'],
+                    images: [],
+                    imageWeight: 0.3,
+                    blessingTypes: ['goldCoin', 'redPacket'],
+                    fontSize: 60,
+                    colors: ['#FFD700', '#FF6B6B'],
+                    glowColor: '#FFD700',
+                    glowIntensity: 1.2,
+                    x: 0.5,
+                    y: 0.4,
+                    scale: 1,
+                    opacity: 0.9,
+                    animationSpeed: 2,
+                    seed: 12345,
+                  },
+                  // 文字雨特效
+                  {
+                    effectType: 'textRain',
+                    contentType: 'mixed',
+                    words: ['健康', '快乐', '成长', '平安'],
+                    images: [],
+                    imageWeight: 0.3,
+                    blessingTypes: ['goldCoin', 'star', 'redPacket'],
+                    fontSize: 60,
+                    colors: ['#FFD700', '#FF6B6B'],
+                    glowColor: '#FFD700',
+                    glowIntensity: 0.8,
+                    x: 0.5,
+                    y: 0.5,
+                    scale: 1,
+                    opacity: 0.7,
+                    animationSpeed: 0.3,
+                    seed: 54321,
+                  },
+                ],
         children: (
           <ChapterGContent
             age={age}
@@ -559,11 +606,14 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       });
     }
     
-    return chapterList;
+    // ==================== 合并自定义章节配置 ====================
+    // 如果提供了自定义章节列表，与默认章节合并
+    // 规则：按 id 匹配，自定义配置覆盖默认配置的部分字段
+    return mergeChapterConfigs(chapterList, customChapterList as StoryChapterConfig[] | undefined);
   }, [
     videoVersion, fps, photos, dreams, name, age, subStyle, orientation, 
     confettiLevel, theme, characterSeries, typedCharacterType, effectiveGradient,
-    birthdaySongSource, birthdaySongVolume, characterImageSrc
+    birthdaySongSource, birthdaySongVolume, characterImageSrc, customChapterList
   ]);
   
   return (
@@ -583,6 +633,8 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       audioSource={effectiveAudioSource}
       audioVolume={audioVolume}
       audioLoop={audioLoop}
+      // PlusEffects 渲染委托
+      renderPlusEffects={renderPlusEffects}
       // 面板级覆盖内容：卡通元素
       overlayContent={
         cartoonElements ? (
