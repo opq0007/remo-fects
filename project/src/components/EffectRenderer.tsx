@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { PlusEffectItemProps, type MixedItemType } from '@shared/schemas';
+import { PlusEffectItemProps, type MixedItemType, type BlessingSymbolType } from '@shared/schemas';
 // 导入混合输入工具函数，复用 shared 中的公共逻辑
 import {
   getAvailableTypes,
@@ -23,8 +23,9 @@ import {
 import { TextVectorAnimation } from '../../../effects/text-vector-effect/src/TextVectorAnimation';
 // 大风车
 import { Windmill } from '../../../effects/text-windmill-effect/src/Windmill';
-// 太极图
+// 太极八卦
 import { TaiChi } from '../../../effects/tai-chi-bagua-effect/src/TaiChi';
+import { Bagua } from '../../../effects/tai-chi-bagua-effect/src/Bagua';
 // 文字雨
 import { TextRain } from '../../../effects/text-rain-effect/src/TextRain';
 // 文字环绕
@@ -110,32 +111,19 @@ export function renderPlusEffects(
         const viewWidth = options?.width ?? 720;
         const viewHeight = options?.height ?? 1280;
 
-        // 判断是否为全屏特效（需要填满整个画布）
-        const isFullScreenEffect = ['textRain', 'textVortex', 'textTornado', 'textFlood', 'textKaleidoscope', 'textFirework'].includes(effectType);
-
-        // 容器样式 - 根据特效类型使用不同的定位策略
-        // 全屏特效：使用全屏容器
-        // 定位特效：使用 x/y 定位
-        const containerStyle: React.CSSProperties = isFullScreenEffect
-          ? {
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              width: viewWidth,
-              height: viewHeight,
-              opacity,
-              zIndex: 25 + index, // 每个特效使用不同的 zIndex，避免覆盖
-              pointerEvents: 'none',
-            }
-          : {
-              position: 'absolute',
-              left: `${x * 100}%`,
-              top: `${y * 100}%`,
-              transform: `translate(-50%, -50%) scale(${scale})`,
-              opacity,
-              zIndex: 25 + index, // 每个特效使用不同的 zIndex
-              pointerEvents: 'none',
-            };
+        // 所有特效都使用全屏容器
+        // 原因：组件内部需要 useVideoConfig() 获取画布尺寸来计算位置
+        // 或者组件是 3D 动画需要全屏空间
+        const containerStyle: React.CSSProperties = {
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: viewWidth,
+          height: viewHeight,
+          opacity,
+          zIndex: 25 + index, // 每个特效使用不同的 zIndex，避免覆盖
+          pointerEvents: 'none',
+        };
 
         // 根据 effectType 渲染对应的核心效果组件
         // 注意：使用类型断言适配各组件的 Props 结构
@@ -197,18 +185,58 @@ export function renderPlusEffects(
           }
 
           case 'taiChiBagua': {
-            // 太极八卦效果
-            const size = fontSize * 2;
+            // 太极八卦效果 - 需要包裹在 SVG 中
+            // 参考 TaiChiBaguaComposition 的默认配置
+            const taichiSize = fontSize * 2;
+            const baguaRadius = taichiSize * 1.4; // 八卦半径约为太极尺寸的 1.4 倍
+            const trigramSize = Math.min(60, taichiSize * 0.35); // 卦象大小
+            const centerX = viewWidth / 2;
+            const centerY = viewHeight / 2;
+            
             return (
               <div key={`plusEffect-${index}`} style={containerStyle}>
-                <TaiChi
-                  size={size}
-                  yangColor={primaryColor}
-                  yinColor={secondaryColor}
-                  glowIntensity={glowIntensity}
-                  rotationSpeed={effect.rotationSpeed ?? 1}
-                  pulseSpeed={1.5}
-                />
+                <svg
+                  width={viewWidth}
+                  height={viewHeight}
+                  viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+                  style={{ position: 'absolute', left: 0, top: 0 }}
+                >
+                  <defs>
+                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                      <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  
+                  {/* 八卦图（外圈） */}
+                  <g transform={`translate(${centerX}, ${centerY})`}>
+                    <Bagua
+                      radius={baguaRadius}
+                      trigramSize={trigramSize}
+                      yangColor={primaryColor}
+                      rotationSpeed={effect.rotationSpeed ?? 0.8}
+                      glowIntensity={glowIntensity}
+                      showLabels={true}
+                      labelColor={primaryColor}
+                      labelOffset={45}
+                    />
+                  </g>
+                  
+                  {/* 太极图（中心） */}
+                  <g transform={`translate(${centerX}, ${centerY})`}>
+                    <TaiChi
+                      size={taichiSize}
+                      yangColor={primaryColor}
+                      yinColor={secondaryColor}
+                      glowIntensity={glowIntensity}
+                      rotationSpeed={effect.rotationSpeed ?? 1}
+                      pulseSpeed={1.5}
+                    />
+                  </g>
+                </svg>
               </div>
             );
           }
@@ -355,34 +383,71 @@ export function renderPlusEffects(
           }
 
           case 'textBreakthrough': {
-            // 文字破屏效果
-            return (
-              <div key={`plusEffect-${index}`} style={containerStyle}>
+            // 文字破屏效果 - 支持混合内容，创建多个实例错开显示
+            // 参考 text-breakthrough-effect 的默认配置
+            const mixedConfig = {
+              words: effectiveWords,
+              images: effect.images,
+              blessingTypes: effect.blessingTypes,
+              contentType: effect.contentType ?? 'text',
+              imageWeight: effect.imageWeight ?? 0.5,
+            };
+            const availableTypes = getAvailableTypes(mixedConfig);
+            
+            // 根据内容类型决定生成几个破屏效果
+            const breakthroughCount = Math.min(
+              effectiveWords.length + (effect.blessingTypes?.length ?? 0),
+              5 // 最多5个
+            );
+            
+            const breakthroughs = [];
+            const random = createSeededRandomGenerator(seed);
+            
+            for (let i = 0; i < breakthroughCount; i++) {
+              const selectedType = selectRandomType(availableTypes, random, effect.imageWeight ?? 0.5);
+              const selectedContent = selectRandomContent(selectedType, mixedConfig, random);
+              
+              // 错开帧数，每个破屏效果间隔 50 帧
+              const startFrame = i * 50;
+              
+              breakthroughs.push(
                 <TextBreakthrough
-                  contentType="text"
-                  text={effectiveWords[0] ?? fallbackText}
-                  startFrame={0}
-                  startZ={-1000}
-                  endZ={200}
+                  key={`breakthrough-${i}`}
+                  contentType={selectedType as 'text' | 'image' | 'blessing'}
+                  text={selectedType === 'text' ? selectedContent : undefined}
+                  imageSrc={selectedType === 'image' ? selectedContent : undefined}
+                  blessingType={selectedType === 'blessing' ? selectedContent as BlessingSymbolType : undefined}
+                  blessingStyle={effect.blessingStyle}
+                  startFrame={startFrame}
+                  startZ={2000}          // 从远处飞来
+                  endZ={-100}            // 冲到屏幕前面
                   startX={0}
                   startY={0}
                   endX={0}
                   endY={0}
                   fontSize={fontSize}
-                  fontFamily="Arial"
-                  fontWeight={700}
-                  textColor={effectiveColors[0]}
+                  fontFamily="PingFang SC, Microsoft YaHei, SimHei, sans-serif"
+                  fontWeight={900}
+                  textColor={effectiveColors[i % effectiveColors.length]}
                   glowColor={effectiveGlowColor}
-                  secondaryGlowColor={effectiveColors[1] ?? effectiveColors[0]}
-                  glowIntensity={glowIntensity}
-                  bevelDepth={5}
-                  approachDuration={30}
-                  breakthroughDuration={15}
-                  holdDuration={60}
-                  impactScale={1.3}
-                  impactRotation={5}
+                  secondaryGlowColor={effectiveColors[(i + 1) % effectiveColors.length]}
+                  glowIntensity={1.5}
+                  bevelDepth={3}
+                  approachDuration={45}
+                  breakthroughDuration={20}
+                  holdDuration={40}
+                  impactScale={1.4}
+                  impactRotation={12}
                   shakeIntensity={10}
+                  imageSize={fontSize * 1.5}
+                  blessingSize={fontSize * 1.2}
                 />
+              );
+            }
+            
+            return (
+              <div key={`plusEffect-${index}`} style={containerStyle}>
+                {breakthroughs}
               </div>
             );
           }
