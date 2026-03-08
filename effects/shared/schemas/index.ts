@@ -200,6 +200,16 @@ export {
   type CustomChapterInputProps,
 } from "./story";
 
+// 照片展示配置
+export {
+  PhotoAnimationTypeSchema,
+  PhotoFrameTypeSchema,
+  PhotoDisplaySchema,
+  type PhotoAnimationType,
+  type PhotoFrameType,
+  type PhotoDisplayProps,
+} from "./story";
+
 // PlusEffects 特效扩展
 export {
   EffectTypeSchema,

@@ -317,6 +317,12 @@ export const PhotoAnimationTypeSchema = z.enum(['flyIn', 'rotateIn', 'fadeIn', '
 export type PhotoAnimationType = z.infer<typeof PhotoAnimationTypeSchema>;
 
 /**
+ * 照片外框类型 Schema
+ */
+export const PhotoFrameTypeSchema = z.enum(['none', 'simple', 'glow', 'magic', 'neon', 'golden', 'polaroid']);
+export type PhotoFrameType = z.infer<typeof PhotoFrameTypeSchema>;
+
+/**
  * 照片展示配置 Schema
  */
 export const PhotoDisplaySchema = z.object({
@@ -325,12 +331,13 @@ export const PhotoDisplaySchema = z.object({
   /** 照片数据 */
   photo: z.object({
     src: z.string(),
-    caption: z.string().optional(),
   }),
   /** 动画类型 */
   animationType: PhotoAnimationTypeSchema.optional(),
-  /** 是否显示标题 */
-  showCaption: z.boolean().optional(),
+  /** 外框类型，默认 none 无外框 */
+  frameType: PhotoFrameTypeSchema.optional(),
+  /** 外框主色调 */
+  frameColor: z.string().optional(),
   /** 开始帧 */
   startFrame: z.number().min(0).optional(),
   /** 持续帧数（0表示显示到章节结束） */

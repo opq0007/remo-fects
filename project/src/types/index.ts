@@ -110,8 +110,6 @@ export interface LayoutConfig {
 export interface PhotoData {
   id?: string;
   src: string;
-  caption?: string;
-  memory?: string;       // 角色说的回忆文案
 }
 
 // ==================== 梦想系统 ====================

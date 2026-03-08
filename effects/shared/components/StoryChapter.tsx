@@ -79,6 +79,11 @@ export interface TextElementConfig {
 export type PhotoAnimationType = 'flyIn' | 'rotateIn' | 'fadeIn' | 'scaleIn' | 'magicCircle';
 
 /**
+ * 照片外框类型
+ */
+export type PhotoFrameType = 'none' | 'simple' | 'glow' | 'magic' | 'neon' | 'golden' | 'polaroid';
+
+/**
  * 照片展示配置
  */
 export interface PhotoDisplayConfig {
@@ -87,12 +92,13 @@ export interface PhotoDisplayConfig {
   /** 照片数据 */
   photo: {
     src: string;
-    caption?: string;
   };
   /** 动画类型 */
   animationType?: PhotoAnimationType;
-  /** 是否显示标题 */
-  showCaption?: boolean;
+  /** 外框类型，默认 none 无外框 */
+  frameType?: PhotoFrameType;
+  /** 外框主色调 */
+  frameColor?: string;
   /** 开始帧 */
   startFrame?: number;
   /** 持续帧数 */
@@ -1104,48 +1110,163 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     
     if (!isVisible) return null;
     
-    // 简单的照片展示（基础实现）
     const elementFrame = frame - startFrame;
-    const fadeIn = interpolate(elementFrame, [0, 20], [0, 1], { extrapolateRight: 'clamp' });
-    const scale = photoDisplay.animationType === 'scaleIn' 
-      ? spring({ frame: elementFrame, fps, config: { damping: 12, stiffness: 80 } })
+    const animationType = photoDisplay.animationType ?? 'fadeIn';
+    const frameType = photoDisplay.frameType ?? 'none';
+    const frameColor = photoDisplay.frameColor ?? '#FFD76A';
+    
+    // 基础淡入
+    const fadeIn = interpolate(elementFrame, [0, 15], [0, 1], { extrapolateRight: 'clamp' });
+    
+    // 缩放动画
+    const scale = animationType === 'scaleIn' 
+      ? spring({ frame: Math.max(elementFrame, 0), fps, config: { damping: 12, stiffness: 80 } })
       : 1;
     
-    const rotation = photoDisplay.animationType === 'rotateIn'
+    // 旋转动画
+    const rotation = animationType === 'rotateIn'
       ? interpolate(elementFrame, [0, 30], [-15, 0], { extrapolateRight: 'clamp' })
       : 0;
     
+    // 飞入动画（从右侧滑入）
+    const flyInX = animationType === 'flyIn'
+      ? interpolate(elementFrame, [0, 30], [300, 0], { extrapolateRight: 'clamp' })
+      : 0;
+    
+    // 处理图片路径（本地路径使用 staticFile，网络URL直接使用）
+    const imgSrc = photoDisplay.photo.src.startsWith('http') 
+      ? photoDisplay.photo.src 
+      : staticFile(photoDisplay.photo.src);
+    
+    // 外框样式生成
+    const getFrameStyle = (): React.CSSProperties => {
+      switch (frameType) {
+        case 'none':
+          return {};
+        case 'simple':
+          return {
+            backgroundColor: 'white',
+            borderRadius: 12,
+            padding: 8,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          };
+        case 'glow': {
+          const glowIntensity = 0.5 + Math.sin(frame * 0.1) * 0.3;
+          const glowSize = 20 + Math.sin(frame * 0.08) * 10;
+          return {
+            backgroundColor: 'white',
+            borderRadius: 12,
+            padding: 8,
+            boxShadow: `
+              0 0 ${glowSize}px ${frameColor}${Math.floor(glowIntensity * 255).toString(16).padStart(2, '0')},
+              0 4px 20px rgba(0,0,0,0.15)
+            `,
+          };
+        }
+        case 'magic': {
+          const hue = (frame * 2) % 360;
+          return {
+            backgroundColor: 'white',
+            borderRadius: 12,
+            padding: 8,
+            boxShadow: `
+              0 0 30px hsla(${hue}, 80%, 70%, 0.5),
+              0 0 60px hsla(${(hue + 60) % 360}, 80%, 70%, 0.3),
+              0 4px 20px rgba(0,0,0,0.15)
+            `,
+          };
+        }
+        case 'neon': {
+          const breathe = 0.6 + Math.sin(frame * 0.05) * 0.4;
+          const colorShift = Math.floor(frame * 0.5) % 360;
+          return {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            borderRadius: 12,
+            padding: 8,
+            border: `2px solid hsl(${colorShift}, 100%, 50%)`,
+            boxShadow: `
+              0 0 10px hsl(${colorShift}, 100%, 50%),
+              0 0 20px hsl(${colorShift}, 100%, 50%),
+              0 0 40px hsl(${colorShift}, 100%, 50%)
+            `,
+          };
+        }
+        case 'golden': {
+          return {
+            backgroundColor: '#1a1a1a',
+            borderRadius: 12,
+            padding: 10,
+            border: '2px solid #bf953f',
+            boxShadow: `
+              0 0 20px rgba(191, 149, 63, 0.5),
+              0 4px 20px rgba(0,0,0,0.3)
+            `,
+          };
+        }
+        case 'polaroid':
+          return {
+            backgroundColor: '#fefefe',
+            borderRadius: 4,
+            padding: '12px 12px 40px 12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          };
+        default:
+          return {};
+      }
+    };
+    
+    const frameStyle = getFrameStyle();
+    
+    // 无外框时直接渲染图片
+    if (frameType === 'none') {
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            top: '40%',
+            left: '50%',
+            transform: `translate(calc(-50% + ${flyInX}px), -50%) scale(${scale}) rotate(${rotation}deg)`,
+            opacity: fadeIn,
+            zIndex: 25,
+          }}
+        >
+          <img 
+            src={imgSrc}
+            alt=""
+            style={{
+              maxWidth: '70%',
+              maxHeight: '50%',
+              objectFit: 'contain',
+            }}
+          />
+        </div>
+      );
+    }
+    
+    // 有外框时的渲染
     return (
       <div
         style={{
           position: 'absolute',
           top: '40%',
           left: '50%',
-          transform: `translate(-50%, -50%) scale(${scale}) rotate(${rotation}deg)`,
+          transform: `translate(calc(-50% + ${flyInX}px), -50%) scale(${scale}) rotate(${rotation}deg)`,
           opacity: fadeIn,
           zIndex: 25,
         }}
       >
-        <img 
-          src={photoDisplay.photo.src}
-          alt={photoDisplay.photo.caption ?? ''}
-          style={{
-            maxWidth: '70%',
-            maxHeight: '50%',
-            borderRadius: 16,
-            boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-          }}
-        />
-        {photoDisplay.showCaption && photoDisplay.photo.caption && (
-          <div style={{
-            textAlign: 'center',
-            marginTop: 16,
-            fontSize: 24,
-            color: '#FFFFFF',
-          }}>
-            {photoDisplay.photo.caption}
-          </div>
-        )}
+        <div style={{ ...frameStyle, maxWidth: '70%' }}>
+          <img 
+            src={imgSrc}
+            alt=""
+            style={{
+              maxWidth: '100%',
+              maxHeight: '50vh',
+              objectFit: 'contain',
+              borderRadius: frameType === 'polaroid' ? 2 : 8,
+            }}
+          />
+        </div>
       </div>
     );
   };

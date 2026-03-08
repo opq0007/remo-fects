@@ -386,20 +386,21 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     
     // 模块 C：照片互动1（13秒 = 312帧）
     // 复杂魔法圆环效果，保留自定义组件
-    if (modules.includes('C') && photos[0]) {
+    // 使用取模访问照片，确保即使只有1张照片也能正常显示
+    if (modules.includes('C') && photos.length > 0) {
       chapterList.push({
         id: 'C_photoInteraction1',
         durationInFrames: 13 * fps,
         backgroundType: 'gradient',
         backgroundGradient: effectiveGradient,
         overlayOpacity: 0.05,
-        children: <PhotoFromMagicCircle photo={photos[0]} visible={true} orientation={orientation} />,
+        children: <PhotoFromMagicCircle photo={photos[0 % photos.length]} visible={true} orientation={orientation} />,
       });
     }
     
     // 模块 D：照片互动2（13秒 = 312帧）
-    // 完全配置驱动
-    if (modules.includes('D') && photos[1]) {
+    // 完全配置驱动，使用取模访问照片
+    if (modules.includes('D') && photos.length > 0) {
       chapterList.push({
         id: 'D_photoInteraction2',
         durationInFrames: 13 * fps,
@@ -408,9 +409,10 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         overlayOpacity: 0.05,
         photoDisplay: {
           enabled: true,
-          photo: photos[1],
+          photo: photos[1 % photos.length],
           animationType: 'flyIn',
-          showCaption: true,
+          frameType: 'glow',
+          frameColor: theme.primary,
         },
         floatingElements: {
           enabled: true,
@@ -423,8 +425,8 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     }
     
     // 模块 E：照片互动3（12秒 = 288帧）
-    // 完全配置驱动
-    if (modules.includes('E') && photos[2]) {
+    // 完全配置驱动，使用取模访问照片
+    if (modules.includes('E') && photos.length > 0) {
       chapterList.push({
         id: 'E_photoInteraction3',
         durationInFrames: 12 * fps,
@@ -433,9 +435,9 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         overlayOpacity: 0.05,
         photoDisplay: {
           enabled: true,
-          photo: photos[2],
+          photo: photos[2 % photos.length],
           animationType: 'rotateIn',
-          showCaption: false,
+          frameType: 'magic',
         },
       });
     }

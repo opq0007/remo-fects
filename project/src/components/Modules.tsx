@@ -308,7 +308,8 @@ export const ModuleD_PhotoInteraction2: React.FC<ModulePhotoProps> = ({
         orientation={orientation}
         animationType="flyIn"
         visible={true}
-        showCaption={true}
+        frameType = "glow"
+        frameColor = "#FFD76A"
       />
       
       {/* 爱心飘出 */}

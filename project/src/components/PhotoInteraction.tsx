@@ -7,12 +7,28 @@ import {
   spring,
   random,
   Img,
-  Easing,
   staticFile
 } from 'remotion';
-import { PhotoData, ScreenOrientation, LAYOUT_CONFIGS, PRIMARY_COLORS } from '../types';
-import { colorWithOpacity } from '../utils/colors';
-import { MagicCircle } from '../../../effects/shared/components/MagicEffects';
+import { ScreenOrientation, LAYOUT_CONFIGS, PRIMARY_COLORS } from '../types';
+
+/**
+ * 照片数据类型（精简版，仅包含 src）
+ */
+export interface PhotoDataSimple {
+  src: string;
+}
+
+/**
+ * 照片外框类型
+ * - none: 无外框（默认），透明背景PNG可无缝展示
+ * - simple: 简单白色边框
+ * - glow: 发光边框（闪烁效果）
+ * - magic: 梦幻魔法边框（粒子环绕）
+ * - neon: 霓虹灯效果（颜色渐变）
+ * - golden: 金色奢华边框
+ * - polaroid: 拍立得风格
+ */
+export type PhotoFrameType = 'none' | 'simple' | 'glow' | 'magic' | 'neon' | 'golden' | 'polaroid';
 
 /**
  * 处理照片源路径
@@ -33,17 +49,148 @@ const getPhotoSrc = (src: string | undefined): string | undefined => {
   return staticFile(cleanPath);
 };
 
+/**
+ * 生成外框样式
+ */
+const getFrameStyle = (
+  frameType: PhotoFrameType, 
+  frame: number, 
+  primaryColor: string = '#FFD76A'
+): React.CSSProperties => {
+  switch (frameType) {
+    case 'none':
+      return {};
+      
+    case 'simple':
+      return {
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 8,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+      };
+      
+    case 'glow': {
+      // 发光闪烁效果
+      const glowIntensity = 0.5 + Math.sin(frame * 0.1) * 0.3;
+      const glowSize = 20 + Math.sin(frame * 0.08) * 10;
+      return {
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 8,
+        boxShadow: `
+          0 0 ${glowSize}px rgba(255, 215, 106, ${glowIntensity}),
+          0 0 ${glowSize * 2}px rgba(255, 182, 106, ${glowIntensity * 0.5}),
+          0 4px 20px rgba(0,0,0,0.15)
+        `,
+      };
+    }
+      
+    case 'magic': {
+      // 梦幻魔法边框 - 渐变光晕
+      const hue1 = (frame * 2) % 360;
+      const hue2 = (hue1 + 60) % 360;
+      return {
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 8,
+        background: `
+          linear-gradient(white, white) padding-box,
+          linear-gradient(${hue1}deg, hsl(${hue1}, 80%, 70%), hsl(${hue2}, 80%, 70%), hsl(${hue1 + 120}, 80%, 70%)) border-box
+        `,
+        border: '3px solid transparent',
+        boxShadow: `
+          0 0 30px hsla(${hue1}, 80%, 70%, 0.5),
+          0 0 60px hsla(${hue2}, 80%, 70%, 0.3),
+          0 4px 20px rgba(0,0,0,0.15)
+        `,
+      };
+    }
+      
+    case 'neon': {
+      // 霓虹灯效果 - 呼吸发光
+      const breathe = 0.6 + Math.sin(frame * 0.05) * 0.4;
+      const colorShift = Math.floor(frame * 0.5) % 360;
+      return {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        borderRadius: 12,
+        padding: 8,
+        border: `2px solid hsl(${colorShift}, 100%, 50%)`,
+        boxShadow: `0 0 10px hsl(${colorShift}, 100%, 50%), 0 0 20px hsl(${colorShift}, 100%, 50%), 0 0 40px hsl(${colorShift}, 100%, 50%), inset 0 0 20px rgba(0,0,0,0.5)`,
+        filter: `brightness(${1 + breathe * 0.2})`,
+      };
+    }
+      
+    case 'golden': {
+      // 金色奢华边框
+      const shimmer = (frame * 3) % 100;
+      return {
+        backgroundColor: '#1a1a1a',
+        borderRadius: 12,
+        padding: 10,
+        border: '2px solid',
+        borderImage: `linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c) ${shimmer}% 1`,
+        boxShadow: `
+          0 0 20px rgba(191, 149, 63, 0.5),
+          inset 0 0 20px rgba(252, 246, 186, 0.1),
+          0 4px 20px rgba(0,0,0,0.3)
+        `,
+      };
+    }
+      
+    case 'polaroid':
+      // 拍立得风格
+      return {
+        backgroundColor: '#fefefe',
+        borderRadius: 4,
+        padding: '12px 12px 40px 12px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+      };
+      
+    default:
+      return {};
+  }
+};
+
+/**
+ * 生成内层图片容器样式
+ */
+const getInnerStyle = (frameType: PhotoFrameType): React.CSSProperties => {
+  const baseStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+  
+  switch (frameType) {
+    case 'none':
+      return { ...baseStyle };
+    case 'polaroid':
+      return { ...baseStyle, borderRadius: 2 };
+    default:
+      return { ...baseStyle, borderRadius: 8 };
+  }
+};
+
 // ==================== 单张照片卡片 ====================
 
 interface PhotoCardProps {
-  photo: PhotoData;
+  photo: PhotoDataSimple;
   index: number;
   totalPhotos: number;
   orientation?: ScreenOrientation;
   animationType?: 'flyIn' | 'rotateIn' | 'scaleIn' | 'fadeIn';
   visible?: boolean;
-  showCaption?: boolean;
-  showMemory?: boolean;
+  /** 外框类型，默认 none 无外框 */
+  frameType?: PhotoFrameType;
+  /** 外框主色调，用于 glow/magic/neon 效果 */
+  frameColor?: string;
+  /** 照片尺寸比例（相对于屏幕宽度的比例） */
+  sizeRatio?: number;
+  /** 是否保持原始比例（不强制 1.1 倍高度） */
+  keepAspectRatio?: boolean;
 }
 
 export const PhotoCard: React.FC<PhotoCardProps> = ({
@@ -53,12 +200,13 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   orientation = 'portrait',
   animationType = 'flyIn',
   visible = true,
-  showCaption = true,
-  showMemory = false
+  frameType = 'none',
+  frameColor = '#FFD76A',
+  sizeRatio = 0.5,
+  keepAspectRatio = true
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
-  const layoutConfig = LAYOUT_CONFIGS[orientation];
   
   // 入场动画
   const entrance = spring({
@@ -71,32 +219,23 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const floatY = Math.sin(frame * 0.05 + index) * 5;
   const floatRotation = Math.sin(frame * 0.03 + index * 0.5) * 2;
   
-  // 照片卡片尺寸 - 先计算尺寸，用于位置计算
-  const cardWidth = orientation === 'portrait' ? width * 0.5 : width * 0.25;
-  const cardHeight = cardWidth * 1.1; // 调整比例，避免过高
+  // 照片卡片尺寸
+  const cardWidth = orientation === 'portrait' ? width * sizeRatio : width * (sizeRatio * 0.5);
+  const cardHeight = keepAspectRatio ? 'auto' as const : cardWidth * 1.1;
   
   // 位置计算 - 确保照片完整显示在画面中
   const getPosition = () => {
-    // 计算安全的 Y 位置范围，确保卡片不会超出画面
-    const minY = cardHeight * 0.6; // 最小 Y（不要太靠上）
-    const maxY = height - cardHeight * 0.6; // 最大 Y（不要太靠下）
-    const safeY = Math.min(Math.max(height * 0.4, minY), maxY);
+    const baseY = height * 0.4;
     
     if (orientation === 'landscape') {
-      return {
-        x: width * 0.65,
-        y: safeY,
-      };
+      return { x: width * 0.65, y: baseY };
     }
-    return {
-      x: width * 0.5,
-      y: safeY,
-    };
+    return { x: width * 0.5, y: baseY };
   };
   
   const pos = getPosition();
   
-  // 动画样式 - 注意 translateX(-50%) 用于居中
+  // 动画样式
   const getAnimationStyle = (): React.CSSProperties => {
     const baseTranslateY = `translateY(${floatY}px)`;
     const baseRotate = `rotate(${floatRotation}deg)`;
@@ -124,6 +263,38 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   
   if (!visible) return null;
   
+  const frameStyle = getFrameStyle(frameType, frame, frameColor);
+  const innerStyle = getInnerStyle(frameType);
+  
+  // 无外框时直接渲染图片
+  if (frameType === 'none') {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: pos.x,
+          top: pos.y,
+          ...getAnimationStyle(),
+          zIndex: 20 + index,
+        }}
+      >
+        {getPhotoSrc(photo.src) ? (
+          <Img
+            src={getPhotoSrc(photo.src)!}
+            style={{
+              maxWidth: cardWidth,
+              maxHeight: height * 0.6,
+              objectFit: 'contain',
+            }}
+          />
+        ) : (
+          <div style={{ fontSize: 40 }}>📷</div>
+        )}
+      </div>
+    );
+  }
+  
+  // 有外框时的渲染
   return (
     <div
       style={{
@@ -134,129 +305,67 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
         zIndex: 20 + index,
       }}
     >
-      {/* 照片卡片 */}
       <div
         style={{
           width: cardWidth,
           height: cardHeight,
-          backgroundColor: 'white',
-          borderRadius: 15,
-          padding: 10,
-          boxShadow: `
-            0 10px 30px rgba(0,0,0,0.2),
-            0 0 0 1px rgba(255,255,255,0.5),
-            inset 0 0 0 1px rgba(0,0,0,0.05)
-          `,
+          ...frameStyle,
         }}
       >
-        {/* 照片 */}
-        <div
-          style={{
-            width: '100%',
-            height: '75%',
-            borderRadius: 10,
-            overflow: 'hidden',
-            backgroundColor: '#f0f0f0',
-          }}
-        >
+        <div style={innerStyle}>
           {getPhotoSrc(photo.src) ? (
             <Img
               src={getPhotoSrc(photo.src)!}
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
               }}
             />
           ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 40,
-            }}>
-              📷
-            </div>
+            <div style={{ fontSize: 40 }}>📷</div>
           )}
         </div>
-        
-        {/* 标题 */}
-        {showCaption && photo.caption && (
-          <div
-            style={{
-              padding: '8px 5px',
-              textAlign: 'center',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#333',
-              fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
-            }}
-          >
-            {photo.caption}
-          </div>
-        )}
       </div>
-      
-      {/* 回忆文字（角色说的） */}
-      {showMemory && photo.memory && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: -40,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: colorWithOpacity(PRIMARY_COLORS.violet, 0.9),
-            padding: '8px 16px',
-            borderRadius: 20,
-            whiteSpace: 'nowrap',
-            fontSize: 14,
-            color: 'white',
-            fontWeight: 500,
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-          }}
-        >
-          {photo.memory}
-        </div>
-      )}
     </div>
   );
 };
 
-// ==================== 照片飞出魔法圈效果 ====================
+// ==================== 照片飞出效果（简化版） ====================
 
 interface PhotoFromMagicCircleProps {
-  photo: PhotoData;
+  photo: PhotoDataSimple;
   visible?: boolean;
   orientation?: ScreenOrientation;
+  /** 外框类型，默认 none 无外框 */
+  frameType?: PhotoFrameType;
+  /** 外框主色调 */
+  frameColor?: string;
 }
 
 export const PhotoFromMagicCircle: React.FC<PhotoFromMagicCircleProps> = ({
   photo,
   visible = true,
-  orientation = 'portrait'
+  orientation = 'portrait',
+  frameType = 'none',
+  frameColor = '#FFD76A'
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   
-  // 魔法圈先出现
-  const circleVisible = frame < 40;
-  
   // 照片从中心飞出
   const photoProgress = spring({
-    frame: Math.max(frame - 20, 0),
+    frame: frame,
     fps,
     config: { damping: 20, stiffness: 60 }
   });
   
   // 卡片尺寸
   const cardWidth = orientation === 'portrait' ? width * 0.5 : width * 0.25;
-  const cardHeight = cardWidth * 1.1;
   
-  // 目标位置 - 确保照片完整显示在画面中
+  // 目标位置
   const targetX = orientation === 'portrait' ? width * 0.5 : width * 0.65;
-  const targetY = height * 0.4; // 调整为 40% 高度，避免超出画面
+  const targetY = height * 0.4;
   
   const photoX = interpolate(photoProgress, [0, 1], [width * 0.5, targetX]);
   const photoY = interpolate(photoProgress, [0, 1], [height * 0.5, targetY]);
@@ -265,16 +374,43 @@ export const PhotoFromMagicCircle: React.FC<PhotoFromMagicCircleProps> = ({
   
   if (!visible) return null;
   
+  const frameStyle = getFrameStyle(frameType, frame, frameColor);
+  const innerStyle = getInnerStyle(frameType);
+  
+  // 无外框时直接渲染图片
+  if (frameType === 'none') {
+    return (
+      <AbsoluteFill style={{ pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: 'absolute',
+            left: photoX,
+            top: photoY,
+            transform: `translate(-50%, -50%) scale(${photoScale})`,
+            opacity: photoOpacity,
+            zIndex: 30,
+          }}
+        >
+          {getPhotoSrc(photo.src) ? (
+            <Img
+              src={getPhotoSrc(photo.src)!}
+              style={{
+                maxWidth: cardWidth,
+                maxHeight: height * 0.6,
+                objectFit: 'contain',
+              }}
+            />
+          ) : (
+            <div style={{ fontSize: 40 }}>📷</div>
+          )}
+        </div>
+      </AbsoluteFill>
+    );
+  }
+  
+  // 有外框时的渲染
   return (
     <AbsoluteFill style={{ pointerEvents: 'none' }}>
-      {/* 魔法圈 */}
-      <MagicCircle 
-        radius={100} 
-        visible={circleVisible} 
-        rotationSpeed={2}
-      />
-      
-      {/* 照片卡片 */}
       <div
         style={{
           position: 'absolute',
@@ -288,65 +424,23 @@ export const PhotoFromMagicCircle: React.FC<PhotoFromMagicCircleProps> = ({
         <div
           style={{
             width: cardWidth,
-            height: cardHeight,
-            backgroundColor: 'white',
-            borderRadius: 15,
-            padding: 10,
-            boxShadow: `
-              0 10px 30px rgba(0,0,0,0.2),
-              0 0 0 1px rgba(255,255,255,0.5),
-              inset 0 0 0 1px rgba(0,0,0,0.05)
-            `,
+            ...frameStyle,
           }}
         >
-          {/* 照片 */}
-          <div
-            style={{
-              width: '100%',
-              height: '75%',
-              borderRadius: 10,
-              overflow: 'hidden',
-              backgroundColor: '#f0f0f0',
-            }}
-          >
+          <div style={innerStyle}>
             {getPhotoSrc(photo.src) ? (
               <Img
                 src={getPhotoSrc(photo.src)!}
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
                 }}
               />
             ) : (
-              <div style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 40,
-              }}>
-                📷
-              </div>
+              <div style={{ fontSize: 40 }}>📷</div>
             )}
           </div>
-          
-          {/* 标题 */}
-          {photo.caption && (
-            <div
-              style={{
-                padding: '8px 5px',
-                textAlign: 'center',
-                fontSize: 14,
-                fontWeight: 600,
-                color: '#333',
-                fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
-              }}
-            >
-              {photo.caption}
-            </div>
-          )}
         </div>
       </div>
     </AbsoluteFill>
@@ -369,7 +463,7 @@ export const FloatingHearts: React.FC<FloatingHeartsProps> = ({
   startY = 0.6
 }) => {
   const frame = useCurrentFrame();
-  const { width, height, fps } = useVideoConfig();
+  const { width, height } = useVideoConfig();
   
   const hearts = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
@@ -492,29 +586,29 @@ export const AgeBalloon: React.FC<AgeBalloonProps> = ({
   );
 };
 
-// ==================== 照片互动场景（完整） ====================
+// ==================== 照片互动场景 ====================
 
 interface PhotoInteractionSceneProps {
-  photos: PhotoData[];
+  photos: PhotoDataSimple[];
   currentIndex: number;
   orientation?: ScreenOrientation;
-  characterText?: string;
   showHearts?: boolean;
   showAgeBalloon?: boolean;
   age?: number;
+  frameType?: PhotoFrameType;
+  frameColor?: string;
 }
 
 export const PhotoInteractionScene: React.FC<PhotoInteractionSceneProps> = ({
   photos,
   currentIndex,
   orientation = 'portrait',
-  characterText,
   showHearts = false,
   showAgeBalloon = false,
-  age
+  age,
+  frameType = 'none',
+  frameColor = '#FFD76A'
 }) => {
-  const frame = useCurrentFrame();
-  
   return (
     <AbsoluteFill>
       {/* 当前照片 */}
@@ -525,7 +619,8 @@ export const PhotoInteractionScene: React.FC<PhotoInteractionSceneProps> = ({
           totalPhotos={photos.length}
           orientation={orientation}
           animationType="flyIn"
-          showMemory={!!characterText}
+          frameType={frameType}
+          frameColor={frameColor}
         />
       )}
       

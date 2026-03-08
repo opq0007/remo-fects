@@ -64,8 +64,6 @@ export const DreamJobSchema = z.enum([
 export const PhotoDataSchema = z.object({
   id: z.string().optional(),
   src: z.string().meta({ description: '照片URL或路径' }),
-  caption: z.string().optional().meta({ description: '照片标题' }),
-  memory: z.string().optional().meta({ description: '角色说的回忆文案' }),
 });
 
 // 卡通元素
