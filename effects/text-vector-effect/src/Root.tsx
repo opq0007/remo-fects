@@ -64,22 +64,24 @@ export const RemotionRoot: React.FC = () => {
           starCount: 50,
           starOpacity: 0.35,
           
-          // 背景
-          backgroundType: "color",
-          backgroundColor: "#0a0a1a",
-          overlayColor: "#000000",
-          overlayOpacity: 0.12,
-          
-          // 水印配置
-          watermarkEnabled: true,
-          watermarkText: "© Remo-Fects",
-          watermarkFontSize: 24,
-          watermarkColor: "#ffffff",
-          watermarkOpacity: 0.35,
-          watermarkSpeed: 1,
-          watermarkIntensity: 0.8,
-          watermarkVelocityX: 180,
-          watermarkVelocityY: 120,
+          // 嵌套参数
+          background: {
+            type: "color",
+            color: "#0a0a1a",
+          },
+          overlay: {
+            color: "#000000",
+            opacity: 0.12,
+          },
+          watermark: {
+            enabled: true,
+            text: "© Remo-Fects",
+            fontSize: 24,
+            color: "#ffffff",
+            opacity: 0.35,
+            speed: 1,
+            intensity: 0.8,
+          },
         }}
       />
     </>

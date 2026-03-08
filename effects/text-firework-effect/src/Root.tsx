@@ -36,21 +36,25 @@ export const RemotionRoot: React.FC = () => {
           wind: 0.1,
           rainParticleSize: 3,
           interval: 40,
-          backgroundType: "color",
-          backgroundColor: "#0a0a20",
-          overlayColor: "#000000",
-          overlayOpacity: 0.2,
-
-          // 水印配置
-          watermarkEnabled: true,
-          watermarkText: "© Remo-Fects",
-          watermarkFontSize: 24,
-          watermarkColor: "#ffffff",
-          watermarkOpacity: 0.35,
-          watermarkSpeed: 1,
-          watermarkIntensity: 0.8,
-          watermarkVelocityX: 180,
-          watermarkVelocityY: 120,
+          
+          // 嵌套参数
+          background: {
+            type: "color",
+            color: "#0a0a20",
+          },
+          overlay: {
+            color: "#000000",
+            opacity: 0.2,
+          },
+          watermark: {
+            enabled: true,
+            text: "© Remo-Fects",
+            fontSize: 24,
+            color: "#ffffff",
+            opacity: 0.35,
+            speed: 1,
+            intensity: 0.8,
+          },
         }}
       />
     </>

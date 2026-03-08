@@ -10,10 +10,6 @@ import {
   CompleteCompositionSchema,
   MixedInputSchema,
   BlessingStyleSchema,
-  extractRadialBurstProps,
-  extractForegroundProps,
-  extractWatermarkProps,
-  extractMarqueeProps,
   mergeBlessingStyle,
 } from "../../shared/index";
 import { TextVortex } from "./TextVortex";
@@ -87,53 +83,60 @@ export type TextVortexProps = z.infer<typeof TextVortexSchema>;
 
 // ==================== 主组件 ====================
 
-export const TextVortexComposition: React.FC<TextVortexProps> = (props) => {
-  const {
-    // 混合输入配置
-    contentType = "text",
-    words = [],
-    images = [],
-    imageWeight = 0.5,
-    blessingTypes = [],
-    blessingStyle,
-    
-    // 旋涡配置
-    particleCount = 80,
-    ringCount = 6,
-    rotationDirection = "clockwise",
-    rotationSpeed = 1.5,
-    expansionDuration = 6,
-    initialRadius = 30,
-    maxRadius = 350,
-    
-    // 3D效果
-    depth3D = true,
-    depthIntensity = 0.4,
-    perspective = 800,
-    
-    // 尺寸配置
-    fontSizeRange = [30, 70],
-    imageSizeRange = [40, 90],
-    blessingSizeRange = [30, 70],
-    
-    // 动画配置
-    entranceDuration = 25,
-    fadeInEnabled = true,
-    spiralTightness = 1.2,
-    pulseEnabled = true,
-    pulseIntensity = 0.15,
-    
-    // 震撼效果
-    shockwaveEnabled = true,
-    shockwaveTiming = 3,
-    suctionEffect = true,
-    suctionIntensity = 0.3,
-    
-    // 样式配置
-    textStyle,
-    seed,
-  } = props;
-
+export const TextVortexComposition: React.FC<TextVortexProps> = ({
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
+  watermark,
+  marquee,
+  radialBurst,
+  foreground,
+  
+  // 混合输入配置
+  contentType = "text",
+  words = [],
+  images = [],
+  imageWeight = 0.5,
+  blessingTypes = [],
+  blessingStyle,
+  
+  // 旋涡配置
+  particleCount = 80,
+  ringCount = 6,
+  rotationDirection = "clockwise",
+  rotationSpeed = 1.5,
+  expansionDuration = 6,
+  initialRadius = 30,
+  maxRadius = 350,
+  
+  // 3D效果
+  depth3D = true,
+  depthIntensity = 0.4,
+  perspective = 800,
+  
+  // 尺寸配置
+  fontSizeRange = [30, 70],
+  imageSizeRange = [40, 90],
+  blessingSizeRange = [30, 70],
+  
+  // 动画配置
+  entranceDuration = 25,
+  fadeInEnabled = true,
+  spiralTightness = 1.2,
+  pulseEnabled = true,
+  pulseIntensity = 0.15,
+  
+  // 震撼效果
+  shockwaveEnabled = true,
+  shockwaveTiming = 3,
+  suctionEffect = true,
+  suctionIntensity = 0.3,
+  
+  // 样式配置
+  textStyle,
+  seed,
+}) => {
   // 默认文字样式（保持原有类型兼容性）
   const defaultTextStyle = {
     color: "#FFD700",
@@ -146,19 +149,15 @@ export const TextVortexComposition: React.FC<TextVortexProps> = (props) => {
   // 使用公共函数合并祝福图案样式
   const mergedBlessingStyle = mergeBlessingStyle(blessingStyle);
 
-  // 提取公共组件参数
-  const radialBurstConfig = extractRadialBurstProps(props);
-  const foregroundConfig = extractForegroundProps(props);
-  const watermarkConfig = extractWatermarkProps(props);
-  const marqueeConfig = extractMarqueeProps(props);
-
   return (
     <BaseComposition
-      {...props}
-      radialBurst={radialBurstConfig}
-      foreground={foregroundConfig ?? undefined}
-      watermark={watermarkConfig}
-      marquee={marqueeConfig}
+      background={background}
+      overlay={overlay}
+      audio={audio}
+      watermark={watermark}
+      marquee={marquee}
+      radialBurst={radialBurst}
+      foreground={foreground}
     >
       <TextVortex
         contentType={contentType}

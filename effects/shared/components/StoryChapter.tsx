@@ -1,7 +1,7 @@
 import React, { ReactNode, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, Sequence, interpolate, spring, staticFile, OffthreadVideo } from 'remotion';
 import { Background, Overlay, RadialBurst } from './index';
-import { BackgroundType } from '../schemas';
+import { BackgroundType, NestedBackgroundProps, NestedOverlayProps } from '../schemas';
 import { 
   Character, 
   CharacterWithSpeech, 
@@ -279,20 +279,12 @@ export interface StoryCharacterConfig {
   inline?: boolean;
   /** 自定义样式 */
   style?: React.CSSProperties;
-  
-  // ===== 新增：入场动画配置 =====
   /** 入场动画配置 */
   entrance?: CharacterEntranceConfig;
-  
-  // ===== 新增：对话时序配置 =====
   /** 对话时序列表（支持多段对话） */
   speechTimeline?: SpeechTimelineItem[];
-  
-  // ===== 新增：表情变化时序 =====
   /** 表情变化时序列表 */
   expressionTimeline?: ExpressionTimelineItem[];
-  
-  // ===== 新增：图片角色配置 =====
   /** 图片资源路径（本地路径或网络URL），仅当 series='image' 时使用 */
   imageSrc?: string;
 }
@@ -473,91 +465,200 @@ export interface StoryRadialBurstConfig {
 }
 
 /**
- * 故事章节 Props
+ * 故事章节 Props（嵌套参数结构）
+ * 
+ * 使用嵌套对象组织各子组件的参数：
+ * - background: 背景配置
+ * - overlay: 遮罩配置
+ * - character: 角色配置
+ * - confetti: 彩带效果配置
+ * - magicEffects: 魔法效果配置
+ * - radialBurst: 发散粒子配置
+ * - subtitles: 字幕列表
+ * - textElements: 文字元素配置
+ * - photoDisplay: 照片展示配置
+ * - floatingElements: 漂浮元素配置
+ * - starFieldBackground: 星空背景配置
+ * - transparentVideos: 透明视频列表
+ * - plusEffects: PlusEffects 特效列表
+ * - countdown: 倒计时配置
  */
 export interface StoryChapterProps {
   /** 章节持续时间（帧） */
   durationInFrames?: number;
   
-  // ===== 背景配置 =====
-  /** 背景类型 */
-  backgroundType?: BackgroundType;
-  /** 背景颜色 */
-  backgroundColor?: string;
-  /** 背景渐变 */
-  backgroundGradient?: string;
-  /** 背景源 */
-  backgroundSource?: string;
-  /** 背景视频循环 */
-  backgroundVideoLoop?: boolean;
-  /** 背景视频静音 */
-  backgroundVideoMuted?: boolean;
+  // ===== 嵌套参数配置 =====
   
-  // ===== 遮罩配置 =====
-  /** 遮罩颜色 */
-  overlayColor?: string;
-  /** 遮罩透明度 */
-  overlayOpacity?: number;
+  /**
+   * 背景配置对象
+   * @example
+   * background={{
+   *   type: 'gradient',
+   *   gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+   * }}
+   */
+  background?: NestedBackgroundProps;
+  
+  /**
+   * 遮罩配置对象
+   * @example
+   * overlay={{
+   *   color: '#000000',
+   *   opacity: 0.2
+   * }}
+   */
+  overlay?: NestedOverlayProps;
+  
   /** 是否显示遮罩 */
   showOverlay?: boolean;
   
-  // ===== 角色配置 =====
-  /** 角色配置 */
+  /**
+   * 角色配置对象
+   * @example
+   * character={{
+   *   series: 'zodiac',
+   *   type: 'tiger',
+   *   position: 'center',
+   *   expression: 'happy',
+   *   speech: '你好呀！',
+   *   showSpeech: true,
+   * }}
+   */
   character?: StoryCharacterConfig;
   
-  // ===== 彩带效果配置 =====
-  /** 彩带效果配置 */
+  /**
+   * 彩带效果配置对象
+   * @example
+   * confetti={{
+   *   enabled: true,
+   *   level: 'medium',
+   *   primaryColor: '#FFD76A'
+   * }}
+   */
   confetti?: StoryConfettiConfig;
   
-  // ===== 魔法效果配置 =====
-  /** 魔法效果配置 */
+  /**
+   * 魔法效果配置对象
+   * @example
+   * magicEffects={{
+   *   particles: { enabled: true, particleCount: 50 },
+   *   firework: { enabled: true, x: 0.5, y: 0.4 }
+   * }}
+   */
   magicEffects?: StoryMagicEffectsConfig;
   
-  // ===== 发散粒子配置 =====
-  /** 发散粒子配置 */
+  /**
+   * 发散粒子配置对象
+   * @example
+   * radialBurst={{
+   *   enabled: true,
+   *   effectType: 'sparkleBurst',
+   *   color: '#FFD76A'
+   * }}
+   */
   radialBurst?: StoryRadialBurstConfig;
   
-  // ===== 字幕配置 =====
-  /** 字幕列表 */
+  /**
+   * 字幕列表
+   * @example
+   * subtitles={[
+   *   { text: '欢迎来到魔法世界', startFrame: 0, durationInFrames: 60 }
+   * ]}
+   */
   subtitles?: SubtitleItem[];
   
+  /**
+   * 文字元素配置（名字、祝福语等）
+   * @example
+   * textElements={[
+   *   { type: 'name', showAge: true, fontSize: 80, verticalPosition: 0.3 }
+   * ]}
+   */
+  textElements?: TextElementConfig[];
+  
+  /**
+   * 照片展示配置
+   * @example
+   * photoDisplay={{
+   *   enabled: true,
+   *   photo: { src: 'photo.jpg' },
+   *   animationType: 'flyIn',
+   *   frameType: 'glow'
+   * }}
+   */
+  photoDisplay?: PhotoDisplayConfig;
+  
+  /**
+   * 漂浮元素配置（爱心、星星等）
+   * @example
+   * floatingElements={{
+   *   enabled: true,
+   *   type: 'hearts',
+   *   count: 15
+   * }}
+   */
+  floatingElements?: FloatingElementsConfig;
+  
+  /**
+   * 星空背景配置
+   * @example
+   * starFieldBackground={{
+   *   enabled: true,
+   *   starCount: 150
+   * }}
+   */
+  starFieldBackground?: StarFieldBackgroundConfig;
+  
+  /**
+   * 透明视频列表
+   * @example
+   * transparentVideos={[
+   *   { src: 'video.mp4', mode: 'greenScreen', scale: 0.6 }
+   * ]}
+   */
+  transparentVideos?: TransparentVideoItem[];
+  
+  /**
+   * PlusEffects 特效列表
+   * @example
+   * plusEffects={[
+   *   { effectType: 'textFirework', words: ['生日快乐'] }
+   * ]}
+   */
+  plusEffects?: PlusEffectItemProps[];
+  
+  /**
+   * 渲染 PlusEffects 的回调函数
+   */
+  renderPlusEffects?: (
+    effects: PlusEffectItemProps[],
+    fallbackWords: string[],
+    options?: { width: number; height: number }
+  ) => ReactNode;
+  
+  /**
+   * 倒计时配置
+   * @example
+   * countdown={{
+   *   enabled: true,
+   *   type: 'number',
+   *   startNumber: 3
+   * }}
+   */
+  countdown?: StoryCountdownConfigProps;
+  
   // ===== 内容配置 =====
+  
   /** 自定义内容 */
   children?: ReactNode;
   
-  // ===== 额外层配置 =====
   /** 额外层 */
   extraLayers?: ReactNode;
   /** 额外层位置 */
   extraLayersPosition?: 'before-content' | 'after-content';
   
-  // ===== 音频配置 =====
   /** 音频元素 */
   audioElement?: ReactNode;
-  
-  // ===== 新增配置项 =====
-  
-  /** 
-   * 文字元素配置（名字、祝福语等）
-   * 支持配置驱动的文字显示，无需自定义 children
-   */
-  textElements?: TextElementConfig[];
-  
-  /** 
-   * 照片展示配置
-   * 支持照片卡片动画展示
-   */
-  photoDisplay?: PhotoDisplayConfig;
-  
-  /** 
-   * 漂浮元素配置（爱心、星星等）
-   */
-  floatingElements?: FloatingElementsConfig;
-  
-  /** 
-   * 星空背景配置
-   */
-  starFieldBackground?: StarFieldBackgroundConfig;
   
   // ===== 上下文数据（用于文字元素渲染）=====
   
@@ -572,47 +673,6 @@ export interface StoryChapterProps {
   
   /** 屏幕方向 */
   orientation?: 'portrait' | 'landscape';
-  
-  // ===== 透明视频配置 =====
-  
-  /** 
-   * 透明视频列表
-   * 支持绿幕、蓝幕、自定义色度键和 WebM 透明视频
-   * 可叠加多个透明视频层
-   */
-  transparentVideos?: TransparentVideoItem[];
-  
-  // ===== PlusEffects 特效扩展配置 =====
-  
-  /**
-   * 额外特效列表
-   * 支持在章节中渲染多个特效组件（如文字矢量动画、大风车等）
-   * 每个特效项包含 MixedInput 属性 + effectType
-   */
-  plusEffects?: PlusEffectItemProps[];
-  
-  /**
-   * 渲染 PlusEffects 的回调函数
-   * 用于渲染委托，在 project 层实现具体的特效渲染逻辑
-   * 
-   * @param effects - PlusEffectItemProps 数组
-   * @param fallbackWords - 默认文字列表（当 effect.words 为空时使用）
-   * @param options - 渲染选项（包含 width 和 height）
-   * @returns ReactNode
-   */
-  renderPlusEffects?: (
-    effects: PlusEffectItemProps[],
-    fallbackWords: string[],
-    options?: { width: number; height: number }
-  ) => ReactNode;
-  
-  // ===== 倒计时配置 =====
-  
-  /**
-   * 倒计时配置
-   * 支持数字倒计时和时间倒计时两种模式
-   */
-  countdown?: StoryCountdownConfigProps;
 }
 
 /**
@@ -630,8 +690,14 @@ export interface StoryChapterProps {
  * ```tsx
  * <StoryChapter
  *   durationInFrames={120}
- *   backgroundType="gradient"
- *   backgroundGradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+ *   background={{
+ *     type: 'gradient',
+ *     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+ *   }}
+ *   overlay={{
+ *     color: '#000000',
+ *     opacity: 0.2
+ *   }}
  *   character={{
  *     series: 'zodiac',
  *     type: 'tiger',
@@ -651,58 +717,27 @@ export interface StoryChapterProps {
  */
 export const StoryChapter: React.FC<StoryChapterProps> = ({
   durationInFrames,
-  
-  // 背景配置
-  backgroundType = 'color',
-  backgroundColor = '#1a1a2e',
-  backgroundGradient,
-  backgroundSource,
-  backgroundVideoLoop = true,
-  backgroundVideoMuted = true,
-  
-  // 遮罩配置
-  overlayColor = '#000000',
-  overlayOpacity = 0.2,
+  // 嵌套参数
+  background,
+  overlay,
   showOverlay = true,
-  
-  // 角色配置
   character,
-  
-  // 彩带配置
   confetti,
-  
-  // 魔法效果配置
   magicEffects,
-  
-  // 发散粒子配置
   radialBurst,
-  
-  // 字幕配置
   subtitles = [],
-  
-  // 内容配置
   children,
-  
-  // 额外层配置
   extraLayers,
   extraLayersPosition = 'before-content',
-  
-  // 音频
   audioElement,
-  
-  // ===== 新增配置项 =====
   textElements,
   photoDisplay,
   floatingElements,
   starFieldBackground,
-  // 透明视频配置
   transparentVideos,
-  // PlusEffects 特效扩展配置
   plusEffects,
   renderPlusEffects,
-  // 倒计时配置
   countdown,
-  // 上下文数据
   name,
   age,
   subStyle,
@@ -710,6 +745,20 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
 }) => {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
+  
+  // ===== 提取参数（带默认值） =====
+  
+  // 背景参数
+  const bgType = background?.type ?? 'color';
+  const bgColor = background?.color ?? '#1a1a2e';
+  const bgGradient = background?.gradient;
+  const bgSource = background?.source;
+  const bgVideoLoop = background?.videoLoop ?? true;
+  const bgVideoMuted = background?.videoMuted ?? true;
+  
+  // 遮罩参数
+  const ovColor = overlay?.color ?? '#000000';
+  const ovOpacity = overlay?.opacity ?? 0.2;
   
   // 渲染角色（支持入场动画、对话时序、表情变化）
   const renderCharacter = () => {
@@ -759,7 +808,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     // 计算当前表情（支持时序变化）
     let currentExpression = character.expression ?? 'happy';
     if (character.expressionTimeline && character.expressionTimeline.length > 0) {
-      // 找到当前帧应该显示的表情
       const sortedTimeline = [...character.expressionTimeline].sort((a, b) => a.startFrame - b.startFrame);
       for (const item of sortedTimeline) {
         if (frame >= item.startFrame) {
@@ -774,7 +822,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     let speechBubbleOpacity = 1;
     
     if (character.speechTimeline && character.speechTimeline.length > 0) {
-      // 找到当前帧应该显示的对话
       for (const item of character.speechTimeline) {
         const startFrame = item.startFrame;
         const endFrame = item.endFrame ?? Infinity;
@@ -787,7 +834,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
             animationType: item.animationType ?? 'scale',
           };
           
-          // 计算气泡动画
           const speechFrame = frame - startFrame;
           if (currentSpeech.animationType === 'scale') {
             speechBubbleScale = spring({
@@ -808,7 +854,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
         }
       }
     } else if (character.speech && character.showSpeech) {
-      // 简单模式：单一对话
       currentSpeech = {
         text: character.speech,
         animationType: 'scale',
@@ -820,11 +865,9 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
       });
     }
     
-    // 计算角色位置
     const verticalPosition = character.entrance?.verticalPosition ?? 0.45;
     const horizontalPosition = character.entrance?.horizontalPosition ?? 0.5;
     
-    // 渲染角色和对话组合
     return (
       <div
         style={{
@@ -839,7 +882,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           alignItems: 'center',
         }}
       >
-        {/* 对话气泡 */}
         {currentSpeech && (
           <div 
             style={{ 
@@ -856,7 +898,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           </div>
         )}
         
-        {/* 角色 */}
         <Character
           series={character.series}
           type={character.type}
@@ -870,7 +911,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染彩带
   const renderConfetti = () => {
     if (!confetti || !confetti.enabled) return null;
     
@@ -884,13 +924,11 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染魔法效果
   const renderMagicEffects = () => {
     if (!magicEffects) return null;
     
     return (
       <>
-        {/* 魔法粒子 */}
         {magicEffects.particles?.enabled && (
           <MagicParticles
             particleCount={magicEffects.particles.particleCount ?? 50}
@@ -901,7 +939,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           />
         )}
         
-        {/* 魔法棒 */}
         {magicEffects.magicWand?.enabled && (
           <MagicWand
             x={magicEffects.magicWand.x ?? 0.5}
@@ -912,7 +949,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           />
         )}
         
-        {/* 魔法圆环 */}
         {magicEffects.magicCircle?.enabled && (
           <MagicCircle
             radius={magicEffects.magicCircle.radius ?? 150}
@@ -922,7 +958,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           />
         )}
         
-        {/* 烟花 */}
         {magicEffects.firework?.enabled && (
           <Firework
             x={magicEffects.firework.x ?? 0.5}
@@ -933,7 +968,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           />
         )}
         
-        {/* 气球爆炸 */}
         {magicEffects.balloonBurst?.enabled && (
           <BalloonBurst
             x={magicEffects.balloonBurst.x ?? 0.5}
@@ -944,7 +978,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           />
         )}
         
-        {/* 白闪转场 */}
         {magicEffects.whiteFlash?.enabled && (
           <WhiteFlashTransition
             durationInFrames={magicEffects.whiteFlash.durationInFrames ?? 12}
@@ -952,7 +985,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           />
         )}
         
-        {/* 流星 */}
         {magicEffects.shootingStar?.enabled && (
           <ShootingStar
             startX={magicEffects.shootingStar.startX ?? 0.8}
@@ -968,8 +1000,7 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染发散粒子
-  const renderRadialBurst = () => {
+  const renderRadialBurstContent = () => {
     if (!radialBurst || !radialBurst.enabled) return null;
     
     return (
@@ -987,16 +1018,11 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染字幕
   const renderSubtitles = () => {
     if (!subtitles || subtitles.length === 0) return null;
-    
     return <SubtitleList subtitles={subtitles} />;
   };
   
-  // ===== 新增渲染函数 =====
-  
-  // 渲染黑屏过渡
   const renderBlackScreen = () => {
     if (!magicEffects?.blackScreen?.enabled) return null;
     
@@ -1023,7 +1049,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染文字元素
   const renderTextElements = () => {
     if (!textElements || textElements.length === 0) return null;
     
@@ -1035,7 +1060,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           
           if (!isVisible) return null;
           
-          // 计算动画
           const elementFrame = frame - startFrame;
           let animatedStyle: React.CSSProperties = {};
           
@@ -1061,7 +1085,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
             };
           }
           
-          // 获取文字内容
           let text = element.text ?? '';
           if (element.type === 'name' && name) {
             text = name;
@@ -1101,7 +1124,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染照片展示
   const renderPhotoDisplay = () => {
     if (!photoDisplay?.enabled || !photoDisplay.photo) return null;
     
@@ -1115,30 +1137,24 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     const frameType = photoDisplay.frameType ?? 'none';
     const frameColor = photoDisplay.frameColor ?? '#FFD76A';
     
-    // 基础淡入
     const fadeIn = interpolate(elementFrame, [0, 15], [0, 1], { extrapolateRight: 'clamp' });
     
-    // 缩放动画
     const scale = animationType === 'scaleIn' 
       ? spring({ frame: Math.max(elementFrame, 0), fps, config: { damping: 12, stiffness: 80 } })
       : 1;
     
-    // 旋转动画
     const rotation = animationType === 'rotateIn'
       ? interpolate(elementFrame, [0, 30], [-15, 0], { extrapolateRight: 'clamp' })
       : 0;
     
-    // 飞入动画（从右侧滑入）
     const flyInX = animationType === 'flyIn'
       ? interpolate(elementFrame, [0, 30], [300, 0], { extrapolateRight: 'clamp' })
       : 0;
     
-    // 处理图片路径（本地路径使用 staticFile，网络URL直接使用）
     const imgSrc = photoDisplay.photo.src.startsWith('http') 
       ? photoDisplay.photo.src 
       : staticFile(photoDisplay.photo.src);
     
-    // 外框样式生成
     const getFrameStyle = (): React.CSSProperties => {
       switch (frameType) {
         case 'none':
@@ -1217,7 +1233,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     
     const frameStyle = getFrameStyle();
     
-    // 无外框时直接渲染图片
     if (frameType === 'none') {
       return (
         <div
@@ -1243,7 +1258,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
       );
     }
     
-    // 有外框时的渲染
     return (
       <div
         style={{
@@ -1271,7 +1285,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染漂浮元素
   const renderFloatingElements = () => {
     if (!floatingElements?.enabled) return null;
     
@@ -1281,14 +1294,12 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     if (!isVisible) return null;
     
     const count = floatingElements.count ?? 15;
-    const color = floatingElements.color ?? '#FF6B6B';
     
-    // 生成漂浮元素
     const elements = Array.from({ length: count }, (_, i) => {
       const elementFrame = frame - startFrame - i * 3;
       if (elementFrame < 0) return null;
       
-      const x = ((i * 137.5) % 100) / 100; // 伪随机分布
+      const x = ((i * 137.5) % 100) / 100;
       const y = interpolate(elementFrame, [0, 120], [1.2, -0.2], { extrapolateRight: 'clamp' });
       const opacity = elementFrame < 10 ? elementFrame / 10 : 1;
       
@@ -1318,7 +1329,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     return <>{elements}</>;
   };
   
-  // 渲染星空背景
   const renderStarFieldBackground = () => {
     if (!starFieldBackground?.enabled) return null;
     
@@ -1330,7 +1340,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染透明视频
   const renderTransparentVideos = () => {
     if (!transparentVideos || transparentVideos.length === 0) return null;
     
@@ -1340,10 +1349,7 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           const videoStartFrame = videoConfig.startFrame ?? 0;
           const videoDuration = videoConfig.durationInFrames ?? 0;
           
-          // 如果当前帧未到达视频开始帧，不渲染
           if (frame < videoStartFrame) return null;
-          
-          // 如果设置了持续时间且已超时，不渲染
           if (videoDuration > 0 && frame >= videoStartFrame + videoDuration) return null;
           
           return (
@@ -1374,7 +1380,6 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     );
   };
   
-  // 渲染 PlusEffects 特效（通过渲染委托回调）
   const renderPlusEffectsContent = () => {
     if (!plusEffects || plusEffects.length === 0) return null;
     if (!renderPlusEffects) {
@@ -1382,14 +1387,12 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
       return null;
     }
     
-    // 回退文字
     const fallbackText = name ?? '福';
     const fallbackWords = [fallbackText, '禄', '寿', '喜'];
     
     return renderPlusEffects(plusEffects, fallbackWords, { width, height });
   };
   
-  // 渲染倒计时
   const renderCountdown = () => {
     if (!countdown || !countdown.enabled) return null;
     
@@ -1414,26 +1417,26 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     <AbsoluteFill>
       {/* 背景层 */}
       <Background
-        type={backgroundType}
-        source={backgroundSource}
-        color={backgroundColor}
-        gradient={backgroundGradient}
-        videoLoop={backgroundVideoLoop}
-        videoMuted={backgroundVideoMuted}
+        type={bgType as BackgroundType}
+        source={bgSource}
+        color={bgColor}
+        gradient={bgGradient}
+        videoLoop={bgVideoLoop}
+        videoMuted={bgVideoMuted}
       />
       
       {/* 星空背景层 */}
       {renderStarFieldBackground()}
       
       {/* 发散粒子效果层 */}
-      {renderRadialBurst()}
+      {renderRadialBurstContent()}
       
       {/* 额外层（内容前） */}
       {extraLayersPosition === 'before-content' && extraLayers}
       
       {/* 遮罩层 */}
-      {showOverlay && overlayOpacity > 0 && (
-        <Overlay color={overlayColor} opacity={overlayOpacity} />
+      {showOverlay && ovOpacity > 0 && (
+        <Overlay color={ovColor} opacity={ovOpacity} />
       )}
       
       {/* 魔法效果层 */}

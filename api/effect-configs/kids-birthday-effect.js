@@ -1,9 +1,9 @@
 const path = require('path');
 
 /**
- * 儿童生日祝福特效配置 v2.0
- * 支持模块化分镜、角色系统、照片互动等新功能
- * 配置驱动架构 - 无需修改 render.js 和 server.js
+ * 儿童生日祝福特效配置 v3.0
+ * 支持模块化分镜、角色系统、照片互动等功能
+ * 使用嵌套参数结构 - 配置驱动架构
  */
 
 // 1. 特效基础信息
@@ -15,7 +15,7 @@ const config = {
   description: '专为3-10岁儿童设计的生日祝福视频，支持模块化分镜、角色系统和照片互动'
 };
 
-// 2. 参数定义
+// 2. 参数定义（扁平结构，用于 API 输入）
 const params = {
   // ========== 基本信息 ==========
   name: {
@@ -82,6 +82,11 @@ const params = {
       return validTypes.includes(v) ? v : validTypes[0];
     },
     description: '角色类型（根据series选择：生肖12种/萌宠6种/超人5种）'
+  },
+  characterImageSrc: {
+    type: 'string',
+    defaultValue: null,
+    description: '自定义角色图片路径（可选）'
   },
   
   // ========== 照片系统 ==========
@@ -187,6 +192,28 @@ const params = {
     parser: (v) => v || 'kids_party_01',
     description: '背景音乐曲目'
   },
+  birthdaySongSource: {
+    type: 'string',
+    defaultValue: null,
+    description: '自定义生日歌路径（可选）'
+  },
+  birthdaySongVolume: {
+    type: 'number',
+    defaultValue: 0.6,
+    parser: (v) => {
+      const num = parseFloat(v);
+      return num >= 0 && num <= 1 ? num : 0.6;
+    },
+    description: '生日歌音量（0-1）'
+  },
+  
+  // ========== 卡通元素 ==========
+  cartoonElements: {
+    type: 'array',
+    defaultValue: null,
+    parser: (v) => v || null,
+    description: '卡通元素配置（可选）'
+  },
   
   // ========== 随机种子 ==========
   seed: {
@@ -194,7 +221,15 @@ const params = {
     defaultValue: null,
     parser: (v) => v ? parseInt(v) : null,
     description: '随机种子（可选，用于复现效果）'
-  }
+  },
+  
+  // ========== 自定义章节列表 ==========
+  chapterList: {
+    type: 'array',
+    defaultValue: null,
+    parser: (v) => v || null,
+    description: '自定义章节配置列表（可选，用于高级定制）'
+  },
 };
 
 // 辅助函数：获取有效的角色类型
@@ -273,7 +308,11 @@ function validate(params) {
   return { valid: true };
 }
 
-// 4. 构建渲染参数
+/**
+ * 4. 构建渲染参数
+ * 将扁平的 API 参数转换为组件需要的格式
+ * 注意：KidsBirthdayComposition 内部处理嵌套参数结构
+ */
 function buildRenderParams(reqParams, commonParams) {
   const videoVersion = reqParams.videoVersion || params.videoVersion.defaultValue;
   const orientation = reqParams.orientation || params.orientation.defaultValue;
@@ -281,6 +320,7 @@ function buildRenderParams(reqParams, commonParams) {
   
   const result = {
     ...commonParams,
+    
     // 基本信息
     name: reqParams.name || params.name.defaultValue,
     age: reqParams.age ?? params.age.defaultValue,
@@ -296,6 +336,7 @@ function buildRenderParams(reqParams, commonParams) {
     // 角色系统
     characterSeries,
     characterType: reqParams.characterType || getValidCharacterTypes(characterSeries)[0],
+    characterImageSrc: reqParams.characterImageSrc || null,
     
     // 照片系统
     photos: params.photos.parser(reqParams.photos),
@@ -309,7 +350,9 @@ function buildRenderParams(reqParams, commonParams) {
     // 名字样式
     nameFontSize: reqParams.nameFontSize ?? params.nameFontSize.defaultValue,
     showAge: reqParams.showAge ?? params.showAge.defaultValue,
-    nameColor: reqParams.nameColor || params.nameColor.defaultValue,
+    nameColor: reqParams.nameColor || null,
+    
+    // 祝福语
     blessingText: reqParams.blessingText || params.blessingText.defaultValue,
     blessingFontSize: reqParams.blessingFontSize ?? params.blessingFontSize.defaultValue,
     
@@ -320,9 +363,17 @@ function buildRenderParams(reqParams, commonParams) {
     // 音频设置
     musicEnabled: reqParams.musicEnabled ?? params.musicEnabled.defaultValue,
     musicTrack: reqParams.musicTrack || params.musicTrack.defaultValue,
+    birthdaySongSource: reqParams.birthdaySongSource || null,
+    birthdaySongVolume: reqParams.birthdaySongVolume ?? params.birthdaySongVolume.defaultValue,
+    
+    // 卡通元素
+    cartoonElements: reqParams.cartoonElements || null,
     
     // 随机种子
-    seed: reqParams.seed || params.seed.defaultValue
+    seed: reqParams.seed || null,
+    
+    // 自定义章节
+    chapterList: reqParams.chapterList || null,
   };
   
   // 动态设置 Composition ID

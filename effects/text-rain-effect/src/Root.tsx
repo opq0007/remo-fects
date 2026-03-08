@@ -56,22 +56,24 @@ export const RemotionRoot: React.FC = () => {
               fontWeight: 900,
               letterSpacing: 2,
             },
-            backgroundType: "image",
-            backgroundSource: "熊猫.png",
-            backgroundColor: "#1a1a2e",
-            overlayColor: "#000000",
-            overlayOpacity: 0.2,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
+            background: {
+              type: "image",
+              source: "熊猫.png",
+              color: "#1a1a2e",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.2,
+            },
+            watermark: {
+              enabled: true,
+              text: "© Remo-Fects",
+              fontSize: 24,
+              color: "#ffffff",
+              opacity: 0.35,
+              speed: 1,
+              intensity: 0.8,
+            },
           }}
         />
 
@@ -104,20 +106,23 @@ export const RemotionRoot: React.FC = () => {
               fontWeight: 800,
               letterSpacing: 2,
             },
-            backgroundType: "color",
-            backgroundColor: "#1a1a2e",
-            overlayColor: "#000000",
-            overlayOpacity: 0.2,
-
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
+            background: {
+              type: "color",
+              color: "#1a1a2e",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.2,
+            },
+            watermark: {
+              enabled: true,
+              text: "© Remo-Fects",
+              fontSize: 24,
+              color: "#ffffff",
+              opacity: 0.35,
+              speed: 1,
+              intensity: 0.8,
+            },
           }}
         />
 
@@ -152,20 +157,23 @@ export const RemotionRoot: React.FC = () => {
             seed: 2026,
             laneCount: 6,
             minVerticalGap: 100,
-            backgroundType: "color",
-            backgroundColor: "#1a0a2e",
-            overlayColor: "#000000",
-            overlayOpacity: 0.15,
-
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffd700",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
+            background: {
+              type: "color",
+              color: "#1a0a2e",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.15,
+            },
+            watermark: {
+              enabled: true,
+              text: "© Remo-Fects",
+              fontSize: 24,
+              color: "#ffd700",
+              opacity: 0.35,
+              speed: 1,
+              intensity: 0.8,
+            },
           }}
         />
 
@@ -198,21 +206,24 @@ export const RemotionRoot: React.FC = () => {
               fontWeight: 800,
               letterSpacing: 6,
             },
-            backgroundType: "image",
-            backgroundSource: "熊猫.png",
-            backgroundColor: "#1a1a2e",
-            overlayColor: "#000000",
-            overlayOpacity: 0.2,
-
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
+            background: {
+              type: "image",
+              source: "熊猫.png",
+              color: "#1a1a2e",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.2,
+            },
+            watermark: {
+              enabled: true,
+              text: "© Remo-Fects",
+              fontSize: 24,
+              color: "#ffffff",
+              opacity: 0.35,
+              speed: 1,
+              intensity: 0.8,
+            },
           }}
         />
       </Folder>

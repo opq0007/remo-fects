@@ -12,7 +12,7 @@ export const WatermarkEffectTypeSchema = z.enum([
 export type WatermarkEffectType = z.infer<typeof WatermarkEffectTypeSchema>;
 
 /**
- * 水印配置 Schema
+ * 水印配置 Schema（扁平结构）
  */
 export const WatermarkSchema = z.object({
   // 启用状态
@@ -39,6 +39,34 @@ export const WatermarkSchema = z.object({
 export type WatermarkProps = z.infer<typeof WatermarkSchema>;
 
 /**
+ * 嵌套水印配置 Schema（用于组件调用）
+ */
+export const NestedWatermarkSchema = z.object({
+  /** 是否启用 */
+  enabled: z.boolean().optional(),
+  /** 水印文字 */
+  text: z.string().optional(),
+  /** 字体大小 */
+  fontSize: z.number().min(8).max(200).optional(),
+  /** 颜色 */
+  color: zColor().optional(),
+  /** 透明度 */
+  opacity: z.number().min(0).max(1).optional(),
+  /** 动态效果类型 */
+  effect: WatermarkEffectTypeSchema.optional(),
+  /** 动画速度 */
+  speed: z.number().min(0.1).max(5).optional(),
+  /** 效果强度 */
+  intensity: z.number().min(0).max(1).optional(),
+  /** X 方向速度 */
+  velocityX: z.number().optional(),
+  /** Y 方向速度 */
+  velocityY: z.number().optional(),
+});
+
+export type NestedWatermarkProps = z.infer<typeof NestedWatermarkSchema>;
+
+/**
  * 水印组件 Props（用于组件调用）
  */
 export interface WatermarkComponentProps {
@@ -52,22 +80,4 @@ export interface WatermarkComponentProps {
   intensity?: number;
   velocityX?: number;
   velocityY?: number;
-}
-
-/**
- * 从 Schema Props 提取组件 Props
- */
-export function extractWatermarkProps(props: WatermarkProps): WatermarkComponentProps {
-  return {
-    enabled: props.watermarkEnabled,
-    text: props.watermarkText,
-    fontSize: props.watermarkFontSize,
-    color: props.watermarkColor,
-    opacity: props.watermarkOpacity,
-    effect: props.watermarkEffect,
-    speed: props.watermarkSpeed,
-    intensity: props.watermarkIntensity,
-    velocityX: props.watermarkVelocityX,
-    velocityY: props.watermarkVelocityY,
-  };
 }

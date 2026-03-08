@@ -84,42 +84,42 @@ export const RemotionRoot: React.FC = () => {
           fallDownDuration: 40,
           fallDownEndY: 0.2,
 
-          // 背景
-          backgroundType: "image",
-          backgroundSource: "财神2.png",
-
-          // 遮罩
-          overlayColor: "#000000",
-          overlayOpacity: 0.1,
-
-          // 音效配置
-          audioEnabled: true,
-          audioSource: "coin-sound.mp3",
-          audioVolume: 0.5,
-
-          // 水印配置
-          watermarkEnabled: true,
-          watermarkText: "水印测试",
-          watermarkFontSize: 24,
-          watermarkColor: "#ffffff",
-          watermarkOpacity: 0.35,
-          watermarkSpeed: 1,
-          watermarkIntensity: 0.8,
-          watermarkVelocityX: 180,
-          watermarkVelocityY: 120,
-
-          // 发散粒子效果配置
-          radialBurstEnabled: true,
-          radialBurstEffectType: "goldenRays",
-          radialBurstColor: "#FFD700",
-          radialBurstSecondaryColor: "#FFA500",
-          radialBurstIntensity: 1.2,
-          radialBurstVerticalOffset: 0.5,
-          radialBurstCount: 12,
-          radialBurstSpeed: 1,
-          radialBurstOpacity: 0.8,
-          radialBurstRotate: true,
-          radialBurstRotationSpeed: 0.5,
+          // 嵌套参数
+          background: {
+            type: "image",
+            source: "财神2.png",
+          },
+          overlay: {
+            color: "#000000",
+            opacity: 0.1,
+          },
+          audio: {
+            enabled: true,
+            source: "coin-sound.mp3",
+            volume: 0.5,
+          },
+          watermark: {
+            enabled: true,
+            text: "水印测试",
+            fontSize: 24,
+            color: "#ffffff",
+            opacity: 0.35,
+            speed: 1,
+            intensity: 0.8,
+          },
+          radialBurst: {
+            enabled: true,
+            effectType: "goldenRays",
+            color: "#FFD700",
+            secondaryColor: "#FFA500",
+            intensity: 1.2,
+            verticalOffset: 0.5,
+            count: 12,
+            speed: 1,
+            opacity: 0.8,
+            rotate: true,
+            rotationSpeed: 0.5,
+          },
         }}
       />
     </>

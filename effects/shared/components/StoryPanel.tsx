@@ -7,6 +7,7 @@ import { Marquee as MarqueeComponent, MarqueeProps } from './Marquee';
 import { RadialBurst } from './RadialBurst';
 import { Foreground } from './Foreground';
 import { PlusEffectItemProps } from '../schemas/story';
+import { BackgroundType, NestedBackgroundProps, NestedOverlayProps, NestedAudioProps } from '../schemas';
 
 // ==================== 类型定义 ====================
 
@@ -27,8 +28,6 @@ export interface ChapterTransition {
 
 /**
  * 故事章节配置（用于面板）
- * 
- * 扩展 StoryChapterProps，添加面板所需的额外配置
  */
 export interface StoryChapterConfig extends Omit<StoryChapterProps, 'children'> {
   /** 章节唯一标识 */
@@ -42,9 +41,7 @@ export interface StoryChapterConfig extends Omit<StoryChapterProps, 'children'> 
 }
 
 /**
- * 故事面板 Props
- * 
- * 继承 BaseComposition 的所有能力，并添加章节管理功能
+ * 故事面板 Props（嵌套参数结构）
  */
 export interface StoryPanelProps extends Omit<BaseCompositionComponentProps, 'children'> {
   /** 章节列表 */
@@ -82,104 +79,14 @@ export interface StoryPanelProps extends Omit<BaseCompositionComponentProps, 'ch
   
   /**
    * 渲染 PlusEffects 的回调函数
-   * 用于渲染委托，在 project 层实现具体的特效渲染逻辑
-   * 
-   * @param effects - PlusEffectItemProps 数组
-   * @param fallbackWords - 默认文字列表（当 effect.words 为空时使用）
-   * @returns ReactNode
    */
   renderPlusEffects?: (effects: PlusEffectItemProps[], fallbackWords: string[]) => ReactNode;
 }
 
 /**
- * 章节过渡效果组件
- */
-interface ChapterTransitionEffectProps {
-  type: ChapterTransitionType;
-  durationInFrames: number;
-  isActive: boolean;
-  isExiting: boolean;
-  children: ReactNode;
-}
-
-const ChapterTransitionEffect: React.FC<ChapterTransitionEffectProps> = ({
-  type,
-  durationInFrames,
-  isActive,
-  isExiting,
-  children,
-}) => {
-  const frame = useCurrentFrame();
-  const { width, height } = useVideoConfig();
-  
-  // 计算过渡进度
-  let opacity = 1;
-  let translateX = 0;
-  let translateY = 0;
-  
-  if (type !== 'none') {
-    const transitionFrame = isExiting ? frame : (durationInFrames - frame);
-    const progress = interpolate(
-      transitionFrame,
-      [0, durationInFrames],
-      [0, 1],
-      { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-    );
-    
-    switch (type) {
-      case 'fade':
-        opacity = isExiting ? 1 - progress : progress;
-        break;
-        
-      case 'crossfade':
-        opacity = isExiting ? 1 - progress : progress;
-        break;
-        
-      case 'slideLeft':
-        translateX = isExiting ? -width * progress : width * (1 - progress);
-        opacity = 0.9 + 0.1 * (isExiting ? 1 - progress : progress);
-        break;
-        
-      case 'slideRight':
-        translateX = isExiting ? width * progress : -width * (1 - progress);
-        opacity = 0.9 + 0.1 * (isExiting ? 1 - progress : progress);
-        break;
-        
-      case 'slideUp':
-        translateY = isExiting ? -height * progress : height * (1 - progress);
-        opacity = 0.9 + 0.1 * (isExiting ? 1 - progress : progress);
-        break;
-        
-      case 'slideDown':
-        translateY = isExiting ? height * progress : -height * (1 - progress);
-        opacity = 0.9 + 0.1 * (isExiting ? 1 - progress : progress);
-        break;
-    }
-  }
-  
-  return (
-    <AbsoluteFill
-      style={{
-        opacity: Math.max(0, Math.min(1, opacity)),
-        transform: `translateX(${translateX}px) translateY(${translateY}px)`,
-      }}
-    >
-      {children}
-    </AbsoluteFill>
-  );
-};
-
-/**
  * 故事面板组件
  * 
  * 基于 BaseComposition，支持嵌入多个故事章节，每个章节的时长和效果可独立控制。
- * 
- * 特性：
- * - 继承 BaseComposition 所有能力（背景、遮罩、音频等）
- * - 支持多个故事章节按顺序播放
- * - 支持章节间过渡效果（淡入淡出、滑动等）
- * - 支持全局水印和走马灯
- * - 支持背景音乐
  * 
  * @example
  * ```tsx
@@ -188,27 +95,16 @@ const ChapterTransitionEffect: React.FC<ChapterTransitionEffectProps> = ({
  *     {
  *       id: 'chapter1',
  *       durationInFrames: 120,
- *       backgroundType: 'gradient',
- *       backgroundGradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+ *       background: {
+ *         type: 'gradient',
+ *         gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+ *       },
  *       character: {
  *         series: 'zodiac',
  *         type: 'tiger',
  *         speech: '欢迎来到魔法世界！',
  *         showSpeech: true,
  *       },
- *       subtitles: [
- *         { text: '第一章：魔法开场', startFrame: 0, durationInFrames: 60 }
- *       ],
- *     },
- *     {
- *       id: 'chapter2',
- *       durationInFrames: 180,
- *       backgroundType: 'color',
- *       backgroundColor: '#1a1a2e',
- *       confetti: { enabled: true, level: 'high' },
- *       subtitles: [
- *         { text: '第二章：欢乐时光', startFrame: 0, durationInFrames: 60 }
- *       ],
  *     },
  *   ]}
  *   defaultTransition={{ type: 'fade', durationInFrames: 15 }}
@@ -229,7 +125,6 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
   watermark,
   marquee,
   backgroundMusic,
-  // PlusEffects 渲染委托
   renderPlusEffects,
   // BaseComposition 参数
   showBackground = true,
@@ -237,18 +132,9 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
   overlayPosition = 'before',
   extraLayers,
   extraLayersPosition = 'before-content',
-  backgroundType = 'color',
-  backgroundSource,
-  backgroundColor = '#1a1a2e',
-  backgroundGradient,
-  backgroundVideoLoop = true,
-  backgroundVideoMuted = true,
-  overlayColor = '#000000',
-  overlayOpacity = 0.2,
-  audioEnabled = false,
-  audioSource,
-  audioVolume = 0.5,
-  audioLoop = true,
+  background,
+  overlay,
+  audio,
   radialBurst,
   foreground,
 }) => {
@@ -267,7 +153,6 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
     
     for (const chapter of chapters) {
       const transition = chapter.transition ?? defaultTransition;
-      const transitionDuration = transition.type !== 'none' ? (transition.durationInFrames ?? 15) : 0;
       
       timings.push({
         chapter,
@@ -281,13 +166,6 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
     
     return timings;
   }, [chapters, defaultTransition, chapterGap]);
-  
-  // 计算总时长
-  const totalDuration = useMemo(() => {
-    if (chapterTimings.length === 0) return 0;
-    const last = chapterTimings[chapterTimings.length - 1];
-    return last.from + last.durationInFrames;
-  }, [chapterTimings]);
   
   // 渲染水印
   const renderWatermark = () => {
@@ -318,15 +196,8 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
   
   // 渲染章节
   const renderChapters = () => {
-    return chapterTimings.map(({ chapter, from, durationInFrames, transition }, index) => {
+    return chapterTimings.map(({ chapter, from, durationInFrames, transition }) => {
       const { id, children, transition: _, ...chapterProps } = chapter;
-      
-      // 检查是否需要过渡效果
-      const needsTransition = transition.type !== 'none';
-      const transitionDuration = transition.durationInFrames ?? 15;
-      
-      // 计算是否是最后一个章节
-      const isLastChapter = index === chapterTimings.length - 1;
       
       return (
         <Sequence
@@ -359,18 +230,9 @@ export const StoryPanel: React.FC<StoryPanelProps> = ({
       overlayPosition={overlayPosition}
       extraLayers={extraLayers}
       extraLayersPosition={extraLayersPosition}
-      backgroundType={backgroundType}
-      backgroundSource={backgroundSource}
-      backgroundColor={backgroundColor}
-      backgroundGradient={backgroundGradient}
-      backgroundVideoLoop={backgroundVideoLoop}
-      backgroundVideoMuted={backgroundVideoMuted}
-      overlayColor={overlayColor}
-      overlayOpacity={overlayOpacity}
-      audioEnabled={audioEnabled}
-      audioSource={audioSource}
-      audioVolume={audioVolume}
-      audioLoop={audioLoop}
+      background={background}
+      overlay={overlay}
+      audio={audio}
       radialBurst={radialBurst}
       foreground={foreground}
     >
@@ -409,14 +271,12 @@ const ChapterWrapper: React.FC<ChapterWrapperProps> = ({
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   
-  // 如果不需要过渡，直接返回
   if (transition.type === 'none') {
     return <>{children}</>;
   }
   
   const transitionDuration = transition.durationInFrames ?? 15;
   
-  // 计算入场和出场进度
   const entranceProgress = interpolate(
     frame,
     [0, transitionDuration],
@@ -431,12 +291,10 @@ const ChapterWrapper: React.FC<ChapterWrapperProps> = ({
     { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
   );
   
-  // 计算样式
   let opacity = 1;
   let translateX = 0;
   let translateY = 0;
   
-  // 入场效果
   if (frame < transitionDuration) {
     switch (transition.type) {
       case 'fade':
@@ -462,7 +320,6 @@ const ChapterWrapper: React.FC<ChapterWrapperProps> = ({
     }
   }
   
-  // 出场效果
   if (frame >= durationInFrames - transitionDuration) {
     switch (transition.type) {
       case 'fade':

@@ -15,10 +15,6 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           yangColor: "#FFD700",
           yinColor: "#1a1a1a",
-          backgroundColor: "#FFFFFF",
-          backgroundType: "color",
-          backgroundVideoLoop: true,
-          backgroundVideoMuted: true,
           glowIntensity: 0.9,
           taichiRotationSpeed: 1,
           baguaRotationSpeed: 0.8,
@@ -40,25 +36,31 @@ export const RemotionRoot: React.FC = () => {
           sparkleDensity: 30,
           enableMysticalAura: true,
           auraIntensity: 0.6,
-          overlayColor: "#000000",
-          overlayOpacity: 0,
-
-          // 音频配置（扁平格式）
-          audioEnabled: false,
-          audioSource: "coin-sound.mp3",
-          audioVolume: 0.5,
-          audioLoop: true,
-
-          // 水印配置
-          watermarkEnabled: true,
-          watermarkText: "© Remo-Fects",
-          watermarkFontSize: 24,
-          watermarkColor: "#ffffff",
-          watermarkOpacity: 0.35,
-          watermarkSpeed: 1,
-          watermarkIntensity: 0.8,
-          watermarkVelocityX: 180,
-          watermarkVelocityY: 120,
+          
+          // 嵌套参数
+          background: {
+            type: "color",
+            color: "#FFFFFF",
+          },
+          overlay: {
+            color: "#000000",
+            opacity: 0,
+          },
+          audio: {
+            enabled: false,
+            source: "coin-sound.mp3",
+            volume: 0.5,
+            loop: true,
+          },
+          watermark: {
+            enabled: true,
+            text: "© Remo-Fects",
+            fontSize: 24,
+            color: "#ffffff",
+            opacity: 0.35,
+            speed: 1,
+            intensity: 0.8,
+          },
         }}
       />
     </>

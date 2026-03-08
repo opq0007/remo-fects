@@ -55,40 +55,43 @@ export const RemotionRoot: React.FC = () => {
             perspective: 1000,
             mode: "vertical",
             verticalPosition: 0.5,
-            backgroundType: "color",
-            backgroundColor: "#1a0a00",
-            overlayColor: "#000000",
-            overlayOpacity: 0.25,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#ffffff",
-            watermarkOpacity: 0.35,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-
-            // 走马灯配置
-            marqueeEnabled: true,
-            marqueeForegroundTexts: ["恭喜发财", "财源广进", "万事如意", "心想事成"],
-            marqueeForegroundFontSize: 48,
-            marqueeForegroundOpacity: 0.9,
-            marqueeForegroundColor: "#ffd700",
-            marqueeForegroundEffect: "gold3d",
-            marqueeBackgroundTexts: ["新春快乐", "阖家幸福", "身体健康", "工作顺利", "步步高升"],
-            marqueeBackgroundFontSize: 24,
-            marqueeBackgroundOpacity: 0.5,
-            marqueeBackgroundColor: "#ffaa00",
-            marqueeBackgroundEffect: "shadow",
-            marqueeOrientation: "horizontal",
-            marqueeDirection: "right-to-left",
-            marqueeSpeed: 100,
-            marqueeSpacing: 80,
-            marqueeForegroundOffsetY: 300,
-            marqueeBackgroundOffsetY: -200,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#1a0a00",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.25,
+            },
+            watermark: {
+              enabled: true,
+              text: "© Remo-Fects",
+              fontSize: 24,
+              color: "#ffffff",
+              opacity: 0.35,
+              speed: 1,
+              intensity: 0.8,
+            },
+            marquee: {
+              enabled: true,
+              foreground: {
+                texts: [{ text: "恭喜发财" }, { text: "财源广进" }, { text: "万事如意" }, { text: "心想事成" }],
+                fontSize: 48,
+                opacity: 0.9,
+                textStyle: { color: "#ffd700", effect: "gold3d" },
+              },
+              background: {
+                texts: [{ text: "新春快乐" }, { text: "阖家幸福" }, { text: "身体健康" }, { text: "工作顺利" }, { text: "步步高升" }],
+                fontSize: 24,
+                opacity: 0.5,
+                textStyle: { color: "#ffaa00", effect: "shadow" },
+              },
+              orientation: "horizontal",
+              direction: "right-to-left",
+              speed: 100,
+            },
           }}
         />
 
@@ -114,10 +117,16 @@ export const RemotionRoot: React.FC = () => {
             perspective: 900,
             mode: "vertical",
             verticalPosition: 0.5,
-            backgroundType: "color",
-            backgroundColor: "#1a0a00",
-            overlayColor: "#000000",
-            overlayOpacity: 0.25,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#1a0a00",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.25,
+            },
           }}
         />
 
@@ -143,10 +152,16 @@ export const RemotionRoot: React.FC = () => {
             perspective: 1500,
             mode: "vertical",
             verticalPosition: 0.5,
-            backgroundType: "color",
-            backgroundColor: "#1a0a00",
-            overlayColor: "#000000",
-            overlayOpacity: 0.2,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#1a0a00",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.2,
+            },
           }}
         />
 
@@ -172,10 +187,16 @@ export const RemotionRoot: React.FC = () => {
             perspective: 1200,
             mode: "vertical",
             verticalPosition: 0.5,
-            backgroundType: "color",
-            backgroundColor: "#1a0a00",
-            overlayColor: "#000000",
-            overlayOpacity: 0.25,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#1a0a00",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.25,
+            },
           }}
         />
 
@@ -210,10 +231,16 @@ export const RemotionRoot: React.FC = () => {
             perspective: 1200,
             mode: "vertical",
             verticalPosition: 0.5,
-            backgroundType: "color",
-            backgroundColor: "#1a0a00",
-            overlayColor: "#000000",
-            overlayOpacity: 0.2,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#1a0a00",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.2,
+            },
           }}
         />
 
@@ -240,10 +267,16 @@ export const RemotionRoot: React.FC = () => {
             perspective: 1000,
             mode: "positions",
             verticalPosition: 0.5,
-            backgroundType: "color",
-            backgroundColor: "#1a0a00",
-            overlayColor: "#000000",
-            overlayOpacity: 0.25,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#1a0a00",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.25,
+            },
           }}
         />
 
@@ -269,10 +302,16 @@ export const RemotionRoot: React.FC = () => {
             perspective: 1500,
             mode: "positions",
             verticalPosition: 0.5,
-            backgroundType: "color",
-            backgroundColor: "#1a0a00",
-            overlayColor: "#000000",
-            overlayOpacity: 0.2,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#1a0a00",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.2,
+            },
           }}
         />
       </Folder>

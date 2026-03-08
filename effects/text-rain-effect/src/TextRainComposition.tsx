@@ -4,13 +4,15 @@ import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
 import {
   BaseComposition,
-  CompleteCompositionSchema,
   BlessingSymbolTypeSchema,
-  extractRadialBurstProps,
-  extractForegroundProps,
-  extractWatermarkProps,
-  extractMarqueeProps,
+  RadialBurstComponentProps,
+  ForegroundComponentProps,
   mergeBlessingStyle,
+  NestedBackgroundProps,
+  NestedOverlayProps,
+  NestedAudioProps,
+  WatermarkComponentProps,
+  MarqueeComponentProps,
 } from "../../shared/index";
 
 // ==================== 特有 Schema 定义 ====================
@@ -60,7 +62,6 @@ const ImageStyleSchema = z.object({
   saturate: z.number().optional().meta({ description: "饱和度 (0-2)" }),
 });
 
-// 祝福图案样式 Schema
 const BlessingStyleSchema = z.object({
   primaryColor: zColor().optional().meta({ description: "主颜色" }),
   secondaryColor: zColor().optional().meta({ description: "次颜色" }),
@@ -70,24 +71,20 @@ const BlessingStyleSchema = z.object({
   animated: z.boolean().optional().meta({ description: "是否启用动画" }),
 });
 
-// ==================== 主组件 Schema（使用公共 Schema）====================
+// ==================== 主组件 Schema ====================
 
-export const TextRainCompositionSchema = CompleteCompositionSchema.extend({
+export const TextRainCompositionSchema = z.object({
   // 内容配置
   words: z.array(z.string()).optional().meta({ description: "要显示的文字列表" }),
-  images: z.array(z.string()).optional().meta({ description: "图片路径列表（支持：public目录相对路径、网络URL、Data URL）" }),
+  images: z.array(z.string()).optional().meta({ description: "图片路径列表" }),
   contentType: z.enum(["text", "image", "mixed", "blessing"]).meta({ description: "内容类型" }),
-  imageWeight: z.number().min(0).max(1).optional().meta({ description: "图片出现权重 (mixed模式下)" }),
-  
-  // 祝福图案配置 (blessing 模式)
+  imageWeight: z.number().min(0).max(1).optional().meta({ description: "图片出现权重" }),
   blessingTypes: z.array(BlessingSymbolTypeSchema).optional().meta({ description: "祝福图案类型列表" }),
   blessingStyle: BlessingStyleSchema.optional().meta({ description: "祝福图案样式配置" }),
   
   // 文字排列方向
-  textDirection: z.enum(["horizontal", "vertical"]).meta({ description: "文字排列方向：horizontal (从左到右) 或 vertical (从上到下)" }),
-  
-  // 运动方向
-  fallDirection: z.enum(["down", "up"]).optional().meta({ description: "雨滴运动方向：down (从上到下，默认) 或 up (从下到上)" }),
+  textDirection: z.enum(["horizontal", "vertical"]).meta({ description: "文字排列方向" }),
+  fallDirection: z.enum(["down", "up"]).optional().meta({ description: "雨滴运动方向" }),
   
   // 雨滴配置
   density: z.number().min(1).max(20).meta({ description: "雨滴密度" }),
@@ -97,14 +94,84 @@ export const TextRainCompositionSchema = CompleteCompositionSchema.extend({
   opacityRange: z.tuple([z.number(), z.number()]).meta({ description: "透明度范围" }),
   rotationRange: z.tuple([z.number(), z.number()]).meta({ description: "旋转角度范围" }),
   seed: z.number().meta({ description: "随机种子" }),
-  
-  // 防重叠配置
   laneCount: z.number().min(4).max(24).meta({ description: "列道数量" }),
   minVerticalGap: z.number().min(20).max(300).meta({ description: "最小垂直间距" }),
 
   // 样式配置
   textStyle: TextStyleSchema.optional().meta({ description: "文字样式配置" }),
   imageStyle: ImageStyleSchema.optional().meta({ description: "图片样式配置" }),
+  
+  // 公共嵌套配置
+  background: z.object({
+    type: z.enum(["image", "video", "color", "gradient"]).optional(),
+    source: z.string().optional(),
+    color: zColor().optional(),
+    gradient: z.string().optional(),
+    videoLoop: z.boolean().optional(),
+    videoMuted: z.boolean().optional(),
+  }).optional(),
+  
+  overlay: z.object({
+    color: z.string().optional(),
+    opacity: z.number().min(0).max(1).optional(),
+  }).optional(),
+  
+  audio: z.object({
+    enabled: z.boolean().optional(),
+    source: z.string().optional(),
+    volume: z.number().min(0).max(1).optional(),
+    loop: z.boolean().optional(),
+  }).optional(),
+  
+  watermark: z.object({
+    enabled: z.boolean().optional(),
+    text: z.string().optional(),
+    fontSize: z.number().optional(),
+    color: z.string().optional(),
+    opacity: z.number().optional(),
+    effect: z.enum(["bounce"]).optional(),
+    speed: z.number().optional(),
+    intensity: z.number().optional(),
+  }).optional(),
+  
+  marquee: z.object({
+    enabled: z.boolean().optional(),
+    foregroundTexts: z.array(z.string()).optional(),
+    foregroundFontSize: z.number().optional(),
+    foregroundOpacity: z.number().optional(),
+    foregroundColor: z.string().optional(),
+    backgroundTexts: z.array(z.string()).optional(),
+    backgroundFontSize: z.number().optional(),
+    backgroundOpacity: z.number().optional(),
+    backgroundColor: z.string().optional(),
+    orientation: z.enum(["horizontal", "vertical"]).optional(),
+    direction: z.enum(["left-to-right", "right-to-left", "top-to-bottom", "bottom-to-top"]).optional(),
+    speed: z.number().optional(),
+  }).optional(),
+  
+  radialBurst: z.object({
+    enabled: z.boolean().optional(),
+    effectType: z.enum(["buddhaLight", "goldenRays", "meteorShower", "sparkleBurst"]).optional(),
+    color: z.string().optional(),
+    secondaryColor: z.string().optional(),
+    intensity: z.number().optional(),
+    verticalOffset: z.number().optional(),
+    count: z.number().optional(),
+    speed: z.number().optional(),
+    opacity: z.number().optional(),
+  }).optional(),
+  
+  foreground: z.object({
+    enabled: z.boolean().optional(),
+    type: z.enum(["image", "video"]).optional(),
+    source: z.string().optional(),
+    width: z.number().optional(),
+    height: z.number().optional(),
+    verticalOffset: z.number().optional(),
+    horizontalOffset: z.number().optional(),
+    scale: z.number().optional(),
+    opacity: z.number().optional(),
+  }).optional(),
 });
 
 export type TextRainCompositionProps = z.infer<typeof TextRainCompositionSchema>;
@@ -131,19 +198,14 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
   imageStyle,
   blessingTypes,
   blessingStyle,
-  // 公共参数（从 CompleteCompositionSchema 继承）
-  backgroundType = "color",
-  backgroundSource,
-  backgroundColor = "#1a1a2e",
-  backgroundVideoLoop = true,
-  backgroundVideoMuted = true,
-  overlayColor = "#000000",
-  overlayOpacity = 0.2,
-  audioEnabled = false,
-  audioSource = "coin-sound.mp3",
-  audioVolume = 0.5,
-  audioLoop = true,
-  ...props
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
+  watermark,
+  marquee,
+  radialBurst,
+  foreground,
 }) => {
   const defaultTextStyle: TextStyleConfig = {
     color: "#ffd700",
@@ -167,32 +229,105 @@ export const TextRainComposition: React.FC<TextRainCompositionProps> = ({
     ...imageStyle,
   };
 
-  // 使用公共函数合并祝福图案样式
   const mergedBlessingStyle: BlessingStyleConfig = mergeBlessingStyle(blessingStyle);
 
-  // 提取公共配置
-  const watermarkConfig = extractWatermarkProps(props);
-  const marqueeConfig = extractMarqueeProps(props);
-  const radialBurstConfig = extractRadialBurstProps(props);
-  const foregroundConfig = extractForegroundProps(props);
+  // 构建嵌套参数对象（带默认值）
+  const backgroundConfig: NestedBackgroundProps = {
+    type: background?.type ?? "color",
+    source: background?.source,
+    color: background?.color ?? "#1a1a2e",
+    gradient: background?.gradient,
+    videoLoop: background?.videoLoop ?? true,
+    videoMuted: background?.videoMuted ?? true,
+  };
+
+  const overlayConfig: NestedOverlayProps = {
+    color: overlay?.color ?? "#000000",
+    opacity: overlay?.opacity ?? 0.2,
+  };
+
+  const audioConfig: NestedAudioProps = {
+    enabled: audio?.enabled ?? false,
+    source: audio?.source ?? "coin-sound.mp3",
+    volume: audio?.volume ?? 0.5,
+    loop: audio?.loop ?? true,
+  };
+
+  const watermarkConfig: WatermarkComponentProps | undefined = watermark?.enabled
+    ? {
+        enabled: true,
+        text: watermark.text ?? "© Remo-Fects",
+        fontSize: watermark.fontSize ?? 24,
+        color: watermark.color ?? "#ffffff",
+        opacity: watermark.opacity ?? 0.35,
+        effect: watermark.effect,
+        speed: watermark.speed ?? 1,
+        intensity: watermark.intensity ?? 0.8,
+      }
+    : undefined;
+
+  const marqueeConfig: MarqueeComponentProps | undefined = marquee?.enabled
+    ? {
+        enabled: true,
+        foreground: marquee.foregroundTexts?.length
+          ? {
+              texts: marquee.foregroundTexts.map((text) => ({ text })),
+              fontSize: marquee.foregroundFontSize ?? 48,
+              opacity: marquee.foregroundOpacity ?? 1,
+              textStyle: { color: marquee.foregroundColor ?? "#ffd700" },
+            }
+          : undefined,
+        background: marquee.backgroundTexts?.length
+          ? {
+              texts: marquee.backgroundTexts.map((text) => ({ text })),
+              fontSize: marquee.backgroundFontSize ?? 24,
+              opacity: marquee.backgroundOpacity ?? 0.6,
+              textStyle: { color: marquee.backgroundColor ?? "#ffaa00" },
+            }
+          : undefined,
+        orientation: marquee.orientation ?? "horizontal",
+        direction: marquee.direction ?? "right-to-left",
+        speed: marquee.speed ?? 100,
+      }
+    : undefined;
+
+  const radialBurstConfig: RadialBurstComponentProps | undefined = radialBurst?.enabled
+    ? {
+        enabled: true,
+        effectType: radialBurst.effectType,
+        color: radialBurst.color,
+        secondaryColor: radialBurst.secondaryColor,
+        intensity: radialBurst.intensity,
+        verticalOffset: radialBurst.verticalOffset,
+        count: radialBurst.count,
+        speed: radialBurst.speed,
+        opacity: radialBurst.opacity,
+      }
+    : undefined;
+
+  const foregroundConfig: ForegroundComponentProps | undefined = foreground?.enabled
+    ? {
+        enabled: true,
+        type: foreground.type ?? "image",
+        source: foreground.source ?? "",
+        width: foreground.width,
+        height: foreground.height,
+        verticalOffset: foreground.verticalOffset,
+        horizontalOffset: foreground.horizontalOffset,
+        scale: foreground.scale,
+        opacity: foreground.opacity,
+      }
+    : undefined;
 
   return (
     <BaseComposition
-      backgroundType={backgroundType}
-      backgroundSource={backgroundSource}
-      backgroundColor={backgroundColor}
-      backgroundVideoLoop={backgroundVideoLoop}
-      backgroundVideoMuted={backgroundVideoMuted}
-      overlayColor={overlayColor}
-      overlayOpacity={overlayOpacity}
-      audioEnabled={audioEnabled}
-      audioSource={audioSource}
-      audioVolume={audioVolume}
-      audioLoop={audioLoop}
+      background={backgroundConfig}
+      overlay={overlayConfig}
+      audio={audioConfig}
       watermark={watermarkConfig}
       marquee={marqueeConfig}
       radialBurst={radialBurstConfig}
-      foreground={foregroundConfig ?? undefined}
+      foreground={foregroundConfig}
     >
       <TextRain
         words={words}

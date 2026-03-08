@@ -68,7 +68,7 @@ export const MarqueeDirectionSchema = z.enum([
 ]);
 
 /**
- * 走马灯完整 Schema（用于 API 参数）
+ * 走马灯完整 Schema（扁平结构 - 用于 API 参数）
  */
 export const MarqueeSchema = z.object({
   // 启用状态
@@ -111,6 +111,52 @@ export const MarqueeSchema = z.object({
 export type MarqueeProps = z.infer<typeof MarqueeSchema>;
 
 /**
+ * 嵌套层级配置 Schema
+ */
+const NestedLayerConfigSchema = z.object({
+  texts: z.array(MarqueeTextItemSchema).optional(),
+  images: z.array(MarqueeImageItemSchema).optional(),
+  fontSize: z.number().min(8).max(200).optional(),
+  opacity: z.number().min(0).max(1).optional(),
+  spacing: z.number().min(0).max(500).optional(),
+  textStyle: MarqueeTextStyleSchema.optional(),
+});
+
+/**
+ * 嵌套走马灯配置 Schema（用于组件调用）
+ */
+export const NestedMarqueeSchema = z.object({
+  /** 是否启用 */
+  enabled: z.boolean().optional(),
+  /** 前景层配置 */
+  foreground: NestedLayerConfigSchema.optional(),
+  /** 后景层配置 */
+  background: NestedLayerConfigSchema.optional(),
+  /** 文字项排列方向 */
+  orientation: MarqueeOrientationSchema.optional(),
+  /** 单个文字内部字符排列方向 */
+  textOrientation: MarqueeTextOrientationSchema.optional(),
+  /** 运动方向 */
+  direction: MarqueeDirectionSchema.optional(),
+  /** 移动速度 */
+  speed: z.number().min(10).max(500).optional(),
+  /** 3D透视深度 */
+  perspectiveDepth: z.number().min(0).max(300).optional(),
+  /** 前景层 X 偏移 */
+  foregroundOffsetX: z.number().optional(),
+  /** 前景层 Y 偏移 */
+  foregroundOffsetY: z.number().optional(),
+  /** 后景层 X 偏移 */
+  backgroundOffsetX: z.number().optional(),
+  /** 后景层 Y 偏移 */
+  backgroundOffsetY: z.number().optional(),
+  /** z-index 层级 */
+  zIndex: z.number().optional(),
+});
+
+export type NestedMarqueeProps = z.infer<typeof NestedMarqueeSchema>;
+
+/**
  * 走马灯组件 Props（用于组件调用）
  */
 export interface MarqueeComponentProps {
@@ -141,57 +187,4 @@ export interface MarqueeComponentProps {
   backgroundOffsetX?: number;
   backgroundOffsetY?: number;
   zIndex?: number;
-}
-
-/**
- * 从 Schema Props 提取组件 Props
- */
-export function extractMarqueeProps(props: MarqueeProps): MarqueeComponentProps | undefined {
-  if (!props.marqueeEnabled) return undefined;
-  
-  const result: MarqueeComponentProps = {
-    enabled: props.marqueeEnabled,
-    orientation: props.marqueeOrientation,
-    textOrientation: props.marqueeTextOrientation,
-    direction: props.marqueeDirection,
-    speed: props.marqueeSpeed,
-    perspectiveDepth: props.marqueePerspectiveDepth,
-    foregroundOffsetX: props.marqueeForegroundOffsetX,
-    foregroundOffsetY: props.marqueeForegroundOffsetY,
-    backgroundOffsetX: props.marqueeBackgroundOffsetX,
-    backgroundOffsetY: props.marqueeBackgroundOffsetY,
-    zIndex: props.marqueeZIndex,
-  };
-
-  // 构建前景层
-  if (props.marqueeForegroundTexts?.length || props.marqueeForegroundImages?.length) {
-    result.foreground = {
-      texts: props.marqueeForegroundTexts?.map(text => ({ text })) || [],
-      images: props.marqueeForegroundImages?.map(src => ({ src })) || [],
-      fontSize: props.marqueeForegroundFontSize,
-      opacity: props.marqueeForegroundOpacity,
-      spacing: props.marqueeSpacing,
-      textStyle: {
-        color: props.marqueeForegroundColor,
-        effect: props.marqueeForegroundEffect,
-      },
-    };
-  }
-
-  // 构建后景层
-  if (props.marqueeBackgroundTexts?.length || props.marqueeBackgroundImages?.length) {
-    result.background = {
-      texts: props.marqueeBackgroundTexts?.map(text => ({ text })) || [],
-      images: props.marqueeBackgroundImages?.map(src => ({ src })) || [],
-      fontSize: props.marqueeBackgroundFontSize,
-      opacity: props.marqueeBackgroundOpacity,
-      spacing: props.marqueeSpacing,
-      textStyle: {
-        color: props.marqueeBackgroundColor,
-        effect: props.marqueeBackgroundEffect,
-      },
-    };
-  }
-
-  return result;
 }

@@ -28,7 +28,7 @@ export const ForegroundAnimationTypeSchema = z.enum([
 export const ForegroundTypeSchema = z.enum(["image", "video"]);
 
 /**
- * 前景组件 Props Schema
+ * 前景组件 Props Schema（扁平结构）
  */
 export const ForegroundSchema = z.object({
   /** 是否启用前景 */
@@ -172,13 +172,71 @@ export type ForegroundType = z.infer<typeof ForegroundTypeSchema>;
 export type ForegroundProps = z.infer<typeof ForegroundSchema>;
 
 /**
+ * 嵌套前景配置 Schema（用于组件调用）
+ */
+export const NestedForegroundSchema = z.object({
+  /** 是否启用 */
+  enabled: z.boolean().optional(),
+  /** 前景类型 */
+  type: ForegroundTypeSchema.optional(),
+  /** 前景源文件路径 */
+  source: z.string().optional(),
+  /** 宽度 */
+  width: z.number().int().positive().optional(),
+  /** 高度 */
+  height: z.number().int().positive().optional(),
+  /** 垂直偏移 */
+  verticalOffset: z.number().optional(),
+  /** 水平偏移 */
+  horizontalOffset: z.number().optional(),
+  /** 缩放比例 */
+  scale: z.number().min(0.1).max(3).optional(),
+  /** 动画类型 */
+  animationType: ForegroundAnimationTypeSchema.optional(),
+  /** 动画开始帧 */
+  animationStartFrame: z.number().int().min(0).optional(),
+  /** 动画持续时间 */
+  animationDuration: z.number().int().min(1).optional(),
+  /** 动画强度系数 */
+  animationIntensity: z.number().min(0).max(2).optional(),
+  /** 是否使用弹簧动画 */
+  useSpring: z.boolean().optional(),
+  /** 弹簧阻尼 */
+  springDamping: z.number().min(1).max(30).optional(),
+  /** 弹簧刚度 */
+  springStiffness: z.number().min(10).max(500).optional(),
+  /** 透明度 */
+  opacity: z.number().min(0).max(1).optional(),
+  /** 混合模式 */
+  mixBlendMode: z.enum([
+    "normal", "multiply", "screen", "overlay", "darken", "lighten",
+    "color-dodge", "color-burn", "hard-light", "soft-light", "difference",
+    "exclusion", "hue", "saturation", "color", "luminosity"
+  ]).optional(),
+  /** 对象适应方式 */
+  objectFit: z.enum(["cover", "contain", "fill", "none"]).optional(),
+  /** z-index 层级 */
+  zIndex: z.number().int().optional(),
+  /** 视频是否循环 */
+  videoLoop: z.boolean().optional(),
+  /** 视频是否静音 */
+  videoMuted: z.boolean().optional(),
+  /** 是否启用持续动画 */
+  continuousAnimation: z.boolean().optional(),
+  /** 持续动画速度 */
+  continuousSpeed: z.number().min(0.1).max(5).optional(),
+});
+
+export type NestedForegroundProps = z.infer<typeof NestedForegroundSchema>;
+
+/**
  * 前景组件渲染 Props（用于组件内部使用）
  */
 export interface ForegroundComponentProps {
   /** 前景类型：图片或视频 */
   type?: "image" | "video";
   /** 前景源文件路径 */
-  source: string;
+  source?: string;
   /** 宽度 */
   width?: number;
   /** 高度 */
@@ -221,39 +279,4 @@ export interface ForegroundComponentProps {
   continuousAnimation?: boolean;
   /** 持续动画速度 */
   continuousSpeed?: number;
-}
-
-/**
- * 从 Schema Props 提取组件 Props
- */
-export function extractForegroundProps(props: ForegroundProps): ForegroundComponentProps | null {
-  if (!props.foregroundEnabled || !props.foregroundSource) {
-    return null;
-  }
-
-  return {
-    type: props.foregroundType ?? "image",
-    source: props.foregroundSource,
-    width: props.foregroundWidth,
-    height: props.foregroundHeight,
-    verticalOffset: props.foregroundVerticalOffset ?? 0,
-    horizontalOffset: props.foregroundHorizontalOffset ?? 0,
-    scale: props.foregroundScale ?? 1,
-    animationType: props.foregroundAnimationType ?? "none",
-    animationStartFrame: props.foregroundAnimationStartFrame ?? 0,
-    animationDuration: props.foregroundAnimationDuration ?? 60,
-    animationIntensity: props.foregroundAnimationIntensity ?? 1,
-    useSpring: props.foregroundUseSpring ?? true,
-    springDamping: props.foregroundSpringDamping ?? 12,
-    springStiffness: props.foregroundSpringStiffness ?? 100,
-    opacity: props.foregroundOpacity ?? 1,
-    mixBlendMode: props.foregroundMixBlendMode ?? "normal",
-    objectFit: props.foregroundObjectFit ?? "cover",
-    enabled: props.foregroundEnabled,
-    zIndex: props.foregroundZIndex ?? 100,
-    videoLoop: props.foregroundVideoLoop ?? true,
-    videoMuted: props.foregroundVideoMuted ?? true,
-    continuousAnimation: props.foregroundContinuousAnimation ?? false,
-    continuousSpeed: props.foregroundContinuousSpeed ?? 1,
-  };
 }

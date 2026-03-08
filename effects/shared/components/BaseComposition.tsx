@@ -1,9 +1,18 @@
 import React, { ReactNode } from "react";
 import { AbsoluteFill, Audio, staticFile } from "remotion";
 import { Background, Overlay, Watermark, Marquee, RadialBurst, Foreground } from "./index";
-import { BackgroundType, BaseCompositionProps, RadialBurstComponentProps, ForegroundComponentProps } from "../schemas";
+import { 
+  BackgroundType, 
+  NestedBackgroundProps,
+  NestedOverlayProps,
+  NestedAudioProps,
+  RadialBurstComponentProps, 
+  ForegroundComponentProps 
+} from "../schemas";
 import { Watermark as WatermarkComponent, WatermarkProps } from "./Watermark";
 import { Marquee as MarqueeComponent, MarqueeProps } from "./Marquee";
+
+// ==================== 嵌套配置类型定义 ====================
 
 /**
  * 水印配置（用于 BaseComposition）
@@ -20,15 +29,48 @@ type MarqueeConfig = Partial<MarqueeProps> & {
   enabled?: boolean;
 };
 
+// ==================== 组件 Props 定义 ====================
+
 /**
- * 基础组合组件 Props（包含水印参数）
+ * 基础组合组件 Props（嵌套参数结构）
+ * 
+ * 使用嵌套对象组织各子组件的参数，提高可读性和可维护性：
+ * - background: 背景配置
+ * - overlay: 遮罩配置
+ * - audio: 音频配置
+ * - watermark: 水印配置
+ * - marquee: 走马灯配置
+ * - radialBurst: 发散粒子配置
+ * - foreground: 前景配置
  */
-export interface BaseCompositionComponentProps extends BaseCompositionProps {
+export interface BaseCompositionComponentProps {
   /** 特效内容（子组件） */
   children: ReactNode;
   
+  // ===== 嵌套参数配置 =====
+  
+  /**
+   * 背景配置对象
+   * @example
+   * background={{
+   *   type: 'gradient',
+   *   gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+   * }}
+   */
+  background?: NestedBackgroundProps;
+  
   /** 是否显示背景层，默认 true */
   showBackground?: boolean;
+  
+  /**
+   * 遮罩配置对象
+   * @example
+   * overlay={{
+   *   color: '#000000',
+   *   opacity: 0.3
+   * }}
+   */
+  overlay?: NestedOverlayProps;
   
   /** 是否显示遮罩层，默认 true */
   showOverlay?: boolean;
@@ -36,23 +78,70 @@ export interface BaseCompositionComponentProps extends BaseCompositionProps {
   /** 遮罩层位置：before（内容前）或 after（内容后），默认 before */
   overlayPosition?: "before" | "after";
   
+  /**
+   * 音频配置对象
+   * @example
+   * audio={{
+   *   enabled: true,
+   *   source: 'bgm.mp3',
+   *   volume: 0.5,
+   *   loop: true
+   * }}
+   */
+  audio?: NestedAudioProps;
+  
+  /**
+   * 水印配置对象
+   * @example
+   * watermark={{
+   *   enabled: true,
+   *   text: "© 2026 MyBrand",
+   *   effect: "bounce",
+   * }}
+   */
+  watermark?: WatermarkConfig;
+  
+  /**
+   * 走马灯配置对象
+   * @example
+   * marquee={{
+   *   enabled: true,
+   *   foregroundTexts: ['生日快乐', '幸福安康'],
+   *   speed: 50
+   * }}
+   */
+  marquee?: MarqueeConfig;
+  
+  /**
+   * 发散粒子效果配置对象
+   * @example
+   * radialBurst={{
+   *   enabled: true,
+   *   effectType: 'sparkleBurst',
+   *   color: '#FFD76A'
+   * }}
+   */
+  radialBurst?: RadialBurstComponentProps;
+  
+  /**
+   * 前景配置对象
+   * @example
+   * foreground={{
+   *   enabled: true,
+   *   type: 'image',
+   *   source: 'overlay.png',
+   *   opacity: 0.8
+   * }}
+   */
+  foreground?: ForegroundComponentProps;
+  
+  // ===== 其他配置 =====
+  
   /** 额外的层（如 StarField、CenterGlow 等） */
   extraLayers?: ReactNode;
   
   /** 额外层的位置：before-content 或 after-content，默认 before-content */
   extraLayersPosition?: "before-content" | "after-content";
-  
-  /** 水印配置对象（可选，用于批量传入） */
-  watermark?: WatermarkConfig;
-  
-  /** 走马灯配置对象（可选，用于批量传入） */
-  marquee?: MarqueeConfig;
-  
-  /** 发散粒子效果配置 */
-  radialBurst?: RadialBurstComponentProps;
-  
-  /** 前景配置对象（可选，用于批量传入） */
-  foreground?: ForegroundComponentProps;
 }
 
 /**
@@ -62,37 +151,25 @@ export interface BaseCompositionComponentProps extends BaseCompositionProps {
  * 各特效组合组件可以通过 children 传入特效内容，自动获得公共功能支持。
  * 
  * @example
- * // 基本用法
  * <BaseComposition
- *   backgroundType="color"
- *   backgroundColor="#1a1a2e"
- *   audioEnabled
- * >
- *   <MyEffectContent />
- * </BaseComposition>
- * 
- * // 完整用法（含水印）
- * <BaseComposition
- *   backgroundType="video"
- *   backgroundSource="bg.mp4"
- *   overlayColor="#000000"
- *   overlayOpacity={0.3}
- *   audioEnabled
- *   audioSource="bgm.mp3"
- *   audioVolume={0.5}
+ *   background={{
+ *     type: 'gradient',
+ *     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+ *   }}
+ *   overlay={{
+ *     color: '#000000',
+ *     opacity: 0.3
+ *   }}
+ *   audio={{
+ *     enabled: true,
+ *     source: 'bgm.mp3',
+ *     volume: 0.5
+ *   }}
  *   watermark={{
  *     enabled: true,
  *     text: "© 2026 MyBrand",
  *     effect: "bounce",
  *   }}
- * >
- *   <MyEffectContent />
- * </BaseComposition>
- * 
- * // 禁用某些层
- * <BaseComposition
- *   showBackground={false}
- *   showOverlay={false}
  * >
  *   <MyEffectContent />
  * </BaseComposition>
@@ -104,34 +181,39 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
   overlayPosition = "before",
   extraLayers,
   extraLayersPosition = "before-content",
-  // 背景参数
-  backgroundType = "color",
-  backgroundSource,
-  backgroundColor = "#1a1a2e",
-  backgroundGradient,
-  backgroundVideoLoop = true,
-  backgroundVideoMuted = true,
-  // 遮罩参数
-  overlayColor = "#000000",
-  overlayOpacity = 0.2,
-  // 音频参数
-  audioEnabled = false,
-  audioSource = "coin-sound.mp3",
-  audioVolume = 0.5,
-  audioLoop = true,
-  // 水印参数
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
   watermark,
-  // 走马灯参数
   marquee,
-  // 发散粒子效果参数
   radialBurst,
-  // 前景参数
   foreground,
 }) => {
+  // ===== 提取参数（带默认值） =====
+  
+  // 背景参数
+  const bgType = background?.type ?? "color";
+  const bgSource = background?.source;
+  const bgColor = background?.color ?? "#1a1a2e";
+  const bgGradient = background?.gradient;
+  const bgVideoLoop = background?.videoLoop ?? true;
+  const bgVideoMuted = background?.videoMuted ?? true;
+  
+  // 遮罩参数
+  const ovColor = overlay?.color ?? "#000000";
+  const ovOpacity = overlay?.opacity ?? 0.2;
+  
+  // 音频参数
+  const audEnabled = audio?.enabled ?? false;
+  const audSource = audio?.source ?? "coin-sound.mp3";
+  const audVolume = audio?.volume ?? 0.5;
+  const audLoop = audio?.loop ?? true;
+
   // 渲染遮罩层
   const renderOverlay = () => {
-    if (!showOverlay || overlayOpacity <= 0) return null;
-    return <Overlay color={overlayColor} opacity={overlayOpacity} />;
+    if (!showOverlay || ovOpacity <= 0) return null;
+    return <Overlay color={ovColor} opacity={ovOpacity} />;
   };
 
   // 渲染额外层
@@ -142,28 +224,25 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
 
   // 渲染音频
   const renderAudio = () => {
-    if (!audioEnabled || !audioSource) return null;
+    if (!audEnabled || !audSource) return null;
     return (
       <Audio
-        src={staticFile(audioSource)}
-        volume={audioVolume}
-        loop={audioLoop}
+        src={staticFile(audSource)}
+        volume={audVolume}
+        loop={audLoop}
       />
     );
   };
 
   // 渲染水印
   const renderWatermark = () => {
-    // 如果没有水印配置或没有文字，不渲染
     if (!watermark || !watermark.enabled || !watermark.text) return null;
-    
     return <WatermarkComponent {...watermark} text={watermark.text} />;
   };
 
   // 渲染走马灯
   const renderMarquee = () => {
     if (!marquee || !marquee.enabled) return null;
-    
     return <MarqueeComponent {...marquee} />;
   };
 
@@ -227,12 +306,12 @@ export const BaseComposition: React.FC<BaseCompositionComponentProps> = ({
       {/* 背景层 */}
       {showBackground && (
         <Background
-          type={backgroundType as BackgroundType}
-          source={backgroundSource}
-          color={backgroundColor}
-          gradient={backgroundGradient}
-          videoLoop={backgroundVideoLoop}
-          videoMuted={backgroundVideoMuted}
+          type={bgType as BackgroundType}
+          source={bgSource}
+          color={bgColor}
+          gradient={bgGradient}
+          videoLoop={bgVideoLoop}
+          videoMuted={bgVideoMuted}
         />
       )}
 

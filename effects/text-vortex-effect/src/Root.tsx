@@ -27,11 +27,6 @@ export const RemotionRoot: React.FC = () => {
         depth3D: true,
         depthIntensity: 0.4,
         perspective: 800,
-        backgroundColor: "#0a0a15",
-        audioEnabled: false,
-        audioSource: "coin-sound.mp3",
-        audioVolume: 0.5,
-        audioLoop: true,
         textStyle: {
           color: "#FFD700",
           effect: "gold3d",
@@ -50,6 +45,18 @@ export const RemotionRoot: React.FC = () => {
         suctionEffect: true,
         suctionIntensity: 0.3,
         seed: 42,
+        
+        // 嵌套参数
+        background: {
+          type: "color",
+          color: "#0a0a15",
+        },
+        audio: {
+          enabled: false,
+          source: "coin-sound.mp3",
+          volume: 0.5,
+          loop: true,
+        },
       }}
     />
   );

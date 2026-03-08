@@ -13,10 +13,6 @@ import {
   MixedInputSchema,
   BlessingStyleSchema,
   MixedImageStyleSchema,
-  extractRadialBurstProps,
-  extractForegroundProps,
-  extractWatermarkProps,
-  extractMarqueeProps,
   mergeBlessingStyle,
 } from "../../shared/index";
 import {
@@ -102,33 +98,41 @@ export type TextFloodCompositionProps = z.infer<typeof TextFloodCompositionSchem
 
 // ==================== 主组件 ====================
 
-export const TextFloodComposition: React.FC<TextFloodCompositionProps> = (props) => {
-  const {
-    words = [],
-    images = [],
-    contentType = "text",
-    imageWeight = 0.5,
-    particleCount = 80,
-    waveCount = 5,
-    direction = "toward",
-    waveConfig,
-    impactConfig,
-    fontSizeRange = [50, 100],
-    imageSizeRange = [60, 120],
-    blessingSizeRange = [60, 120],
-    opacityRange = [0.7, 1],
-    textStyle,
-    imageStyle,
-    blessingTypes,
-    blessingStyle,
-    enablePerspective = true,
-    perspectiveStrength = 800,
-    enableWaveBackground = true,
-    waveBackgroundColor = "#1a4a7a",
-    waveBackgroundOpacity = 0.3,
-    seed = 42,
-  } = props;
-
+export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
+  watermark,
+  marquee,
+  radialBurst,
+  foreground,
+  
+  // 混合输入配置
+  words = [],
+  images = [],
+  contentType = "text",
+  imageWeight = 0.5,
+  particleCount = 80,
+  waveCount = 5,
+  direction = "toward",
+  waveConfig,
+  impactConfig,
+  fontSizeRange = [50, 100],
+  imageSizeRange = [60, 120],
+  blessingSizeRange = [60, 120],
+  opacityRange = [0.7, 1],
+  textStyle,
+  imageStyle,
+  blessingTypes,
+  blessingStyle,
+  enablePerspective = true,
+  perspectiveStrength = 800,
+  enableWaveBackground = true,
+  waveBackgroundColor = "#1a4a7a",
+  waveBackgroundOpacity = 0.3,
+  seed = 42,
+}) => {
   // 默认文字样式
   const defaultTextStyle = {
     color: "#00d4ff",
@@ -159,19 +163,15 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = (props)
     ...blessingStyle,
   });
 
-  // 提取公共组件参数
-  const radialBurstConfig = extractRadialBurstProps(props);
-  const foregroundConfig = extractForegroundProps(props);
-  const watermarkConfig = extractWatermarkProps(props);
-  const marqueeConfig = extractMarqueeProps(props);
-
   return (
     <BaseComposition
-      {...props}
-      radialBurst={radialBurstConfig}
-      foreground={foregroundConfig ?? undefined}
-      watermark={watermarkConfig}
-      marquee={marqueeConfig}
+      background={background}
+      overlay={overlay}
+      audio={audio}
+      watermark={watermark}
+      marquee={marquee}
+      radialBurst={radialBurst}
+      foreground={foreground}
     >
       <TextFlood
         words={words}

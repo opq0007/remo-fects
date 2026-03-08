@@ -12,10 +12,6 @@ import {
   CompleteCompositionSchema,
   MixedInputSchema,
   BlessingStyleSchema,
-  extractRadialBurstProps,
-  extractForegroundProps,
-  extractWatermarkProps,
-  extractMarqueeProps,
   mergeTextStyle,
   mergeBlessingStyle,
 } from "../../shared/index";
@@ -83,63 +79,66 @@ export type TextCrystalBallProps = z.infer<typeof TextCrystalBallSchema>;
 
 // ==================== 主组件 ====================
 
-export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = (props) => {
-  const {
-    // 混合输入配置
-    contentType = "text",
-    words = [],
-    images = [],
-    imageWeight = 0.5,
-    blessingTypes = [],
-    blessingStyle,
-    // 水晶球配置
-    ballRadius = 200,
-    ballColor = "#4169E1",
-    ballOpacity = 0.3,
-    glowColor = "#87CEEB",
-    glowIntensity = 1,
-    // 位置配置
-    verticalOffset = 0.5,
-    // 旋转动画配置
-    rotationSpeedX = 0.2,
-    rotationSpeedY = 0.5,
-    rotationSpeedZ = 0.1,
-    autoRotate = true,
-    // 镜头推进配置
-    zoomEnabled = false,
-    zoomProgress = 0,
-    // 内容配置
-    particleCount = 30,
-    fontSizeRange = [30, 60],
-    imageSizeRange = [40, 80],
-    blessingSizeRange = [35, 70],
-    // 样式配置
-    textStyle,
-    // 透视配置
-    perspective = 1000,
-    // 入场动画
-    entranceDuration = 30,
-    // 随机种子
-    seed,
-  } = props;
-
+export const TextCrystalBallComposition: React.FC<TextCrystalBallProps> = ({
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
+  watermark,
+  marquee,
+  radialBurst,
+  foreground,
+  
+  // 混合输入配置
+  contentType = "text",
+  words = [],
+  images = [],
+  imageWeight = 0.5,
+  blessingTypes = [],
+  blessingStyle,
+  // 水晶球配置
+  ballRadius = 200,
+  ballColor = "#4169E1",
+  ballOpacity = 0.3,
+  glowColor = "#87CEEB",
+  glowIntensity = 1,
+  // 位置配置
+  verticalOffset = 0.5,
+  // 旋转动画配置
+  rotationSpeedX = 0.2,
+  rotationSpeedY = 0.5,
+  rotationSpeedZ = 0.1,
+  autoRotate = true,
+  // 镜头推进配置
+  zoomEnabled = false,
+  zoomProgress = 0,
+  // 内容配置
+  particleCount = 30,
+  fontSizeRange = [30, 60],
+  imageSizeRange = [40, 80],
+  blessingSizeRange = [35, 70],
+  // 样式配置
+  textStyle,
+  // 透视配置
+  perspective = 1000,
+  // 入场动画
+  entranceDuration = 30,
+  // 随机种子
+  seed,
+}) => {
   // 使用公共函数合并样式
   const mergedTextStyle = mergeTextStyle(textStyle);
   const mergedBlessingStyle = mergeBlessingStyle(blessingStyle);
 
-  // 提取公共组件参数
-  const radialBurstConfig = extractRadialBurstProps(props);
-  const foregroundConfig = extractForegroundProps(props);
-  const watermarkConfig = extractWatermarkProps(props);
-  const marqueeConfig = extractMarqueeProps(props);
-
   return (
     <BaseComposition
-      {...props}
-      radialBurst={radialBurstConfig}
-      foreground={foregroundConfig ?? undefined}
-      watermark={watermarkConfig}
-      marquee={marqueeConfig}
+      background={background}
+      overlay={overlay}
+      audio={audio}
+      watermark={watermark}
+      marquee={marquee}
+      radialBurst={radialBurst}
+      foreground={foreground}
     >
       <CrystalBall
         contentType={contentType}

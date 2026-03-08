@@ -30,11 +30,6 @@ export const RemotionRoot: React.FC = () => {
         zoomEnabled: true,
         zoomProgress: 0,
         particleCount: 30,
-        backgroundColor: "#0a0a30",
-        audioEnabled: false,
-        audioSource: "coin-sound.mp3",
-        audioVolume: 0.5,
-        audioLoop: true,
         textStyle: {
           color: "#FFD700",
           effect: "gold3d",
@@ -46,6 +41,18 @@ export const RemotionRoot: React.FC = () => {
         entranceDuration: 30,
         perspective: 1000,
         seed: 42,
+        
+        // 嵌套参数
+        background: {
+          type: "color",
+          color: "#0a0a30",
+        },
+        audio: {
+          enabled: false,
+          source: "coin-sound.mp3",
+          volume: 0.5,
+          loop: true,
+        },
       }}
     />
   );

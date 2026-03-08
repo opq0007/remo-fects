@@ -13,10 +13,6 @@ import { Bagua } from "./Bagua";
 import {
   BaseComposition,
   CompleteCompositionSchema,
-  extractWatermarkProps,
-  extractMarqueeProps,
-  extractRadialBurstProps,
-  extractForegroundProps,
 } from "../../shared/index";
 
 // ==================== Schema 定义（使用公共 Schema）====================
@@ -259,49 +255,40 @@ const Depth3DLayer: React.FC<{
 
 // ==================== 主组件 ====================
 
-export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = (props) => {
-  const {
-    yangColor = "#FFD700",
-    yinColor = "#1a1a1a",
-    backgroundColor = "#FFFFFF",
-    backgroundType = "color",
-    backgroundSource,
-    backgroundVideoLoop = true,
-    backgroundVideoMuted = true,
-    glowIntensity = 0.9,
-    taichiRotationSpeed = 1,
-    baguaRotationSpeed = 0.5,
-    taichiSize = 200,
-    baguaRadius = 280,
-    showLabels = true,
-    showParticles = true,
-    showEnergyField = true,
-    labelOffset = 45,
-    particleCount = 40,
-    particleSpeed = 1,
-    viewAngle = 90,
-    perspectiveDistance = 800,
-    verticalPosition = 0.5,
-    verticalMargin = 50,
-    enable3D = false,
-    depth3D = 15,
-    enableGoldenSparkle = true,
-    sparkleDensity = 30,
-    enableMysticalAura = true,
-    auraIntensity = 0.6,
-    overlayColor = "#000000",
-    overlayOpacity = 0,
-    audioEnabled = false,
-    audioSource = "coin-sound.mp3",
-    audioVolume = 0.5,
-    audioLoop = true,
-  } = props;
-
-  // 提取公共组件参数
-  const watermarkConfig = extractWatermarkProps(props);
-  const marqueeConfig = extractMarqueeProps(props);
-  const radialBurstConfig = extractRadialBurstProps(props);
-  const foregroundConfig = extractForegroundProps(props);
+export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
+  watermark,
+  marquee,
+  radialBurst,
+  foreground,
+  // 项目特有参数
+  yangColor = "#FFD700",
+  yinColor = "#1a1a1a",
+  glowIntensity = 0.9,
+  taichiRotationSpeed = 1,
+  baguaRotationSpeed = 0.5,
+  taichiSize = 200,
+  baguaRadius = 280,
+  showLabels = true,
+  showParticles = true,
+  showEnergyField = true,
+  labelOffset = 45,
+  particleCount = 40,
+  particleSpeed = 1,
+  viewAngle = 90,
+  perspectiveDistance = 800,
+  verticalPosition = 0.5,
+  verticalMargin = 50,
+  enable3D = false,
+  depth3D = 15,
+  enableGoldenSparkle = true,
+  sparkleDensity = 30,
+  enableMysticalAura = true,
+  auraIntensity = 0.6,
+}) => {
 
   const { width, height } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -344,21 +331,13 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = (props) => {
 
   return (
     <BaseComposition
-      backgroundType={backgroundType}
-      backgroundSource={backgroundSource}
-      backgroundColor={backgroundColor}
-      backgroundVideoLoop={backgroundVideoLoop}
-      backgroundVideoMuted={backgroundVideoMuted}
-      overlayColor={overlayColor}
-      overlayOpacity={overlayOpacity}
-      audioEnabled={audioEnabled}
-      audioSource={audioSource}
-      audioVolume={audioVolume}
-      audioLoop={audioLoop}
-      watermark={watermarkConfig}
-      marquee={marqueeConfig}
-      radialBurst={radialBurstConfig}
-      foreground={foregroundConfig ?? undefined}
+      background={background}
+      overlay={overlay}
+      audio={audio}
+      watermark={watermark}
+      marquee={marquee}
+      radialBurst={radialBurst}
+      foreground={foreground}
     >
       <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", ...perspective3D }}>
         <svg width={width} height={height} style={{ position: "absolute", top: 0, left: 0, ...transform3D, opacity: entranceProgress }}>

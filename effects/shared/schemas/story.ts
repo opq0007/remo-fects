@@ -1,7 +1,19 @@
 import { z } from 'zod';
-import { BackgroundSchema } from './background';
-import { OverlaySchema } from './overlay';
-import { AudioSchema } from './audio';
+import { 
+  BackgroundSchema, 
+  NestedBackgroundSchema,
+  type NestedBackgroundProps 
+} from './background';
+import { 
+  OverlaySchema, 
+  NestedOverlaySchema,
+  type NestedOverlayProps 
+} from './overlay';
+import { 
+  AudioSchema, 
+  NestedAudioSchema,
+  type NestedAudioProps 
+} from './audio';
 import { RadialBurstSchema } from './radial-burst';
 
 // ==================== 字幕 Schema ====================
@@ -666,24 +678,46 @@ export type StoryCountdownConfigProps = z.infer<typeof StoryCountdownConfigSchem
 // ==================== 故事章节 Schema ====================
 
 /**
- * 故事章节 Schema
+ * 故事章节 Schema（嵌套参数结构）
  */
 export const StoryChapterSchema = z.object({
   /** 章节持续时间（帧） */
   durationInFrames: z.number().min(1),
   
-  // 背景配置
-  backgroundType: z.enum(['color', 'image', 'video', 'gradient']).optional(),
-  backgroundColor: z.string().optional(),
-  backgroundGradient: z.string().optional(),
-  backgroundSource: z.string().optional(),
-  backgroundVideoLoop: z.boolean().optional(),
-  backgroundVideoMuted: z.boolean().optional(),
+  // ===== 嵌套参数配置 =====
   
-  // 遮罩配置
-  overlayColor: z.string().optional(),
-  overlayOpacity: z.number().min(0).max(1).optional(),
-  showOverlay: z.boolean().optional(),
+  /**
+   * 背景配置（嵌套结构）
+   * @example
+   * background={{
+   *   type: 'gradient',
+   *   gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+   * }}
+   */
+  background: NestedBackgroundSchema.optional(),
+  
+  /**
+   * 遮罩配置（嵌套结构）
+   * @example
+   * overlay={{
+   *   color: '#000000',
+   *   opacity: 0.3
+   * }}
+   */
+  overlay: NestedOverlaySchema.optional(),
+  
+  /**
+   * 音频配置（嵌套结构）
+   * @example
+   * audio={{
+   *   enabled: true,
+   *   source: 'bgm.mp3',
+   *   volume: 0.5
+   * }}
+   */
+  audio: NestedAudioSchema.optional(),
+  
+  // ===== 章节特有配置 =====
   
   // 角色配置
   character: StoryCharacterConfigSchema.optional(),
@@ -699,8 +733,6 @@ export const StoryChapterSchema = z.object({
   
   // 字幕
   subtitles: z.array(SubtitleItemSchema).optional(),
-  
-  // ===== 新增配置项 =====
   
   // 文字元素（名字、祝福语等）
   textElements: z.array(TextElementSchema).optional(),
@@ -785,7 +817,7 @@ export const BackgroundMusicSchema = z.object({
 export type BackgroundMusicProps = z.infer<typeof BackgroundMusicSchema>;
 
 /**
- * 故事面板 Schema
+ * 故事面板 Schema（嵌套参数结构）
  */
 export const StoryPanelSchema = z.object({
   /** 章节列表 */
@@ -803,47 +835,55 @@ export const StoryPanelSchema = z.object({
   /** 背景音乐配置 */
   backgroundMusic: BackgroundMusicSchema.optional(),
   
-  // 基础配置（继承 BaseComposition）
-  backgroundType: z.enum(['color', 'image', 'video', 'gradient']).optional(),
-  backgroundColor: z.string().optional(),
-  backgroundGradient: z.string().optional(),
-  backgroundSource: z.string().optional(),
-  overlayColor: z.string().optional(),
-  overlayOpacity: z.number().min(0).max(1).optional(),
-  audioEnabled: z.boolean().optional(),
-  audioSource: z.string().optional(),
-  audioVolume: z.number().min(0).max(1).optional(),
-  audioLoop: z.boolean().optional(),
+  // ===== 嵌套参数配置 =====
+  
+  /**
+   * 背景配置（嵌套结构）
+   */
+  background: NestedBackgroundSchema.optional(),
+  
+  /**
+   * 遮罩配置（嵌套结构）
+   */
+  overlay: NestedOverlaySchema.optional(),
+  
+  /**
+   * 音频配置（嵌套结构）
+   */
+  audio: NestedAudioSchema.optional(),
 });
 export type StoryPanelProps = z.infer<typeof StoryPanelSchema>;
 
 // ==================== 辅助函数 ====================
 
 /**
- * 从 props 中提取故事章节参数
+ * 从 props 中提取故事章节参数（嵌套结构）
  */
 export function extractStoryChapterProps(props: Record<string, unknown>): StoryChapterSchemaType {
   return {
     durationInFrames: props.durationInFrames as number,
-    backgroundType: props.backgroundType as StoryChapterSchemaType['backgroundType'],
-    backgroundColor: props.backgroundColor as string,
-    backgroundGradient: props.backgroundGradient as string,
-    backgroundSource: props.backgroundSource as string,
-    backgroundVideoLoop: props.backgroundVideoLoop as boolean,
-    backgroundVideoMuted: props.backgroundVideoMuted as boolean,
-    overlayColor: props.overlayColor as string,
-    overlayOpacity: props.overlayOpacity as number,
-    showOverlay: props.showOverlay as boolean,
+    // 嵌套参数直接传递
+    background: props.background as NestedBackgroundProps,
+    overlay: props.overlay as NestedOverlayProps,
+    audio: props.audio as NestedAudioProps,
+    // 章节特有配置
     character: props.character as StoryChapterSchemaType['character'],
     confetti: props.confetti as StoryChapterSchemaType['confetti'],
     magicEffects: props.magicEffects as StoryChapterSchemaType['magicEffects'],
     radialBurst: props.radialBurst as StoryChapterSchemaType['radialBurst'],
     subtitles: props.subtitles as SubtitleItemProps[],
+    textElements: props.textElements as StoryChapterSchemaType['textElements'],
+    photoDisplay: props.photoDisplay as StoryChapterSchemaType['photoDisplay'],
+    floatingElements: props.floatingElements as StoryChapterSchemaType['floatingElements'],
+    starFieldBackground: props.starFieldBackground as StoryChapterSchemaType['starFieldBackground'],
+    transparentVideos: props.transparentVideos as StoryChapterSchemaType['transparentVideos'],
+    plusEffects: props.plusEffects as StoryChapterSchemaType['plusEffects'],
+    countdown: props.countdown as StoryChapterSchemaType['countdown'],
   };
 }
 
 /**
- * 从 props 中提取故事面板参数
+ * 从 props 中提取故事面板参数（嵌套结构）
  */
 export function extractStoryPanelProps(props: Record<string, unknown>): StoryPanelProps {
   return {
@@ -852,16 +892,10 @@ export function extractStoryPanelProps(props: Record<string, unknown>): StoryPan
     autoCalculateStartFrame: props.autoCalculateStartFrame as boolean,
     chapterGap: props.chapterGap as number,
     backgroundMusic: props.backgroundMusic as BackgroundMusicProps,
-    backgroundType: props.backgroundType as StoryPanelProps['backgroundType'],
-    backgroundColor: props.backgroundColor as string,
-    backgroundGradient: props.backgroundGradient as string,
-    backgroundSource: props.backgroundSource as string,
-    overlayColor: props.overlayColor as string,
-    overlayOpacity: props.overlayOpacity as number,
-    audioEnabled: props.audioEnabled as boolean,
-    audioSource: props.audioSource as string,
-    audioVolume: props.audioVolume as number,
-    audioLoop: props.audioLoop as boolean,
+    // 嵌套参数直接传递
+    background: props.background as NestedBackgroundProps,
+    overlay: props.overlay as NestedOverlayProps,
+    audio: props.audio as NestedAudioProps,
   };
 }
 

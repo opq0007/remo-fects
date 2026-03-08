@@ -8,15 +8,22 @@
 export {
   BackgroundSchema,
   BackgroundTypeSchema,
+  NestedBackgroundSchema,
   type BackgroundProps,
   type BackgroundType,
+  type NestedBackgroundProps,
 } from "./background";
 
 // 背景组件 Props（用于组件调用）
 export type { BackgroundComponentProps } from "./background";
 
 // 遮罩效果
-export { OverlaySchema, type OverlayProps } from "./overlay";
+export { 
+  OverlaySchema, 
+  NestedOverlaySchema,
+  type OverlayProps, 
+  type NestedOverlayProps,
+} from "./overlay";
 
 // 遮罩组件 Props
 export type { OverlayComponentProps } from "./overlay";
@@ -33,10 +40,11 @@ export {
 export {
   WatermarkSchema,
   WatermarkEffectTypeSchema,
+  NestedWatermarkSchema,
   type WatermarkProps,
   type WatermarkEffectType,
   type WatermarkComponentProps,
-  extractWatermarkProps,
+  type NestedWatermarkProps,
 } from "./watermark";
 
 // 走马灯配置
@@ -48,9 +56,10 @@ export {
   MarqueeTextItemSchema,
   MarqueeImageItemSchema,
   MarqueeTextStyleSchema,
+  NestedMarqueeSchema,
   type MarqueeProps,
   type MarqueeComponentProps,
-  extractMarqueeProps,
+  type NestedMarqueeProps,
 } from "./marquee";
 
 // 通用配置
@@ -72,7 +81,6 @@ export {
   type BatchGenerateConfig,
   type BlessingSymbolProps,
   type BlessingSymbolComponentProps,
-  extractBlessingSymbolProps,
 } from "./blessing-symbol";
 
 // 混合输入配置
@@ -91,18 +99,17 @@ export {
   type MixedImageStyle,
   type MixedInputProps,
   type FullMixedInputProps,
-  extractMixedInputProps,
-  extractFullMixedInputProps,
 } from "./mixed-input";
 
 // 中心发散粒子效果配置
 export {
   RadialBurstEffectTypeSchema,
   RadialBurstSchema,
+  NestedRadialBurstSchema,
   type RadialBurstEffectType,
   type RadialBurstProps,
   type RadialBurstComponentProps,
-  extractRadialBurstProps,
+  type NestedRadialBurstProps,
 } from "./radial-burst";
 
 // 前景配置
@@ -110,11 +117,12 @@ export {
   ForegroundAnimationTypeSchema,
   ForegroundTypeSchema,
   ForegroundSchema,
+  NestedForegroundSchema,
   type ForegroundAnimationType,
   type ForegroundType,
   type ForegroundProps,
   type ForegroundComponentProps,
-  extractForegroundProps,
+  type NestedForegroundProps,
 } from "./foreground";
 
 // ==================== 故事系统 Schema ====================
@@ -190,8 +198,6 @@ export {
   BackgroundMusicSchema,
   StoryPanelSchema,
   CustomChapterInputSchema,
-  extractStoryChapterProps,
-  extractStoryPanelProps,
   type ChapterTransitionTypeType,
   type ChapterTransitionProps,
   type StoryPanelChapterProps,
@@ -238,24 +244,19 @@ export {
   type StoryCountdownConfigProps,
 } from "./story";
 
-// 重新导出完整背景 Schema（合并背景和遮罩）
+// ==================== 嵌套结构 Schema ====================
+
 import { z } from "zod";
-import { BackgroundSchema } from "./background";
-import { OverlaySchema } from "./overlay";
-import { AudioSchema } from "./audio";
-import { WatermarkSchema } from "./watermark";
-import { MarqueeSchema } from "./marquee";
-import { RadialBurstSchema } from "./radial-burst";
-import { ForegroundSchema } from "./foreground";
+import { NestedBackgroundSchema } from "./background";
+import { NestedOverlaySchema } from "./overlay";
+import { NestedAudioSchema } from "./audio";
+import { NestedWatermarkSchema } from "./watermark";
+import { NestedMarqueeSchema } from "./marquee";
+import { NestedRadialBurstSchema } from "./radial-burst";
+import { NestedForegroundSchema } from "./foreground";
 
 /**
- * 完整背景 Schema（背景 + 遮罩 + 发散粒子）
- * 适用于大多数需要背景和遮罩的场景
- */
-export const FullBackgroundSchema = BackgroundSchema.merge(OverlaySchema).merge(RadialBurstSchema);
-
-/**
- * 基础组合 Schema
+ * 基础组合 Schema（嵌套结构）
  * 包含背景 + 遮罩的基础配置
  * 
  * 使用方式：
@@ -265,27 +266,15 @@ export const FullBackgroundSchema = BackgroundSchema.merge(OverlaySchema).merge(
  * });
  * ```
  */
-export const BaseCompositionSchema = FullBackgroundSchema;
+export const BaseCompositionSchema = z.object({
+  background: NestedBackgroundSchema.optional(),
+  overlay: NestedOverlaySchema.optional(),
+  radialBurst: NestedRadialBurstSchema.optional(),
+});
 
 /**
- * 完整组合 Schema
- * 包含背景 + 遮罩 + 音频的完整配置
- * 
- * 使用方式：
- * ```typescript
- * export const MySchema = FullCompositionSchema.extend({
- *   // 项目特有参数
- * });
- * ```
- */
-export const FullCompositionSchema = FullBackgroundSchema.merge(AudioSchema);
-
-/**
- * 全功能组合 Schema
+ * 完整组合 Schema（嵌套结构）
  * 包含背景 + 遮罩 + 音频 + 水印 + 走马灯 + 前景的完整配置
- * 
- * 注意：使用扁平化的 AudioSchema（audioEnabled, audioSource 等），
- * 与 BaseComposition 组件接口保持一致。
  * 
  * 使用方式：
  * ```typescript
@@ -294,8 +283,25 @@ export const FullCompositionSchema = FullBackgroundSchema.merge(AudioSchema);
  * });
  * ```
  */
-export const CompleteCompositionSchema = FullBackgroundSchema
-  .merge(AudioSchema)
-  .merge(WatermarkSchema)
-  .merge(MarqueeSchema)
-  .merge(ForegroundSchema);
+export const CompleteCompositionSchema = z.object({
+  background: NestedBackgroundSchema.optional(),
+  overlay: NestedOverlaySchema.optional(),
+  audio: NestedAudioSchema.optional(),
+  watermark: NestedWatermarkSchema.optional(),
+  marquee: NestedMarqueeSchema.optional(),
+  radialBurst: NestedRadialBurstSchema.optional(),
+  foreground: NestedForegroundSchema.optional(),
+});
+
+/**
+ * 完整背景 Schema（背景 + 遮罩 + 发散粒子）
+ * 适用于大多数需要背景和遮罩的场景
+ * @deprecated 请使用 BaseCompositionSchema
+ */
+export const FullBackgroundSchema = BaseCompositionSchema;
+
+/**
+ * 全功能组合 Schema
+ * @deprecated 请使用 CompleteCompositionSchema
+ */
+export const FullCompositionSchema = CompleteCompositionSchema;

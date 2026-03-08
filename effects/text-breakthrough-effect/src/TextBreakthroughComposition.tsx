@@ -15,7 +15,6 @@ import {
   BlessingSymbolType,
   getEffectiveBlessingTypes,
   mergeBlessingStyle,
-  extractForegroundProps,
 } from "../../shared/index";
 
 // ==================== 主组件 Schema ====================
@@ -184,6 +183,15 @@ const BorderBreakEffect: React.FC<{
 // ==================== 主组件 ====================
 
 export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionProps> = ({
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
+  watermark,
+  marquee,
+  radialBurst,
+  foreground,
+  
   // 混合输入参数
   contentType = "text",
   words = [],
@@ -220,79 +228,6 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   enableFallDown = false,
   fallDownDuration = 40,
   fallDownEndY = 0.2,
-  
-  // 基础参数
-  backgroundType = "color",
-  backgroundSource,
-  backgroundColor = "#0a0a20",
-  backgroundVideoLoop = true,
-  backgroundVideoMuted = true,
-  overlayColor = "#000000",
-  overlayOpacity = 0.1,
-  audioEnabled = false,
-  audioSource = "coin-sound.mp3",
-  audioVolume = 0.5,
-  watermarkEnabled = false,
-  watermarkText,
-  watermarkFontSize,
-  watermarkColor,
-  watermarkOpacity,
-  watermarkSpeed,
-  watermarkIntensity,
-  watermarkVelocityX,
-  watermarkVelocityY,
-  marqueeEnabled = false,
-  marqueeForegroundTexts,
-  marqueeForegroundFontSize,
-  marqueeForegroundOpacity,
-  marqueeForegroundColor,
-  marqueeForegroundEffect,
-  marqueeBackgroundTexts,
-  marqueeBackgroundFontSize,
-  marqueeBackgroundOpacity,
-  marqueeBackgroundColor,
-  marqueeBackgroundEffect,
-  marqueeOrientation,
-  marqueeTextOrientation,
-  marqueeDirection,
-  marqueeSpeed,
-  marqueeSpacing,
-  marqueeForegroundOffsetX,
-  marqueeForegroundOffsetY,
-  marqueeBackgroundOffsetX,
-  marqueeBackgroundOffsetY,
-  // 发散粒子效果参数
-  radialBurstEnabled,
-  radialBurstEffectType,
-  radialBurstColor,
-  radialBurstSecondaryColor,
-  radialBurstIntensity,
-  radialBurstVerticalOffset,
-  radialBurstCount,
-  radialBurstSpeed,
-  radialBurstOpacity,
-  radialBurstSeed,
-  radialBurstRotate,
-  radialBurstRotationSpeed,
-  // 前景参数
-  foregroundEnabled,
-  foregroundType,
-  foregroundSource,
-  foregroundWidth,
-  foregroundHeight,
-  foregroundVerticalOffset,
-  foregroundHorizontalOffset,
-  foregroundScale,
-  foregroundAnimationType,
-  foregroundAnimationStartFrame,
-  foregroundAnimationDuration,
-  foregroundAnimationIntensity,
-  foregroundOpacity,
-  foregroundMixBlendMode,
-  foregroundObjectFit,
-  foregroundZIndex,
-  foregroundContinuousAnimation,
-  foregroundContinuousSpeed,
 }) => {
   const { width, height, durationInFrames } = useVideoConfig();
   const frame = useCurrentFrame();
@@ -443,112 +378,16 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
     </>
   );
 
-  // 构建走马灯配置
-  const marqueeConfig = marqueeEnabled
-    ? {
-        enabled: true,
-        foreground: {
-          texts: (marqueeForegroundTexts ?? ["新年快乐", "万事如意", "恭喜发财"]).map(text => ({ text })),
-          fontSize: marqueeForegroundFontSize ?? 32,
-          opacity: marqueeForegroundOpacity ?? 0.9,
-          spacing: marqueeSpacing ?? 80,
-          textStyle: {
-            color: marqueeForegroundColor ?? "#ffd700",
-            effect: marqueeForegroundEffect ?? "none",
-          },
-        },
-        background: {
-          texts: (marqueeBackgroundTexts ?? ["新春大吉", "财源广进", "龙年行大运"]).map(text => ({ text })),
-          fontSize: marqueeBackgroundFontSize ?? 24,
-          opacity: marqueeBackgroundOpacity ?? 0.5,
-          spacing: marqueeSpacing ?? 80,
-          textStyle: {
-            color: marqueeBackgroundColor ?? "#ffffff",
-            effect: marqueeBackgroundEffect ?? "none",
-          },
-        },
-        orientation: marqueeOrientation ?? "horizontal",
-        textOrientation: marqueeTextOrientation ?? "horizontal",
-        direction: marqueeDirection ?? "left-to-right",
-        speed: marqueeSpeed ?? 50,
-        foregroundOffsetX: marqueeForegroundOffsetX ?? 0,
-        foregroundOffsetY: marqueeForegroundOffsetY ?? 0,
-        backgroundOffsetX: marqueeBackgroundOffsetX ?? 0,
-        backgroundOffsetY: marqueeBackgroundOffsetY ?? 0,
-      }
-    : undefined;
-
-  // 构建发散粒子效果配置
-  const radialBurstConfig = radialBurstEnabled
-    ? {
-        enabled: true,
-        effectType: radialBurstEffectType,
-        color: radialBurstColor,
-        secondaryColor: radialBurstSecondaryColor,
-        intensity: radialBurstIntensity,
-        verticalOffset: radialBurstVerticalOffset,
-        count: radialBurstCount,
-        speed: radialBurstSpeed,
-        opacity: radialBurstOpacity,
-        seed: radialBurstSeed,
-        rotate: radialBurstRotate,
-        rotationSpeed: radialBurstRotationSpeed,
-      }
-    : undefined;
-
-  // 提取前景参数
-  const foregroundConfig = extractForegroundProps({
-    foregroundEnabled,
-    foregroundType,
-    foregroundSource,
-    foregroundWidth,
-    foregroundHeight,
-    foregroundVerticalOffset,
-    foregroundHorizontalOffset,
-    foregroundScale,
-    foregroundAnimationType,
-    foregroundAnimationStartFrame,
-    foregroundAnimationDuration,
-    foregroundAnimationIntensity,
-    foregroundOpacity,
-    foregroundMixBlendMode,
-    foregroundObjectFit,
-    foregroundZIndex,
-    foregroundContinuousAnimation,
-    foregroundContinuousSpeed,
-  } as any);
-
   return (
     <BaseComposition
-      backgroundType={backgroundType}
-      backgroundSource={backgroundSource}
-      backgroundColor={backgroundColor}
-      backgroundVideoLoop={backgroundVideoLoop}
-      backgroundVideoMuted={backgroundVideoMuted}
-      overlayColor={overlayColor}
-      overlayOpacity={overlayOpacity}
-      audioEnabled={audioEnabled}
-      audioSource={audioSource}
-      audioVolume={audioVolume}
+      background={background}
+      overlay={overlay}
+      audio={audio}
+      watermark={watermark}
+      marquee={marquee}
+      radialBurst={radialBurst}
+      foreground={foreground}
       extraLayers={extraLayers}
-      watermark={
-        watermarkEnabled
-          ? {
-              enabled: true,
-              text: watermarkText ?? "© Remo-Fects",
-              fontSize: watermarkFontSize ?? 24,
-              color: watermarkColor ?? "#ffffff",
-              opacity: watermarkOpacity ?? 0.35,
-              speed: watermarkSpeed ?? 1,
-              intensity: watermarkIntensity ?? 0.8,
-              velocityX: watermarkVelocityX ?? 180,
-              velocityY: watermarkVelocityY ?? 120,
-            }
-          : undefined
-      }
-      marquee={marqueeConfig}
-      radialBurst={radialBurstConfig}
-      foreground={foregroundConfig ?? undefined}
     >
       {contentTimings.map((timing, index) => {
         const pos = contentPositions[timing.itemIndex] ?? contentPositions[0] ?? { x: 0, y: 0 };

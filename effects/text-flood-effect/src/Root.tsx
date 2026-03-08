@@ -74,27 +74,31 @@ export const RemotionRoot: React.FC = () => {
             enableWaveBackground: true,
             waveBackgroundColor: "#0a3a5a",
             waveBackgroundOpacity: 0.4,
-            backgroundType: "color",
-            backgroundColor: "#050a15",
-            overlayColor: "#000000",
-            overlayOpacity: 0.1,
-
-            // 水印配置
-            watermarkEnabled: true,
-            watermarkText: "© Remo-Fects",
-            watermarkFontSize: 24,
-            watermarkColor: "#00d4ff",
-            watermarkOpacity: 0.4,
-            watermarkSpeed: 1,
-            watermarkIntensity: 0.8,
-            watermarkVelocityX: 180,
-            watermarkVelocityY: 120,
-
-            // 音频配置（扁平格式）
-            audioEnabled: true,
-            audioSource: "coin-sound.mp3",
-            audioVolume: 0.6,
-            audioLoop: true,
+            
+            // 嵌套参数
+            background: {
+              type: "color",
+              color: "#050a15",
+            },
+            overlay: {
+              color: "#000000",
+              opacity: 0.1,
+            },
+            watermark: {
+              enabled: true,
+              text: "© Remo-Fects",
+              fontSize: 24,
+              color: "#00d4ff",
+              opacity: 0.4,
+              speed: 1,
+              intensity: 0.8,
+            },
+            audio: {
+              enabled: true,
+              source: "coin-sound.mp3",
+              volume: 0.6,
+              loop: true,
+            },
           }}
         />
       </Folder>

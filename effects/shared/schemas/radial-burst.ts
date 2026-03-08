@@ -13,7 +13,7 @@ export const RadialBurstEffectTypeSchema = z.enum([
 export type RadialBurstEffectType = z.infer<typeof RadialBurstEffectTypeSchema>;
 
 /**
- * 中心发散粒子效果配置 Schema
+ * 中心发散粒子效果配置 Schema（扁平结构）
  */
 export const RadialBurstSchema = z.object({
   /** 是否启用效果 */
@@ -56,6 +56,38 @@ export const RadialBurstSchema = z.object({
 export type RadialBurstProps = z.infer<typeof RadialBurstSchema>;
 
 /**
+ * 嵌套发散粒子效果配置 Schema（用于组件调用）
+ */
+export const NestedRadialBurstSchema = z.object({
+  /** 是否启用 */
+  enabled: z.boolean().optional(),
+  /** 效果类型 */
+  effectType: RadialBurstEffectTypeSchema.optional(),
+  /** 主颜色 */
+  color: zColor().optional(),
+  /** 次颜色 */
+  secondaryColor: zColor().optional(),
+  /** 效果强度 */
+  intensity: z.number().min(0).max(2).optional(),
+  /** 垂直偏移 */
+  verticalOffset: z.number().min(0).max(1).optional(),
+  /** 粒子/光线数量 */
+  count: z.number().min(1).max(100).optional(),
+  /** 动画速度系数 */
+  speed: z.number().min(0.1).max(5).optional(),
+  /** 整体透明度 */
+  opacity: z.number().min(0).max(1).optional(),
+  /** 随机种子 */
+  seed: z.number().optional(),
+  /** 是否旋转 */
+  rotate: z.boolean().optional(),
+  /** 旋转速度 */
+  rotationSpeed: z.number().min(0).max(10).optional(),
+});
+
+export type NestedRadialBurstProps = z.infer<typeof NestedRadialBurstSchema>;
+
+/**
  * RadialBurst 组件 Props（用于组件调用）
  */
 export interface RadialBurstComponentProps {
@@ -71,24 +103,4 @@ export interface RadialBurstComponentProps {
   seed?: number;
   rotate?: boolean;
   rotationSpeed?: number;
-}
-
-/**
- * 从 Schema Props 提取组件 Props
- */
-export function extractRadialBurstProps(props: RadialBurstProps): RadialBurstComponentProps {
-  return {
-    enabled: props.radialBurstEnabled,
-    effectType: props.radialBurstEffectType,
-    color: props.radialBurstColor,
-    secondaryColor: props.radialBurstSecondaryColor,
-    intensity: props.radialBurstIntensity,
-    verticalOffset: props.radialBurstVerticalOffset,
-    count: props.radialBurstCount,
-    speed: props.radialBurstSpeed,
-    opacity: props.radialBurstOpacity,
-    seed: props.radialBurstSeed,
-    rotate: props.radialBurstRotate,
-    rotationSpeed: props.radialBurstRotationSpeed,
-  };
 }

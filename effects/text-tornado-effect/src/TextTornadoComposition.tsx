@@ -10,10 +10,6 @@ import {
   CompleteCompositionSchema,
   MixedInputSchema,
   BlessingStyleSchema,
-  extractRadialBurstProps,
-  extractForegroundProps,
-  extractWatermarkProps,
-  extractMarqueeProps,
 } from "../../shared/index";
 import { TextTornado } from "./TextTornado";
 
@@ -66,35 +62,42 @@ export type TextTornadoProps = z.infer<typeof TextTornadoSchema>;
 
 // ==================== 主组件 ====================
 
-export const TextTornadoComposition: React.FC<TextTornadoProps> = (props) => {
-  const {
-    // 混合输入配置
-    contentType = "text",
-    words = [],
-    images = [],
-    imageWeight = 0.5,
-    blessingTypes = [],
-    blessingStyle,
-    // 龙卷风配置
-    particleCount = 60,
-    baseRadius = 300,
-    topRadius = 50,
-    rotationSpeed = 2,
-    liftSpeed = 0.3,
-    funnelHeight = 0.85,
-    // 尺寸配置
-    fontSizeRange = [40, 80],
-    imageSizeRange = [50, 100],
-    blessingSizeRange = [40, 80],
-    // 动画配置
-    zoomIntensity = 0.5,
-    entranceDuration = 30,
-    swirlIntensity = 1,
-    // 样式配置
-    textStyle,
-    seed,
-  } = props;
-
+export const TextTornadoComposition: React.FC<TextTornadoProps> = ({
+  // 嵌套参数
+  background,
+  overlay,
+  audio,
+  watermark,
+  marquee,
+  radialBurst,
+  foreground,
+  
+  // 混合输入配置
+  contentType = "text",
+  words = [],
+  images = [],
+  imageWeight = 0.5,
+  blessingTypes = [],
+  blessingStyle,
+  // 龙卷风配置
+  particleCount = 60,
+  baseRadius = 300,
+  topRadius = 50,
+  rotationSpeed = 2,
+  liftSpeed = 0.3,
+  funnelHeight = 0.85,
+  // 尺寸配置
+  fontSizeRange = [40, 80],
+  imageSizeRange = [50, 100],
+  blessingSizeRange = [40, 80],
+  // 动画配置
+  zoomIntensity = 0.5,
+  entranceDuration = 30,
+  swirlIntensity = 1,
+  // 样式配置
+  textStyle,
+  seed,
+}) => {
   // 默认文字样式
   const defaultTextStyle = {
     color: "#FFD700",
@@ -114,19 +117,15 @@ export const TextTornadoComposition: React.FC<TextTornadoProps> = (props) => {
     ...blessingStyle,
   };
 
-  // 提取公共组件参数
-  const radialBurstConfig = extractRadialBurstProps(props);
-  const foregroundConfig = extractForegroundProps(props);
-  const watermarkConfig = extractWatermarkProps(props);
-  const marqueeConfig = extractMarqueeProps(props);
-
   return (
     <BaseComposition
-      {...props}
-      radialBurst={radialBurstConfig}
-      foreground={foregroundConfig ?? undefined}
-      watermark={watermarkConfig}
-      marquee={marqueeConfig}
+      background={background}
+      overlay={overlay}
+      audio={audio}
+      watermark={watermark}
+      marquee={marquee}
+      radialBurst={radialBurst}
+      foreground={foreground}
     >
       <TextTornado
         contentType={contentType}
