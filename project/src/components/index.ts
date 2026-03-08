@@ -39,7 +39,8 @@ export {
   PhotoFromMagicCircle, 
   FloatingHearts, 
   AgeBalloon,
-  PhotoInteractionScene 
+  PhotoInteractionScene,
+  PhotoFrameType
 } from './PhotoInteraction';
 
 // 生日歌
@@ -47,18 +48,3 @@ export { BirthdayCake, BouncingBirthdayText, MakeWish, BirthdaySongScene } from 
 
 // 梦想泡泡
 export { DreamBubblesScene, DreamIcon } from './DreamBubbles';
-
-// 模块化分镜
-export { 
-  ModuleA_MagicOpening,
-  ModuleB_CharacterEntrance,
-  ModuleC_PhotoInteraction1,
-  ModuleD_PhotoInteraction2,
-  ModuleE_PhotoInteraction3,
-  ModuleF_GrowthCelebration,
-  ModuleG_BirthdaySong,
-  ModuleH_FutureBlessing,
-  ModuleI_DreamSeeds,
-  ModuleJ_WarmClosing,
-  createModule
-} from './Modules';
