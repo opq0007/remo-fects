@@ -4,12 +4,9 @@ import { KidsBirthdayComposition } from './compositions';
 import { KidsBirthdaySchema } from './schemas';
 
 /**
- * 儿童生日祝福视频生成器 v2.0
+ * 儿童生日祝福视频生成器 v3.0
  * 
- * 支持模块化分镜系统：
- * - 60秒版本：A+B+C+D+E+F+G（适合短视频平台）
- * - 90秒版本：上述+H（适合分享给亲友）
- * - 120秒版本：全模块（完整祝福体验）
+ * 固定 124 秒版本（4秒倒计时 + 120秒正片）
  * 
  * 支持角色系统：
  * - 生肖守护神系列（12生肖）
@@ -20,13 +17,13 @@ import { KidsBirthdaySchema } from './schemas';
 export const RemotionRoot: React.FC = () => {
   return (
     <Folder name="儿童生日祝福">
-      {/* ========== 时长版本 ========== */}
-      <Folder name="时长版本">
-        {/* 120秒完整版 */}
+      {/* ========== 竖屏版本 ========== */}
+      <Folder name="竖屏">
+        {/* 通用风格 */}
         <Composition
-          id="KidsBirthday120s"
+          id="KidsBirthdayPortrait"
           component={KidsBirthdayComposition}
-          durationInFrames={2976} // 124秒 @ 24fps (120秒 + 4秒倒计时)
+          durationInFrames={2976} // 124秒 @ 24fps
           fps={24}
           width={720}
           height={1280}
@@ -35,8 +32,7 @@ export const RemotionRoot: React.FC = () => {
             name: '小明',
             age: 6,
             message: '愿你每天开心成长，梦想成真！',
-            videoVersion: '120s',
-            duration: 124, // 更新为124秒
+            duration: 124,
             fps: 24,
             width: 720,
             height: 1280,
@@ -59,51 +55,11 @@ export const RemotionRoot: React.FC = () => {
           }}
         />
         
-        {/* 90秒版本 */}
-        <Composition
-          id="KidsBirthday90s"
-          component={KidsBirthdayComposition}
-          durationInFrames={2256} // 94秒 @ 24fps (90秒 + 4秒倒计时)
-          fps={24}
-          width={720}
-          height={1280}
-          schema={KidsBirthdaySchema}
-          defaultProps={{
-            name: '小明',
-            age: 6,
-            message: '愿你每天开心成长！',
-            videoVersion: '90s',
-            duration: 94, // 更新为94秒
-            fps: 24,
-            width: 720,
-            height: 1280,
-            subStyle: 'general',
-            characterSeries: 'zodiac',
-            characterType: 'tiger',
-            photos: [{"src":"熊猫.png"}],
-            dreams: ['astronaut', 'artist', 'racer'],
-            orientation: 'portrait',
-            nameFontSize: 120,
-            showAge: true,
-            blessingText: '生日快乐',
-            blessingFontSize: 60,
-            confettiLevel: 'high',
-            animationSpeed: 'normal',
-            musicEnabled: true,
-            musicTrack: 'JoyfulChildren',
-            birthdaySongSource: 'birthday_audio.mp3',
-            birthdaySongVolume: 0.6
-          }}
-        />
-      </Folder>
-      
-      {/* ========== 风格模板 ========== */}
-      <Folder name="风格模板">
         {/* 女孩独角兽风格 */}
         <Composition
           id="KidsBirthdayGirl"
           component={KidsBirthdayComposition}
-          durationInFrames={2976} // 124秒 @ 24fps (120秒 + 4秒倒计时)
+          durationInFrames={2976}
           fps={24}
           width={720}
           height={1280}
@@ -112,8 +68,7 @@ export const RemotionRoot: React.FC = () => {
             name: '小美',
             age: 5,
             message: '小公主生日快乐！',
-            videoVersion: '120s',
-            duration: 124, // 更新为124秒
+            duration: 124,
             fps: 24,
             width: 720,
             height: 1280,
@@ -140,7 +95,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="KidsBirthdayBoy"
           component={KidsBirthdayComposition}
-          durationInFrames={2976} // 124秒 @ 24fps (120秒 + 4秒倒计时)
+          durationInFrames={2976}
           fps={24}
           width={720}
           height={1280}
@@ -149,8 +104,7 @@ export const RemotionRoot: React.FC = () => {
             name: '小强',
             age: 7,
             message: '小小男子汉生日快乐！',
-            videoVersion: '120s',
-            duration: 124, // 更新为124秒
+            duration: 124,
             fps: 24,
             width: 720,
             height: 1280,
@@ -172,53 +126,14 @@ export const RemotionRoot: React.FC = () => {
             birthdaySongVolume: 0.6
           }}
         />
-        
-        {/* 自定义图片角色风格 */}
-        <Composition
-          id="KidsBirthdayCustomImage"
-          component={KidsBirthdayComposition}
-          durationInFrames={2976} // 124秒 @ 24fps (120秒 + 4秒倒计时)
-          fps={24}
-          width={1920}
-          height={1080}
-          schema={KidsBirthdaySchema}
-          defaultProps={{
-            name: '宝贝',
-            age: 5,
-            message: '生日快乐！',
-            videoVersion: '120s',
-            duration: 124, // 更新为124秒
-            fps: 24,
-            width: 720,
-            height: 1280,
-            subStyle: 'general',
-            characterSeries: 'image',
-            characterType: 'tiger', // image 模式下使用默认值
-            characterImageSrc: '熊猫.png', // 本地图片路径（相对于 public 目录）
-            photos: [{"src":"熊猫.png"}],
-            dreams: ['artist', 'musician', 'teacher'],
-            orientation: 'portrait',
-            nameFontSize: 120,
-            showAge: true,
-            blessingText: '生日快乐',
-            blessingFontSize: 60,
-            confettiLevel: 'high',
-            animationSpeed: 'normal',
-            musicEnabled: true,
-            musicTrack: 'JoyfulChildren',
-            birthdaySongSource: 'birthday_audio.mp3',
-            birthdaySongVolume: 0.6
-          }}
-        />
       </Folder>
       
-      {/* ========== 屏幕方向 ========== */}
-      <Folder name="屏幕方向">
-        {/* 横屏版本 */}
+      {/* ========== 横屏版本 ========== */}
+      <Folder name="横屏">
         <Composition
           id="KidsBirthdayLandscape"
           component={KidsBirthdayComposition}
-          durationInFrames={2976} // 124秒 @ 24fps (120秒 + 4秒倒计时)
+          durationInFrames={2976}
           fps={24}
           width={1280}
           height={720}
@@ -227,8 +142,7 @@ export const RemotionRoot: React.FC = () => {
             name: '小明',
             age: 6,
             message: '生日快乐！',
-            videoVersion: '120s',
-            duration: 124, // 更新为124秒
+            duration: 124,
             fps: 24,
             width: 1280,
             height: 720,

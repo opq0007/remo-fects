@@ -3,11 +3,6 @@ import { CompleteCompositionSchema, CustomChapterInputSchema } from '../../../ef
 
 // ==================== 枚举类型 Schema ====================
 
-// 视频版本
-export const VideoVersionSchema = z.enum(['90s', '120s']).meta({
-  description: '视频时长版本：90秒/120秒'
-});
-
 // 角色系列
 export const CharacterSeriesSchema = z.enum(['zodiac', 'pet', 'hero', 'image']).meta({
   description: '角色系列：生肖守护神/萌宠精灵/勇气超人/自定义图片'
@@ -86,12 +81,9 @@ export const KidsBirthdaySchema = CompleteCompositionSchema.extend({
   age: z.number().min(1).max(18).optional().meta({ description: '年龄' }),
   message: z.string().max(100).default('愿你每天开心成长').meta({ description: '祝福语' }),
   
-  // ========== 视频版本 ==========
-  videoVersion: VideoVersionSchema.default('120s').meta({ 
-    description: '视频时长版本' 
-  }),
-  duration: z.number().min(5).max(180).default(120).meta({ 
-    description: '视频时长(秒)，会根据videoVersion自动调整' 
+  // ========== 视频配置（固定 124 秒：4秒倒计时 + 120秒正片） ==========
+  duration: z.number().default(124).meta({ 
+    description: '视频时长(秒)，固定为 124 秒（4秒倒计时 + 120秒正片）' 
   }),
   fps: z.number().default(24),
   width: z.number().default(720),
@@ -190,30 +182,17 @@ export type BirthdayBlessingProps = z.infer<typeof BirthdayBlessingSchema>;
 // ==================== 辅助函数 ====================
 
 /**
- * 根据视频版本获取模块列表
+ * 获取 120s 版本的模块列表（固定）
  */
-export const getModulesByVersion = (version: '90s' | '120s'): string[] => {
-  switch (version) {
-    case '90s':
-      return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-    case '120s':
-      return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-    default:
-      return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-  }
+export const getModules = (): string[] => {
+  return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 };
 
 /**
- * 根据视频版本获取总时长（秒）
- * 注意：倒计时章节占用 4 秒（3秒倒计时 + 1秒最终文字）
+ * 获取视频总时长（固定 124 秒：4秒倒计时 + 120秒正片）
  */
-export const getDurationByVersion = (version: '90s' | '120s'): number => {
-  const countdownDuration = 4; // 倒计时章节时长
-  switch (version) {
-    case '90s': return 90 + countdownDuration;
-    case '120s': return 120 + countdownDuration;
-    default: return 120 + countdownDuration;
-  }
+export const getDuration = (): number => {
+  return 124;
 };
 
 /**

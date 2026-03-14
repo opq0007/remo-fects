@@ -60,18 +60,6 @@ export interface GradientBackground {
   type: 'dreamy' | 'energetic' | 'soft';
 }
 
-// ==================== 视频版本 ====================
-
-// 视频时长版本
-export type VideoVersion = '60s' | '90s' | '120s';
-
-// 视频版本配置
-export interface VideoVersionConfig {
-  duration: number;      // 总时长（秒）
-  modules: string[];     // 包含的模块
-  photoCount: number;    // 照片数量
-}
-
 // ==================== 分镜模块 ====================
 
 // 模块类型
@@ -175,9 +163,6 @@ export interface KidsBirthdayParams extends BaseBlessingParams {
   audience: 'kids';
   subStyle: KidsSubStyle;
   
-  // 新增：视频版本
-  videoVersion: VideoVersion;
-  
   // 新增：角色系统
   characterSeries: CharacterSeries;
   characterType: ZodiacType | PetType | HeroType;
@@ -258,25 +243,6 @@ export const KIDS_COLOR_THEMES: Record<KidsSubStyle, ColorTheme> = {
     background: '#FFF9E6',
     gradient: `linear-gradient(180deg, ${PRIMARY_COLORS.skyBlue} 0%, ${PRIMARY_COLORS.violet} 100%)`,
     gradientSecondary: `linear-gradient(135deg, ${PRIMARY_COLORS.strawberryPink} 0%, ${PRIMARY_COLORS.creamYellow} 100%)`
-  }
-};
-
-// 视频版本配置
-export const VIDEO_VERSIONS: Record<VideoVersion, VideoVersionConfig> = {
-  '60s': {
-    duration: 60,
-    modules: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
-    photoCount: 3
-  },
-  '90s': {
-    duration: 90,
-    modules: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-    photoCount: 3
-  },
-  '120s': {
-    duration: 120,
-    modules: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
-    photoCount: 3
   }
 };
 
@@ -471,12 +437,11 @@ export const LAYOUT_CONFIGS: Record<ScreenOrientation, LayoutConfig> = {
 
 // 默认参数（更新）
 export const DEFAULT_KIDS_BIRTHDAY_PARAMS: Partial<KidsBirthdayParams> = {
-  duration: 120,         // 默认120秒完整版
+  duration: 124,         // 固定 124 秒（4秒倒计时 + 120秒正片）
   fps: 24,
   width: 720,
   height: 1280,
   subStyle: 'general',
-  videoVersion: '120s',
   characterSeries: 'zodiac',
   characterType: 'tiger',
   photos: [],

@@ -31,8 +31,8 @@ import {
 } from '../types';
 import { 
   KidsBirthdaySchema, 
-  getModulesByVersion, 
-  getDurationByVersion 
+  getModules, 
+  getDuration 
 } from '../schemas';
 
 export type KidsBirthdayProps = z.infer<typeof KidsBirthdaySchema>;
@@ -114,8 +114,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
   const {
     name,
     age,
-    videoVersion = '120s',
-    duration,
+    duration = getDuration(),
     subStyle = 'general',
     characterSeries = 'zodiac',
     characterType = 'tiger',
@@ -134,9 +133,6 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
   } = props;
   
   const theme = getColorTheme(subStyle);
-  
-  // 计算时长
-  const effectiveDuration = duration ?? getDurationByVersion(videoVersion);
   
   // 构建面板级嵌套参数配置
   const panelBackground: NestedBackgroundProps = {
@@ -161,7 +157,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
   
   // 构建章节配置
   const chapters = useMemo((): StoryChapterConfig[] => {
-    const modules = getModulesByVersion(videoVersion);
+    const modules = getModules();
     const chapterList: StoryChapterConfig[] = [];
     
     // 模块 0：倒计时开场
@@ -669,7 +665,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
             birthdaySongVolume={birthdaySongVolume}
             photos={photos}
             subStyle={subStyle}
-            durationInFrames={30 * fps}
+            durationInFrames={35 * fps}
             orientation={orientation}
           />
         ),
@@ -785,7 +781,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     
     return mergeChapterConfigs(chapterList, customChapterList as StoryChapterConfig[] | undefined);
   }, [
-    videoVersion, fps, photos, dreams, name, age, subStyle, orientation, 
+    fps, photos, dreams, name, age, subStyle, orientation, 
     confettiLevel, theme, characterSeries, typedCharacterType,
     birthdaySongSource, birthdaySongVolume, characterImageSrc, customChapterList
   ]);
