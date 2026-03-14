@@ -341,6 +341,8 @@ interface PhotoFromMagicCircleProps {
   frameType?: PhotoFrameType;
   /** 外框主色调 */
   frameColor?: string;
+  /** 目标垂直位置（0-1，相对于高度），默认 0.75 */
+  targetY?: number;
 }
 
 export const PhotoFromMagicCircle: React.FC<PhotoFromMagicCircleProps> = ({
@@ -348,7 +350,8 @@ export const PhotoFromMagicCircle: React.FC<PhotoFromMagicCircleProps> = ({
   visible = true,
   orientation = 'portrait',
   frameType = 'none',
-  frameColor = '#FFD76A'
+  frameColor = '#FFD76A',
+  targetY = 0.75
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -365,10 +368,10 @@ export const PhotoFromMagicCircle: React.FC<PhotoFromMagicCircleProps> = ({
   
   // 目标位置
   const targetX = orientation === 'portrait' ? width * 0.5 : width * 0.65;
-  const targetY = height * 0.4;
+  const targetYPosition = height * targetY;
   
   const photoX = interpolate(photoProgress, [0, 1], [width * 0.5, targetX]);
-  const photoY = interpolate(photoProgress, [0, 1], [height * 0.5, targetY]);
+  const photoY = interpolate(photoProgress, [0, 1], [height * 0.5, targetYPosition]);
   const photoScale = interpolate(photoProgress, [0, 0.5, 1], [0.3, 0.5, 1]);
   const photoOpacity = interpolate(photoProgress, [0, 0.3, 1], [0, 0.5, 1]);
   

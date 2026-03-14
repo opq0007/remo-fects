@@ -281,21 +281,25 @@ function colorWithOpacity(color: string, opacity: number): string {
 
 interface PhotoWithGlowProps {
   photoSrc?: string;
-  position: 'left' | 'right';
   size?: number;
   delay?: number;
+  /** 照片垂直位置（0-1） */
+  verticalPosition?: number;
+  /** 屏幕方向 */
+  orientation?: 'portrait' | 'landscape';
 }
 
 const PhotoWithGlow: React.FC<PhotoWithGlowProps> = ({
   photoSrc,
-  position,
-  size = 120,
-  delay = 0
+  size = 160,
+  delay = 0,
+  verticalPosition = 0.32,
+  orientation = 'portrait'
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
   
-  // 飞入动画
+  // 飞入动画（从上方飞入）
   const flyIn = spring({
     frame: Math.max(frame - delay, 0),
     fps,
@@ -305,17 +309,20 @@ const PhotoWithGlow: React.FC<PhotoWithGlowProps> = ({
   // 处理照片源
   const src = getPhotoSrc(photoSrc);
   
-  // 位置计算
-  const xOffset = position === 'left' ? -180 : 180;
-  const startX = position === 'left' ? -300 : 300;
-  const x = interpolate(flyIn, [0, 1], [startX, xOffset]);
+  // 位置计算：从上方飞入到目标位置
+  const startY = -size;
+  const targetY = height * verticalPosition;
+  const y = interpolate(flyIn, [0, 1], [startY, targetY]);
   
   // 轻微浮动
-  const floatY = Math.sin(frame * 0.05 + (position === 'left' ? 0 : Math.PI)) * 5;
-  const rotation = Math.sin(frame * 0.03 + (position === 'left' ? 0 : Math.PI)) * 3;
+  const floatY = Math.sin(frame * 0.05) * 5;
+  const rotation = Math.sin(frame * 0.03) * 2;
   
   // 发光脉冲
   const glowPulse = 0.8 + Math.sin(frame * 0.1) * 0.2;
+  
+  // 装饰光晕尺寸
+  const glowSize = size * 1.5;
   
   if (!src) return null;
   
@@ -324,23 +331,38 @@ const PhotoWithGlow: React.FC<PhotoWithGlowProps> = ({
       style={{
         position: 'absolute',
         left: '50%',
-        top: '35%',
-        transform: `translate(calc(-50% + ${x}px), -50%) translateY(${floatY}px) rotate(${rotation}deg)`,
+        top: 0,
+        transform: `translate(-50%, ${y + floatY}px) rotate(${rotation}deg)`,
         opacity: flyIn,
         zIndex: 10,
       }}
     >
-      {/* 发光背景 */}
+      {/* 发光背景 - 更大的光晕效果 */}
       <div
         style={{
           position: 'absolute',
           left: '50%',
           top: '50%',
-          width: size * 1.4,
-          height: size * 1.4,
+          width: glowSize,
+          height: glowSize,
           borderRadius: '50%',
-          background: `radial-gradient(circle, ${colorWithOpacity(PRIMARY_COLORS.creamYellow, 0.4 * glowPulse)} 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${colorWithOpacity(PRIMARY_COLORS.creamYellow, 0.35 * glowPulse)} 0%, transparent 70%)`,
           transform: 'translate(-50%, -50%)',
+        }}
+      />
+      
+      {/* 外圈光环 */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: size * 1.15,
+          height: size * 1.15,
+          borderRadius: '50%',
+          border: `3px solid ${colorWithOpacity(PRIMARY_COLORS.creamYellow, 0.6)}`,
+          transform: 'translate(-50%, -50%)',
+          boxShadow: `0 0 20px ${colorWithOpacity(PRIMARY_COLORS.creamYellow, 0.4)}`,
         }}
       />
       
@@ -351,10 +373,11 @@ const PhotoWithGlow: React.FC<PhotoWithGlowProps> = ({
           height: size,
           borderRadius: '50%',
           overflow: 'hidden',
-          border: `4px solid white`,
+          border: `5px solid white`,
           boxShadow: `
-            0 8px 25px rgba(0,0,0,0.25),
-            0 0 30px ${colorWithOpacity(PRIMARY_COLORS.strawberryPink, 0.3 * glowPulse)}
+            0 10px 35px rgba(0,0,0,0.3),
+            0 0 40px ${colorWithOpacity(PRIMARY_COLORS.strawberryPink, 0.35 * glowPulse)},
+            inset 0 0 20px rgba(255,255,255,0.1)
           `,
           backgroundColor: '#f0f0f0',
         }}
@@ -369,13 +392,14 @@ const PhotoWithGlow: React.FC<PhotoWithGlowProps> = ({
         />
       </div>
       
-      {/* 装饰星星 */}
-      {Array.from({ length: 3 }).map((_, i) => {
-        const angle = (i / 3) * Math.PI * 2 + frame * 0.05;
-        const radius = size * 0.7;
+      {/* 装饰星星 - 环绕照片 */}
+      {Array.from({ length: 6 }).map((_, i) => {
+        const angle = (i / 6) * Math.PI * 2 + frame * 0.04;
+        const radius = size * 0.75;
         const starX = Math.cos(angle) * radius;
         const starY = Math.sin(angle) * radius;
-        const starOpacity = 0.5 + Math.sin(frame * 0.2 + i) * 0.5;
+        const starOpacity = 0.4 + Math.sin(frame * 0.15 + i * 0.8) * 0.6;
+        const starScale = 0.8 + Math.sin(frame * 0.2 + i) * 0.3;
         
         return (
           <div
@@ -384,9 +408,9 @@ const PhotoWithGlow: React.FC<PhotoWithGlowProps> = ({
               position: 'absolute',
               left: size / 2 + starX,
               top: size / 2 + starY,
-              fontSize: 16,
+              fontSize: 18,
               opacity: starOpacity,
-              transform: 'translate(-50%, -50%)',
+              transform: `translate(-50%, -50%) scale(${starScale})`,
             }}
           >
             ✨
@@ -434,10 +458,12 @@ interface BirthdaySongSceneProps {
   birthdaySongSource?: string;
   /** 音频音量 (0-1) */
   birthdaySongVolume?: number;
-  /** 主角照片列表（最多显示2张） */
+  /** 主角照片列表（只显示第一张作为主体） */
   photos?: PhotoData[];
   /** 风格主题 */
   subStyle?: KidsSubStyle;
+  /** 屏幕方向 */
+  orientation?: 'portrait' | 'landscape';
 }
 
 export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
@@ -447,7 +473,8 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
   birthdaySongSource,
   birthdaySongVolume = 0.6,
   photos = [],
-  subStyle = 'general'
+  subStyle = 'general',
+  orientation = 'portrait'
 }) => {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
@@ -468,13 +495,28 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
   // 是否播放音频：只看 birthdaySongSource 是否有值
   const shouldPlayAudio = Boolean(birthdaySongSource);
   
-  // 照片数据（最多取2张）
-  const displayPhotos = photos.slice(0, 2);
-  const hasPhotos = displayPhotos.length > 0;
+  // 照片数据（只取第一张作为主体）
+  const mainPhoto = photos[0];
+  const hasPhoto = Boolean(mainPhoto?.src);
+  
+  // 根据屏幕方向调整尺寸和位置
+  const isPortrait = orientation === 'portrait';
+  
+  // 蛋糕尺寸：缩小以避免占据过多空间
+  const cakeSize = isPortrait ? 150 : 140;
+  
+  // 照片尺寸：放大以突出主体
+  const photoSize = isPortrait ? 300 : 240;
+  
+  // 照片垂直位置
+  const photoVerticalPosition = isPortrait ? 0.3 : 0.2;
+  
+  // 蛋糕垂直位置
+  const cakeVerticalPosition = isPortrait ? 0.62 : 0.65;
   
   // 蛋糕位置和大小（许愿时上移并缩小）
-  const cakeScale = showWish ? interpolate(wishTransition, [0, 1], [1, 0.7]) : 1;
-  const cakeY = showWish ? interpolate(wishTransition, [0, 1], [0, -80]) : 0;
+  const cakeScale = showWish ? interpolate(wishTransition, [0, 1], [1, 0.65]) : 1;
+  const cakeY = showWish ? interpolate(wishTransition, [0, 1], [0, -60]) : 0;
   
   return (
     <AbsoluteFill
@@ -482,7 +524,7 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
       }}
     >
       {/* 音频播放 - 生日歌（仅当 birthdaySongSource 有值时渲染） */}
@@ -494,44 +536,30 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
         />
       )}
       
-      {/* 照片显示（蛋糕两侧） */}
-      {!showWish && hasPhotos && displayPhotos[0] && (
+      {/* 照片显示（中央上方，作为主体） */}
+      {!showWish && hasPhoto && (
         <PhotoWithGlow
-          photoSrc={displayPhotos[0].src}
-          position="left"
-          size={100}
-          delay={15}
-        />
-      )}
-      {!showWish && hasPhotos && displayPhotos[1] && (
-        <PhotoWithGlow
-          photoSrc={displayPhotos[1].src}
-          position="right"
-          size={100}
-          delay={25}
-        />
-      )}
-      {/* 只有一张照片时，右侧显示相同照片 */}
-      {!showWish && hasPhotos && displayPhotos.length === 1 && displayPhotos[0] && (
-        <PhotoWithGlow
-          photoSrc={displayPhotos[0].src}
-          position="right"
-          size={100}
-          delay={25}
+          photoSrc={mainPhoto.src}
+          size={photoSize}
+          delay={10}
+          verticalPosition={photoVerticalPosition}
+          orientation={orientation}
         />
       )}
       
-      {/* 蛋糕 */}
+      {/* 蛋糕（放在照片下方） */}
       <div style={{ 
-        marginBottom: 30, 
+        position: 'absolute',
+        top: `${cakeVerticalPosition * 100}%`,
+        left: '50%',
+        transform: `translate(-50%, -50%) translateY(${cakeY}px) scale(${cakeScale})`,
         zIndex: 20,
-        transform: `translateY(${cakeY}px) scale(${cakeScale})`,
       }}>
         <BirthdayCake
           candles={5}
           age={age}
           lit={!showWish}
-          size={220}
+          size={cakeSize}
         />
       </div>
       
@@ -539,13 +567,13 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
       {!showWish && (
         <div style={{
           position: 'absolute',
-          bottom: height * 0.18,
+          bottom: isPortrait ? height * 0.12 : height * 0.15,
           width: '100%',
           zIndex: 25,
         }}>
           <BouncingBirthdayText
             color={theme.primary}
-            fontSize={64}
+            fontSize={isPortrait ? 56 : 48}
             subStyle={subStyle}
           />
         </div>
@@ -555,7 +583,7 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
       {showWish && (
         <div style={{
           position: 'absolute',
-          top: '55%',
+          top: isPortrait ? '50%' : '52%',
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -564,7 +592,7 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
           opacity: wishTransition,
           transform: `translateY(${interpolate(wishTransition, [0, 1], [30, 0])}px)`,
         }}>
-          <MakeWishContent name={name} />
+          <MakeWishContent name={name} fontSize={isPortrait ? 48 : 40} />
         </div>
       )}
     </AbsoluteFill>
@@ -575,10 +603,12 @@ export const BirthdaySongScene: React.FC<BirthdaySongSceneProps> = ({
 
 interface MakeWishContentProps {
   name?: string;
+  fontSize?: number;
 }
 
 const MakeWishContent: React.FC<MakeWishContentProps> = ({
-  name = '小朋友'
+  name = '小朋友',
+  fontSize = 52
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
@@ -588,6 +618,11 @@ const MakeWishContent: React.FC<MakeWishContentProps> = ({
   
   // 闪烁星星
   const sparkle = 0.5 + Math.sin(frame * 0.3) * 0.5;
+  
+  // 响应式字体大小
+  const mainFontSize = fontSize;
+  const subFontSize = Math.round(fontSize * 0.46);
+  const starFontSize = Math.round(fontSize * 0.35);
   
   return (
     <div
@@ -609,7 +644,7 @@ const MakeWishContent: React.FC<MakeWishContentProps> = ({
       {/* 主文字 */}
       <div
         style={{
-          fontSize: 52,
+          fontSize: mainFontSize,
           fontWeight: 700,
           color: 'white',
           textShadow: `
@@ -628,20 +663,20 @@ const MakeWishContent: React.FC<MakeWishContentProps> = ({
       {/* 副文字 */}
       <div
         style={{
-          fontSize: 24,
+          fontSize: subFontSize,
           fontWeight: 500,
           color: 'rgba(255,255,255,0.9)',
           marginTop: 10,
           fontFamily: '"PingFang SC", cursive',
         }}
       >
-        {name}，闭上眼睛许个愿望
+        {name}，闭上眼睛许个愿望吧~
       </div>
       
       {/* 装饰星星 */}
       {Array.from({ length: 6 }).map((_, i) => {
         const angle = (i / 6) * Math.PI * 2 + frame * 0.03;
-        const radius = 120 + Math.sin(frame * 0.05 + i) * 15;
+        const radius = mainFontSize * 2.3 + Math.sin(frame * 0.05 + i) * 15;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius * 0.4;
         
@@ -652,7 +687,7 @@ const MakeWishContent: React.FC<MakeWishContentProps> = ({
               position: 'absolute',
               left: `calc(50% + ${x}px)`,
               top: `calc(50% + ${y}px)`,
-              fontSize: 18,
+              fontSize: starFontSize,
               opacity: sparkle,
               transform: 'translate(-50%, -50%)',
             }}

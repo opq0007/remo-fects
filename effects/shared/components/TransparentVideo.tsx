@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useMemo } from 'react';
-import { AbsoluteFill, useVideoConfig, staticFile, OffthreadVideo } from 'remotion';
+import { AbsoluteFill, useVideoConfig, staticFile, OffthreadVideo, Audio, useCurrentFrame, Sequence } from 'remotion';
 
 // ==================== 类型定义 ====================
 
@@ -28,6 +28,8 @@ export interface TransparentVideoConfig {
   enabled?: boolean;
   /** 视频源（本地路径或网络 URL） */
   src: string;
+  /** 自定义音频源（本地路径或网络 URL），优先使用此音频替代视频内置音频 */
+  volumeSrc?: string;
   /** 透明模式 */
   mode?: TransparencyMode;
   /** 色度键配置（仅 mode 为 'chromaKey' 时使用） */
@@ -144,10 +146,16 @@ const isGreenPixelRelaxed = (r: number, g: number, b: number): boolean => {
  * - blueScreen: 蓝幕抠图（移除蓝色背景）
  * - chromaKey: 自定义色度键（移除指定颜色）
  * - webmAlpha: WebM 透明视频（无需处理，直接播放）
+ * 
+ * 音频处理说明：
+ * - 视频元素始终静音，避免多实例音频冲突
+ * - 使用独立的 Audio 组件播放音频
+ * - Audio 组件与视频同步播放，确保音频正确
  */
 export const TransparentVideo: React.FC<TransparentVideoProps> = ({
   enabled = true,
   src,
+  volumeSrc,
   mode = 'greenScreen',
   chromaKey,
   opacity = 1,
@@ -168,7 +176,8 @@ export const TransparentVideo: React.FC<TransparentVideoProps> = ({
   height: customHeight,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { width: configWidth, height: configHeight } = useVideoConfig();
+  const { width: configWidth, height: configHeight, fps } = useVideoConfig();
+  const frame = useCurrentFrame();
   
   // 计算视频显示尺寸
   const displayWidth = customWidth ?? Math.round(configWidth * scale);
@@ -177,6 +186,11 @@ export const TransparentVideo: React.FC<TransparentVideoProps> = ({
   // 判断视频源类型
   const isNetworkUrl = src.startsWith('http://') || src.startsWith('https://');
   const videoSrc = isNetworkUrl ? src : staticFile(src);
+  
+  // 判断音频源类型，优先使用 volumeSrc
+  const audioSource = volumeSrc 
+    ? (volumeSrc.startsWith('http://') || volumeSrc.startsWith('https://') ? volumeSrc : staticFile(volumeSrc))
+    : videoSrc;
   
   // 是否需要 Canvas 处理（非 webmAlpha 模式需要）
   const needsCanvasProcessing = mode !== 'webmAlpha';
@@ -252,6 +266,12 @@ export const TransparentVideo: React.FC<TransparentVideoProps> = ({
     context.putImageData(imageData, 0, 0);
   }, [configWidth, configHeight, mode, targetColor, tolerance, softness, opacity]);
   
+  // 计算视频播放起始时间（秒）
+  // startFrame 是相对于当前 Sequence 的偏移，需要转换为秒
+  const startFrom = useMemo(() => {
+    return startFrame / fps;
+  }, [startFrame, fps]);
+  
   if (!enabled) return null;
   
   // 计算位置和变换
@@ -269,6 +289,7 @@ export const TransparentVideo: React.FC<TransparentVideoProps> = ({
   };
   
   // WebM 透明视频模式：直接播放
+  // 注意：WebM 模式下仍使用 OffthreadVideo 的原生音频，因为不需要 Canvas 处理
   if (mode === 'webmAlpha') {
     return (
       <AbsoluteFill style={{ pointerEvents: 'none' }}>
@@ -290,17 +311,30 @@ export const TransparentVideo: React.FC<TransparentVideoProps> = ({
   }
   
   // 色度键模式：使用 Canvas 处理
+  // 关键修复：视频元素始终静音，音频使用独立的 Audio 组件
+  // 这样可以避免多个 TransparentVideo 实例之间的音频冲突
   return (
     <AbsoluteFill style={{ pointerEvents: 'none' }}>
-      {/* 隐藏的原始视频，使用 onVideoFrame 回调处理每一帧，音频正常播放 */}
+      {/* 隐藏的原始视频，用于 Canvas 处理帧，始终静音 */}
       <OffthreadVideo
         src={videoSrc}
         style={{ opacity: 0 }}
         onVideoFrame={onVideoFrame}
         playbackRate={playbackRate}
-        muted={muted}
-        volume={volume}
+        muted={true}  // 视频元素始终静音，避免音频冲突
       />
+      
+      {/* 独立的音频组件，确保音频正确播放 */}
+      {/* 只有在 muted=false 时才渲染 Audio 组件 */}
+      {/* 优先使用 volumeSrc 指定的音频，否则使用视频内置音频 */}
+      {!muted && (
+        <Audio
+          src={audioSource}
+          volume={volume}
+          playbackRate={playbackRate}
+          startFrom={startFrom}
+        />
+      )}
       
       {/* 处理后的 Canvas */}
       <div style={positionStyle}>

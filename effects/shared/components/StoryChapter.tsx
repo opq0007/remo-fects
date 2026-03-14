@@ -513,7 +513,7 @@ export interface StoryChapterProps {
   showOverlay?: boolean;
   
   /**
-   * 角色配置对象
+   * 角色配置对象（单个角色，向后兼容）
    * @example
    * character={{
    *   series: 'zodiac',
@@ -525,6 +525,17 @@ export interface StoryChapterProps {
    * }}
    */
   character?: StoryCharacterConfig;
+  
+  /**
+   * 多角色配置数组（优先于 character 单个配置）
+   * 支持多个角色先后入场，围绕画面四周
+   * @example
+   * characters={[
+   *   { series: 'zodiac', type: 'tiger', entrance: { direction: 'left', horizontalPosition: 0.2, verticalPosition: 0.5 } },
+   *   { series: 'zodiac', type: 'rabbit', entrance: { direction: 'right', horizontalPosition: 0.8, verticalPosition: 0.5, delay: 30 } },
+   * ]}
+   */
+  characters?: StoryCharacterConfig[];
   
   /**
    * 彩带效果配置对象
@@ -704,23 +715,19 @@ export interface StoryChapterProps {
  * 
  * 用于渲染一个相对短的故事片段动画，支持：
  * - 背景、遮罩
- * - 角色（带对话气泡）
+ * - 角色（单个 character 或多个 characters 数组，带对话气泡）
  * - 彩带效果
  * - 魔法效果（粒子、魔法棒、圆环、烟花、气球等）
  * - 字幕系统
  * - 自定义内容
  * 
- * @example
+ * @example 单个角色
  * ```tsx
  * <StoryChapter
  *   durationInFrames={120}
  *   background={{
  *     type: 'gradient',
  *     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
- *   }}
- *   overlay={{
- *     color: '#000000',
- *     opacity: 0.2
  *   }}
  *   character={{
  *     series: 'zodiac',
@@ -731,12 +738,31 @@ export interface StoryChapterProps {
  *     showSpeech: true,
  *   }}
  *   confetti={{ enabled: true, level: 'medium' }}
- *   subtitles={[
- *     { text: '欢迎来到魔法世界', startFrame: 0, durationInFrames: 60 }
+ * />
+ * ```
+ * 
+ * @example 多个角色围绕四周
+ * ```tsx
+ * <StoryChapter
+ *   durationInFrames={300}
+ *   background={{ type: 'gradient', gradient: theme.gradient }}
+ *   characters={[
+ *     {
+ *       series: 'zodiac',
+ *       type: 'tiger',
+ *       size: 140,
+ *       entrance: { enabled: true, direction: 'left', horizontalPosition: 0.15, verticalPosition: 0.25 },
+ *       speechTimeline: [{ text: '生日快乐！', startFrame: 60, endFrame: 180 }],
+ *     },
+ *     {
+ *       series: 'zodiac',
+ *       type: 'rabbit',
+ *       size: 140,
+ *       entrance: { enabled: true, direction: 'right', delay: 20, horizontalPosition: 0.85, verticalPosition: 0.25 },
+ *       speechTimeline: [{ text: '祝你开心！', startFrame: 100, endFrame: 220 }],
+ *     },
  *   ]}
- * >
- *   <CustomContent />
- * </StoryChapter>
+ * />
  * ```
  */
 export const StoryChapter: React.FC<StoryChapterProps> = ({
@@ -746,6 +772,7 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
   overlay,
   showOverlay = true,
   character,
+  characters,
   confetti,
   magicEffects,
   radialBurst,
@@ -786,25 +813,20 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
   const ovColor = overlay?.color ?? '#000000';
   const ovOpacity = overlay?.opacity ?? 0.2;
   
-  // 渲染角色（支持入场动画、对话时序、表情变化）
-  const renderCharacter = () => {
-    if (!character) return null;
-    
+  // 渲染单个角色（支持入场动画、对话时序、表情变化）
+  const renderSingleCharacter = (charConfig: StoryCharacterConfig, index: number) => {
     // 计算入场动画
-    let entranceTransform = '';
     let entranceOpacity = 1;
     let entranceTranslateY = 0;
     let entranceTranslateX = 0;
     
-    if (character.entrance?.enabled) {
+    if (charConfig.entrance?.enabled) {
       const { 
         direction = 'bottom',
         delay = 0,
         distance = 200,
         springConfig = { damping: 12, stiffness: 80 },
-        verticalPosition = 0.45,
-        horizontalPosition = 0.5,
-      } = character.entrance;
+      } = charConfig.entrance;
       
       const entranceFrame = Math.max(frame - delay, 0);
       const entranceProgress = spring({
@@ -832,9 +854,9 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     }
     
     // 计算当前表情（支持时序变化）
-    let currentExpression = character.expression ?? 'happy';
-    if (character.expressionTimeline && character.expressionTimeline.length > 0) {
-      const sortedTimeline = [...character.expressionTimeline].sort((a, b) => a.startFrame - b.startFrame);
+    let currentExpression = charConfig.expression ?? 'happy';
+    if (charConfig.expressionTimeline && charConfig.expressionTimeline.length > 0) {
+      const sortedTimeline = [...charConfig.expressionTimeline].sort((a, b) => a.startFrame - b.startFrame);
       for (const item of sortedTimeline) {
         if (frame >= item.startFrame) {
           currentExpression = item.expression;
@@ -847,8 +869,8 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
     let speechBubbleScale = 1;
     let speechBubbleOpacity = 1;
     
-    if (character.speechTimeline && character.speechTimeline.length > 0) {
-      for (const item of character.speechTimeline) {
+    if (charConfig.speechTimeline && charConfig.speechTimeline.length > 0) {
+      for (const item of charConfig.speechTimeline) {
         const startFrame = item.startFrame;
         const endFrame = item.endFrame ?? Infinity;
         
@@ -879,9 +901,9 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           break;
         }
       }
-    } else if (character.speech && character.showSpeech) {
+    } else if (charConfig.speech && charConfig.showSpeech) {
       currentSpeech = {
-        text: character.speech,
+        text: charConfig.speech,
         animationType: 'scale',
       };
       speechBubbleScale = spring({
@@ -891,18 +913,19 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
       });
     }
     
-    const verticalPosition = character.entrance?.verticalPosition ?? 0.45;
-    const horizontalPosition = character.entrance?.horizontalPosition ?? 0.5;
+    const verticalPosition = charConfig.entrance?.verticalPosition ?? 0.45;
+    const horizontalPosition = charConfig.entrance?.horizontalPosition ?? 0.5;
     
     return (
       <div
+        key={`character-${index}`}
         style={{
           position: 'absolute',
           left: `${horizontalPosition * 100}%`,
           top: `${verticalPosition * 100}%`,
           transform: `translateX(-50%) translateX(${entranceTranslateX}px) translateY(${entranceTranslateY}px)`,
           opacity: entranceOpacity,
-          zIndex: 30,
+          zIndex: 30 + index,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -925,16 +948,35 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
         )}
         
         <Character
-          series={character.series}
-          type={character.type}
-          size={character.size ?? 200}
+          series={charConfig.series}
+          type={charConfig.type}
+          size={charConfig.size ?? 200}
           expression={currentExpression}
           inline={true}
-          animate={character.animate ?? true}
-          imageSrc={character.imageSrc}
+          animate={charConfig.animate ?? true}
+          imageSrc={charConfig.imageSrc}
         />
       </div>
     );
+  };
+  
+  // 渲染角色（支持单个 character 或多个 characters 数组）
+  const renderCharacter = () => {
+    // 优先使用 characters 数组
+    if (characters && characters.length > 0) {
+      return (
+        <>
+          {characters.map((charConfig, index) => renderSingleCharacter(charConfig, index))}
+        </>
+      );
+    }
+    
+    // 向后兼容：单个 character 参数
+    if (character) {
+      return renderSingleCharacter(character, 0);
+    }
+    
+    return null;
   };
   
   const renderConfetti = () => {
@@ -1382,31 +1424,36 @@ export const StoryChapter: React.FC<StoryChapterProps> = ({
           const videoStartFrame = videoConfig.startFrame ?? 0;
           const videoDuration = videoConfig.durationInFrames ?? 0;
           
-          if (frame < videoStartFrame) return null;
-          if (videoDuration > 0 && frame >= videoStartFrame + videoDuration) return null;
-          
+          // 使用 Sequence 包装，确保视频元素始终存在，音频能正确播放
+          // Sequence 的 from 控制何时开始显示，durationInFrames 控制显示时长
           return (
-            <TransparentVideo
-              key={`transparent-video-${index}`}
-              enabled={true}
-              src={videoConfig.src}
-              mode={videoConfig.mode ?? 'greenScreen'}
-              chromaKey={videoConfig.chromaKey}
-              opacity={videoConfig.opacity ?? 1}
-              scale={videoConfig.scale ?? 1}
-              x={videoConfig.x ?? 0.5}
-              y={videoConfig.y ?? 0.5}
-              playbackRate={videoConfig.playbackRate ?? 1}
-              loop={videoConfig.loop ?? false}
-              muted={videoConfig.muted ?? false}
-              volume={videoConfig.volume ?? 1}
-              startFrame={videoStartFrame}
-              durationInFrames={videoDuration}
-              flipX={videoConfig.flipX ?? false}
-              flipY={videoConfig.flipY ?? false}
-              rotation={videoConfig.rotation ?? 0}
-              zIndex={videoConfig.zIndex ?? 20}
-            />
+            <Sequence
+              key={`transparent-video-seq-${index}`}
+              from={videoStartFrame}
+              durationInFrames={videoDuration > 0 ? videoDuration : undefined}
+              name={`TransparentVideo-${index}`}
+            >
+              <TransparentVideo
+                enabled={true}
+                src={videoConfig.src}
+                mode={videoConfig.mode ?? 'greenScreen'}
+                chromaKey={videoConfig.chromaKey}
+                opacity={videoConfig.opacity ?? 1}
+                scale={videoConfig.scale ?? 1}
+                x={videoConfig.x ?? 0.5}
+                y={videoConfig.y ?? 0.5}
+                playbackRate={videoConfig.playbackRate ?? 1}
+                loop={videoConfig.loop ?? false}
+                muted={videoConfig.muted ?? false}
+                volume={videoConfig.volume ?? 1}
+                startFrame={0}
+                durationInFrames={0}
+                flipX={videoConfig.flipX ?? false}
+                flipY={videoConfig.flipY ?? false}
+                rotation={videoConfig.rotation ?? 0}
+                zIndex={videoConfig.zIndex ?? 20}
+              />
+            </Sequence>
           );
         })}
       </>

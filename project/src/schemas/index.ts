@@ -4,8 +4,8 @@ import { CompleteCompositionSchema, CustomChapterInputSchema } from '../../../ef
 // ==================== 枚举类型 Schema ====================
 
 // 视频版本
-export const VideoVersionSchema = z.enum(['60s', '90s', '120s']).meta({
-  description: '视频时长版本：60秒/90秒/120秒'
+export const VideoVersionSchema = z.enum(['90s', '120s']).meta({
+  description: '视频时长版本：90秒/120秒'
 });
 
 // 角色系列
@@ -192,10 +192,8 @@ export type BirthdayBlessingProps = z.infer<typeof BirthdayBlessingSchema>;
 /**
  * 根据视频版本获取模块列表
  */
-export const getModulesByVersion = (version: '60s' | '90s' | '120s'): string[] => {
+export const getModulesByVersion = (version: '90s' | '120s'): string[] => {
   switch (version) {
-    case '60s':
-      return ['A', 'B', 'C', 'G'];
     case '90s':
       return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     case '120s':
@@ -209,10 +207,9 @@ export const getModulesByVersion = (version: '60s' | '90s' | '120s'): string[] =
  * 根据视频版本获取总时长（秒）
  * 注意：倒计时章节占用 4 秒（3秒倒计时 + 1秒最终文字）
  */
-export const getDurationByVersion = (version: '60s' | '90s' | '120s'): number => {
+export const getDurationByVersion = (version: '90s' | '120s'): number => {
   const countdownDuration = 4; // 倒计时章节时长
   switch (version) {
-    case '60s': return 60 + countdownDuration;
     case '90s': return 90 + countdownDuration;
     case '120s': return 120 + countdownDuration;
     default: return 120 + countdownDuration;

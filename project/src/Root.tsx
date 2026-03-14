@@ -43,7 +43,7 @@ export const RemotionRoot: React.FC = () => {
             subStyle: 'general',
             characterSeries: 'zodiac',
             characterType: 'tiger',
-            photos: [],
+            photos: [{"src":"熊猫.png"}],
             dreams: ['astronaut', 'artist', 'racer'],
             orientation: 'portrait',
             nameFontSize: 120,
@@ -80,7 +80,7 @@ export const RemotionRoot: React.FC = () => {
             subStyle: 'general',
             characterSeries: 'zodiac',
             characterType: 'tiger',
-            photos: [],
+            photos: [{"src":"熊猫.png"}],
             dreams: ['astronaut', 'artist', 'racer'],
             orientation: 'portrait',
             nameFontSize: 120,
@@ -93,101 +93,6 @@ export const RemotionRoot: React.FC = () => {
             musicTrack: 'JoyfulChildren',
             birthdaySongSource: 'birthday_audio.mp3',
             birthdaySongVolume: 0.6
-          }}
-        />
-        
-        {/* 60秒版本 */}
-        <Composition
-          id="KidsBirthday60s"
-          component={KidsBirthdayComposition}
-          durationInFrames={1536} // 64秒 @ 24fps (60秒 + 4秒倒计时)
-          fps={24}
-          width={720}
-          height={1280}
-          schema={KidsBirthdaySchema}
-          defaultProps={{
-            name: '小明',
-            age: 6,
-            message: '生日快乐！',
-            videoVersion: '60s',
-            duration: 64, // 更新为64秒
-            fps: 24,
-            width: 720,
-            height: 1280,
-            subStyle: 'general',
-            characterSeries: 'zodiac',
-            characterType: 'tiger',
-            photos: [],
-            dreams: [],
-            orientation: 'portrait',
-            nameFontSize: 120,
-            showAge: true,
-            blessingText: '生日快乐',
-            blessingFontSize: 60,
-            confettiLevel: 'high',
-            animationSpeed: 'normal',
-            musicEnabled: true,
-            musicTrack: 'JoyfulChildren',
-            birthdaySongVolume: 0.6,
-            // 自定义章节列表
-            chapterList: [
-              // 倒计时开场章节（精简配置，其余使用默认值）
-              {
-                id: '0_countdown',
-                countdown: {
-                  enabled: true,
-                  audio: {
-                    enabled: true,
-                    tickSound: 'countDown_common.mp3',
-                    endSound: 'countDown_game.mp3',
-                    volume: 0.6,
-                  },
-                },
-              },
-              // 生日歌章节特效配置
-              {
-                id: 'G_birthdaySong',
-                plusEffects: [
-                  // 文字烟花特效
-                  {
-                    effectType: 'textFirework',
-                    contentType: 'mixed',
-                    words: ['生日快乐', 'Happy Birthday', '快乐成长', '梦想成真'],
-                    images: [],
-                    imageWeight: 0.3,
-                    blessingTypes: ['goldCoin', 'star', 'heart'],
-                    fontSize: 80,
-                    colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'],
-                    glowColor: '#FFD700',
-                    glowIntensity: 1.2,
-                    x: 0.5,
-                    y: 0.4,
-                    scale: 1,
-                    opacity: 0.9,
-                    seed: 12345,
-                  },
-                  // 文字雨特效
-                  {
-                    effectType: 'textRain',
-                    contentType: 'mixed',
-                    words: ['福', '寿', '喜', '乐'],
-                    images: [],
-                    imageWeight: 0.3,
-                    blessingTypes: ['goldCoin', 'star'],
-                    fontSize: 60,
-                    colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#96CEB4'],
-                    glowColor: '#FFD700',
-                    glowIntensity: 0.8,
-                    x: 0.5,
-                    y: 0.5,
-                    scale: 1,
-                    opacity: 0.7,
-                    animationSpeed: 0.3,
-                    seed: 54321,
-                  },
-                ],
-              },
-            ],
           }}
         />
       </Folder>
@@ -215,7 +120,7 @@ export const RemotionRoot: React.FC = () => {
             subStyle: 'girl_unicorn',
             characterSeries: 'pet',
             characterType: 'bunny',
-            photos: [],
+            photos: [{"src":"熊猫.png"}],
             dreams: ['artist', 'musician', 'teacher'],
             orientation: 'portrait',
             nameFontSize: 120,
@@ -252,7 +157,7 @@ export const RemotionRoot: React.FC = () => {
             subStyle: 'boy_rocket',
             characterSeries: 'hero',
             characterType: 'astronaut',
-            photos: [],
+            photos: [{"src":"熊猫.png"}],
             dreams: ['astronaut', 'racer', 'scientist'],
             orientation: 'portrait',
             nameFontSize: 120,
@@ -274,8 +179,8 @@ export const RemotionRoot: React.FC = () => {
           component={KidsBirthdayComposition}
           durationInFrames={2976} // 124秒 @ 24fps (120秒 + 4秒倒计时)
           fps={24}
-          width={720}
-          height={1280}
+          width={1920}
+          height={1080}
           schema={KidsBirthdaySchema}
           defaultProps={{
             name: '宝贝',
@@ -290,7 +195,7 @@ export const RemotionRoot: React.FC = () => {
             characterSeries: 'image',
             characterType: 'tiger', // image 模式下使用默认值
             characterImageSrc: '熊猫.png', // 本地图片路径（相对于 public 目录）
-            photos: [],
+            photos: [{"src":"熊猫.png"}],
             dreams: ['artist', 'musician', 'teacher'],
             orientation: 'portrait',
             nameFontSize: 120,
@@ -330,7 +235,7 @@ export const RemotionRoot: React.FC = () => {
             subStyle: 'general',
             characterSeries: 'zodiac',
             characterType: 'tiger',
-            photos: [],
+            photos: [{"src":"熊猫.png"}],
             dreams: ['astronaut', 'artist', 'racer'],
             orientation: 'landscape',
             nameFontSize: 100,
