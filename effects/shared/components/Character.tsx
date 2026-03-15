@@ -408,6 +408,10 @@ interface CharacterProps {
   inline?: boolean;
   /** 图片资源路径（本地路径或网络URL），仅当 series='image' 时使用 */
   imageSrc?: string;
+  /** 图片宽度（仅 image 模式），不设置则使用 size 参数 */
+  imageWidth?: number;
+  /** 图片高度（仅 image 模式），不设置则使用 size * 1.5 */
+  imageHeight?: number;
 }
 
 export const Character: React.FC<CharacterProps> = ({
@@ -419,7 +423,9 @@ export const Character: React.FC<CharacterProps> = ({
   animate = true,
   customConfig,
   inline = false,
-  imageSrc
+  imageSrc,
+  imageWidth,
+  imageHeight
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -475,11 +481,15 @@ export const Character: React.FC<CharacterProps> = ({
   
   // 渲染图片角色（image 模式）
   const renderImageCharacter = () => {
+    // 计算图片尺寸，优先使用自定义尺寸，否则使用默认值
+    const imgWidth = imageWidth ?? size;
+    const imgHeight = imageHeight ?? size * 1.5;
+    
     if (!imageSrc) {
       return (
         <div style={{
-          width: size,
-          height: size,
+          width: imgWidth,
+          height: imgHeight,
           backgroundColor: '#f0f0f0',
           borderRadius: '50%',
           display: 'flex',
@@ -505,9 +515,8 @@ export const Character: React.FC<CharacterProps> = ({
         src={imageSource} 
         alt="角色图片"
         style={{
-          width: size,
-          height: 'auto',
-          maxHeight: size * 1.5,
+          width: imgWidth,
+          height: imgHeight,
           objectFit: 'contain',
         }}
       />

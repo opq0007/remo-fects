@@ -146,7 +146,7 @@ export const NestedMarqueeSchema = z.object({
    * - 0.5: 中间
    * - 1: 底部
    */
-  positionY: z.number().min(0).max(1).optional(),
+  positionY: z.number().min(0).max(1).step(0.01).optional(),
   /** 3D透视深度 */
   perspectiveDepth: z.number().min(0).max(300).optional(),
   /** 前景层 X 偏移 */

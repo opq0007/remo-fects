@@ -223,55 +223,47 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       },
     });
     
-    // // 模块 A：魔法开场
-    // if (modules.includes('A')) {
-    //   chapterList.push({
-    //     id: 'A_magicOpening',
-    //     durationInFrames: 2 * fps,
-    //     background: {
-    //       type: 'color',
-    //       color: '#0a0a20',
-    //     },
-    //     magicEffects: {
-    //       particles: {
-    //         enabled: true,
-    //         particleCount: 80,
-    //         color: PRIMARY_COLORS.violet,
-    //         durationInFrames: 48,
-    //       },
-    //       blackScreen: {
-    //         enabled: true,
-    //         durationInFrames: 24,
-    //         startFrame: 0,
-    //       },
-    //     },
-    //     character: {
-    //       series: characterSeries,
-    //       type: typedCharacterType,
-    //       size: 180,
-    //       animate: true,
-    //       imageSrc: characterImageSrc,
-    //       entrance: {
-    //         enabled: true,
-    //         direction: 'bottom',
-    //         delay: 20,
-    //         distance: 100,
-    //         springConfig: { damping: 12, stiffness: 80 },
-    //         verticalPosition: 0.45,
-    //         horizontalPosition: 0.5,
-    //       },
-    //       speechTimeline: [
-    //         {
-    //           text: `亲爱的${name}小朋友——\n生日快乐呀！`,
-    //           startFrame: 35,
-    //           animationType: 'scale',
-    //           bubbleColor: '#FFFFFF',
-    //         },
-    //       ],
-    //       expression: 'happy',
-    //     },
-    //   });
-    // }
+    // 模块 A：魔法开场
+    if (modules.includes('A')) {
+      chapterList.push({
+        id: 'A_magicOpening',
+        durationInFrames: 2 * fps,
+        background: {
+          type: 'color',
+          color: '#0a0a20',
+        },
+        magicEffects: {
+          // particles: {
+          //   enabled: true,
+          //   particleCount: 80,
+          //   color: PRIMARY_COLORS.violet,
+          //   durationInFrames: 48,
+          // },
+          blackScreen: {
+            enabled: true,
+            durationInFrames: 24,
+            startFrame: 0,
+          },
+        },
+        character: {
+          series: characterSeries,
+          type: typedCharacterType,
+          size: 500,
+          animate: true,
+          imageSrc: "pic/孙悟空.png",
+          entrance: {
+            enabled: true,
+            direction: 'bottom',
+            delay: 20,
+            distance: 100,
+            springConfig: { damping: 12, stiffness: 80 },
+            verticalPosition: 0.3,
+            horizontalPosition: 0.5,
+          },
+          expression: 'happy',
+        },
+      });
+    }
     
     // // 模块 B：角色入场
     // if (modules.includes('B')) {
