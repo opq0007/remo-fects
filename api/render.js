@@ -155,8 +155,8 @@ async function renderVideo(params, jobId, onProgress) {
     fs.writeFileSync(propsFile, JSON.stringify(defaultProps, null, 2), 'utf8');
 
     // 构建 npx remotion render 命令
-    const maxFrames = 480;
-    const frameCount = Math.min(params.duration * params.fps, maxFrames);
+    const maxFrames = 120;
+    const frameCount = Math.max(params.duration * params.fps, maxFrames);
     const args = [
       'remotion',
       'render',

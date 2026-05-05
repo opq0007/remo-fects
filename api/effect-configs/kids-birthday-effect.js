@@ -242,7 +242,7 @@ function getBlessingSeriesConfig(series) {
 
 // 辅助函数：获取 Composition ID
 function getCompositionId(orientation) {
-  return orientation === 'landscape' ? 'KidsBirthdayLandscape' : 'KidsBirthday';
+  return 'KidsBirthday';
 }
 
 // 参数验证

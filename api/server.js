@@ -16,6 +16,7 @@ const { renderVideo, renderCompositeEffect } = require('./render');
 const {
   getProjectList,
   getProjectInfo,
+  getEffectConfig,
   validateParams,
   buildRenderParams,
   hasEffect,
@@ -79,6 +80,31 @@ function generateJobId() {
 app.get('/api/projects', (req, res) => {
   const projectList = getProjectList();
   res.json(projectList);
+});
+
+// ============================================================
+// API: 获取项目参数定义
+// ============================================================
+app.get('/api/projects/:projectId/params', (req, res) => {
+  const { projectId } = req.params;
+
+  if (!hasEffect(projectId)) {
+    return res.status(404).json({
+      error: `项目不存在: ${projectId}。可用项目: ${getProjectList().map(p => p.id).join(', ')}`
+    });
+  }
+
+  const config = getEffectConfig(projectId);
+  const projectInfo = getProjectInfo(projectId);
+
+  res.json({
+    id: projectId,
+    name: projectInfo.name,
+    compositionId: projectInfo.compositionId,
+    params: config.params || {},
+    presets: config.getPresets ? config.getPresets() : {},
+    description: config.config.description || ''
+  });
 });
 
 // ============================================================

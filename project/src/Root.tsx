@@ -16,9 +16,82 @@ import { KidsBirthdaySchema } from './schemas';
  */
 export const RemotionRoot: React.FC = () => {
   return (
-    <Folder name="儿童生日祝福">
-      {/* ========== 竖屏版本 ========== */}
-      <Folder name="竖屏">
+    <Folder name="KidsBirthday">
+      <Composition
+        id="KidsBirthday"
+        component={KidsBirthdayComposition}
+        durationInFrames={2976} // 124秒 @ 24fps
+        fps={24}
+        width={720}
+        height={1280}
+        schema={KidsBirthdaySchema}
+        defaultProps={{
+          name: '小明',
+          age: 6,
+          message: '愿你每天开心成长，梦想成真！',
+          duration: 124,
+          fps: 24,
+          width: 720,
+          height: 1280,
+          subStyle: 'general',
+          photos: [{"src":"熊猫.png"}],
+          dreams: ['astronaut', 'artist', 'racer'],
+          orientation: 'portrait',
+          blessingSeries: 'journey_to_the_west',
+          nameFontSize: 120,
+          showAge: true,
+          blessingText: '生日快乐',
+          blessingFontSize: 60,
+          confettiLevel: 'high',
+          animationSpeed: 'normal',
+          musicEnabled: true,
+          musicTrack: 'JoyfulChildren',
+          birthdaySongSource: 'birthday_audio.mp3',
+          birthdaySongVolume: 0.6,
+          // 走马灯测试配置（添加 positionY 参数）
+          marquee: {
+            enabled: true,
+            positionY: 0.85,  // 新增：垂直位置（0-1）
+            foreground: {
+              texts: [
+                { text: '生日快乐' },
+                { text: 'Happy Birthday' },
+                { text: '快乐成长' },
+              ],
+              fontSize: 24,
+              opacity: 0.8,
+            },
+            background: {
+              texts: [
+                { text: '✨' },
+                { text: '🎉' },
+                { text: '🎂' },
+              ],
+              fontSize: 18,
+              opacity: 0.4,
+            },
+            direction: 'left-to-right',
+            speed: 50,
+          },
+          // 水印测试配置
+          watermark: {
+            enabled: true,
+            text: 'Remo-Fects',
+            fontSize: 20,
+            opacity: 0.5,
+          },
+          // 径向发散粒子测试配置
+          radialBurst: {
+            enabled: true,
+            effectType: 'sparkleBurst',
+            color: '#FFD76A',
+            secondaryColor: '#7EC8FF',
+            intensity: 0.8,
+          },
+        }}
+      />
+
+      <Folder name="Portrait-Preview">
         {/* 通用风格 */}
         <Composition
           id="KidsBirthdayPortrait"
@@ -164,9 +237,8 @@ export const RemotionRoot: React.FC = () => {
           }}
         />
       </Folder>
-      
-      {/* ========== 横屏版本 ========== */}
-      <Folder name="横屏">
+
+      <Folder name="Landscape-Preview">
         <Composition
           id="KidsBirthdayLandscape"
           component={KidsBirthdayComposition}

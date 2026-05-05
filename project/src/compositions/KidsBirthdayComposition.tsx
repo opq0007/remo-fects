@@ -127,7 +127,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     cartoonElements,
     confettiLevel = 'high',
     musicEnabled = true,
-    musicTrack = 'kids_party_01',
+    musicTrack = 'JoyfulChildren',
     birthdaySongSource,
     birthdaySongVolume = 0.6,
     seed,
