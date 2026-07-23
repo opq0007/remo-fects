@@ -1,158 +1,97 @@
-# 儿童生日祝福视频生成器
+﻿# 儿童生日祝福视频生成器
 
-基于 Remotion 框架的儿童生日祝福视频生成器，支持模块化分镜、角色系统、照片互动等功能。
+基于 Remotion 的儿童生日祝福视频，**配置驱动 + 精简用户参数 + 动态时长**。
 
 ## 快速开始
 
 ```bash
-# 安装依赖（在根目录执行）
+# 根目录
 npm install
 
-# 启动 Remotion Studio 预览
-npm run dev
+# Studio
+cd project && npm run dev
 
-# 或指定端口
-npm run dev:kids-birthday
-
-# 渲染视频
+# 渲染
 npm run render:kids-birthday
 ```
 
-## 功能特性
+## 最少参数
 
-### 🎬 模块化分镜系统
+```json
+{ "name": "小明" }
+```
 
-视频由多个模块按时间顺序组成，支持 60 秒、90 秒、120 秒三种版本：
+推荐：
 
-| 模块 | 名称 | 时间范围 | 说明 |
-|------|------|----------|------|
-| A | 魔法开场 | 0-2秒 | 黑屏 → 魔法光粒聚集 → 角色声音 |
-| B | 角色入场 | 2-12秒 | 角色冲入画面 → 名字发光弹跳 → 气球爆开彩带 |
-| C | 照片互动1 | 12-25秒 | 角色挥魔法棒 → 照片飞出 |
-| D | 照片互动2 | 25-38秒 | 照片飞入 → 拥抱动作 → 爱心飘出 |
-| E | 照片互动3 | 38-50秒 | 照片旋转入场 → 年龄气球上升 |
-| F | 成长庆祝 | 50-60秒 | 烟花绽放 → 名字炸开（60秒截止点）|
-| G | 生日歌 | 60-90秒 | 蛋糕升起 → 生日歌 → 许愿 |
-| H | 未来祝福 | 90-105秒 | 角色飞到夜空 → 流星划过 |
-| I | 梦想种子 | 105-115秒 | 梦想泡泡 → 职业图标 |
-| J | 温暖收尾 | 115-120秒 | 角色挥手 → LOGO浮现 |
+```json
+{
+  "name": "小明",
+  "age": 6,
+  "photos": [{ "src": "your-photo.png" }],
+  "blessingSeries": "journey_to_the_west",
+  "preset": "general",
+  "orientation": "portrait"
+}
+```
 
-### 🐯 角色系统
+## 功能
 
-支持三大角色系列：
+### 章节时间轴（classic，动态）
 
-- **生肖守护神系列**（12生肖）：rat, ox, tiger, rabbit, dragon, snake, horse, goat, monkey, rooster, dog, pig
-- **萌宠精灵系列**：bunny, kitten, puppy, bear, fox, panda
-- **勇气超人系列**：superhero, astronaut, knight, wizard, pirate
+| 章节 | 说明 | 条件 |
+|------|------|------|
+| 倒计时 | 3-2-1 开场 | 始终 |
+| 魔法开场 | 主角色入场 | 始终 |
+| 成长庆祝 | 彩带 / 烟花 / 名字 | 始终 |
+| 照片互动 1–2 | 魔法圈照片 + 特效 | 有照片 |
+| 生日歌 | 多角色 + 蛋糕 | 始终 |
+| 未来祝福 | 夜空流星 | 始终 |
 
-### 🎨 风格模板
+无照片总时长约 **61s**，有照片约 **121s**（24fps）。
 
-- `girl_unicorn`：女孩独角兽风格（草莓粉 + 紫罗兰）
-- `boy_rocket`：男孩火箭风格（天空蓝 + 薄荷绿）
-- `animal`：可爱动物风格（薄荷绿 + 奶油黄）
-- `general`：通用派对风格（奶油黄 + 天空蓝）
+### 祝福系列
 
-### 📐 屏幕方向
+- `journey_to_the_west` 西游记
+- `zodiac` 生肖
+- `fairy_tale` 童话
+- `custom` 自定义资源
 
-- `portrait`：竖屏（720x1280，适合抖音、快手）
-- `landscape`：横屏（1280x720，适合微信视频号、B站）
+### 风格预设
 
-## 项目结构
+`journey_to_the_west` | `zodiac` | `girl_unicorn` | `boy_rocket` | `animal` | `general`
+
+### 方向
+
+- `portrait` 720×1280
+- `landscape` 1280×720
+
+## 目录
 
 ```
 project/src/
-├── index.ts                    # 入口文件
-├── Root.tsx                    # Remotion Root 组件
-├── components/                 # 组件目录
-│   ├── Character.tsx           # 角色组件
-│   ├── BouncingName.tsx        # 弹跳名字组件
-│   ├── ConfettiBurst.tsx       # 彩带烟花组件
-│   ├── BirthdaySong.tsx        # 生日歌组件
-│   ├── DreamBubbles.tsx        # 梦想泡泡组件
-│   ├── MagicEffects.tsx        # 魔法效果组件
-│   ├── PhotoInteraction.tsx    # 照片互动组件
-│   ├── Modules.tsx             # 模块聚合组件
-│   └── ...
-├── compositions/               # 组合组件目录
-│   ├── KidsBirthdayComposition.tsx  # 儿童生日祝福主组合
-│   └── index.ts
-├── schemas/                    # Zod Schema 定义
-│   ├── index.ts                # 主 Schema 和辅助函数
-│   └── ...
-├── types/                      # TypeScript 类型定义
-│   ├── index.ts                # 类型、常量、默认配置
-│   └── ...
-└── utils/                      # 工具函数
-    ├── colors.ts               # 颜色工具
-    ├── easing.ts               # 缓动函数
-    └── index.ts
+├── recipe/                 # 配方：系列 / 章节 / 模板 / compile
+├── compositions/           # 薄 Composition
+├── schemas/user.ts         # L0 Schema
+├── components/             # 场景子组件 + EffectRenderer
+└── Root.tsx
 ```
 
-## 主要参数说明
+## API
 
-### 基本参数
-
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| name | string | '小明' | 主角名字 |
-| age | number | 6 | 年龄 |
-| message | string | '愿你每天开心成长' | 祝福语 |
-| videoVersion | '60s' \| '90s' \| '120s' | '120s' | 视频版本 |
-
-### 角色参数
-
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| characterSeries | 'zodiac' \| 'pet' \| 'hero' | 'zodiac' | 角色系列 |
-| characterType | string | 'tiger' | 角色类型 |
-
-### 照片参数
-
-```typescript
-photos: [
-  {
-    src: '照片URL或路径',
-    caption: '照片标题',
-    memory: '角色说的回忆文案'
-  }
-]
+```bash
+curl -X POST http://localhost:3001/api/render/kids-birthday-effect \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"小明\",\"photos\":[{\"src\":\"熊猫.png\"}]}"
 ```
 
-### 梦想参数
+参数说明：`GET /api/projects/kids-birthday-effect/params`
 
-```typescript
-dreams: ['astronaut', 'artist', 'racer']  // 最多5个
-```
+## 扩展
 
-可用值：astronaut, artist, racer, doctor, teacher, scientist, musician, athlete, chef, pilot
+见 [AGENTS.md](./AGENTS.md)：加系列 / 加章节 / `chapterOverrides`。
 
-## 开发指南
+## 说明
 
-### 添加新模块
-
-1. 在 `components/` 创建新组件
-2. 在 `Modules.tsx` 中添加导出
-3. 在 `KidsBirthdayComposition.tsx` 中配置时间
-
-### 添加新角色
-
-1. 在 `types/index.ts` 的角色配置中添加新角色
-2. 更新 `schemas/index.ts` 的类型枚举
-
-### 添加新风格
-
-1. 在 `types/index.ts` 的 `KIDS_COLOR_THEMES` 中添加配色
-2. 更新 `KidsSubStyleSchema` 枚举
-
-## 依赖关系
-
-本项目依赖根目录的共享模块：
-
-- `effects/shared/components` - 公共组件（BaseComposition 等）
-- `effects/shared/schemas` - 公共 Schema
-- `effects/shared/utils` - 公共工具函数
-
-## 相关文档
-
-- [AGENTS.md](./AGENTS.md) - AI 开发上下文文档
-- [根目录 README](../README.md) - 项目总览
+- BGM 默认 `JoyfulChildren.mp3`
+- 生日歌需传 `birthdaySongSource`（如 `birthday_audio.mp3`）
+- 高级引擎层（走马灯等）见 Studio `KidsBirthdayInternal`，不在默认用户 API 中

@@ -1,8 +1,9 @@
 /**
  * 章节配置合并工具
  * 
- * 用于合并预设章节配置和自定义章节配置
+ * 用于合并预设章节配置与用户 chapterOverrides
  * 支持部分覆盖：自定义配置只覆盖指定字段，未定义字段保留默认值
+ * 用户 API 字段名：chapterOverrides（原 chapterList）
  */
 
 import { StoryChapterConfig } from '../../../effects/shared/components/StoryPanel';
