@@ -28,7 +28,7 @@ export const RemotionRoot: React.FC = () => {
           focusWords: ["福", "财"],
           fontSize: 60,
           focusFontSize: 140,
-          colors: ["#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7"],
+          colors: ["#FFD76A", "#FF8FA3", "#7EC8FF", "#FFF3C4"],
           glowColor: "#ffd700",
           glowIntensity: 1.2,
           itemCount: 60,

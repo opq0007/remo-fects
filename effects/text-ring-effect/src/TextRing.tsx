@@ -142,7 +142,8 @@ const generateRingItems = (
     // 确定尺寸
     let size: number;
     if (type === "text") {
-      size = fontSize;
+      // 主词条层级：第一个文字项更大更亮，其余为氛围层
+      size = fontSize * (counters.text === 0 ? 1.35 : 1);
     } else if (type === "image") {
       size = imageSizeRange[0] + (Math.sin(seedValue) * 0.5 + 0.5) * (imageSizeRange[1] - imageSizeRange[0]);
     } else {
@@ -176,20 +177,14 @@ const TextRingItem: React.FC<{
   opacity: number;
   glowIntensity: number;
   depth3d: number;
+  zPercent?: number; // 深度系数 0(远)-1(近)：驱动辉光衰减与远侧失焦
   textStyle?: { color?: string; effect?: string; effectIntensity?: number; fontWeight?: number };
-}> = ({ item, x, z, scale, opacity, glowIntensity, depth3d, textStyle }) => {
-  const depthLayers: string[] = [];
-  for (let i = 1; i <= depth3d; i++) {
-    const alpha = 0.5 - i * 0.03;
-    depthLayers.push(`${i}px ${i}px 0 rgba(80, 40, 0, ${alpha})`);
-  }
-  depthLayers.push(`-${item.fontSize * 0.02}px -${item.fontSize * 0.02}px ${item.fontSize * 0.08}px rgba(255, 215, 0, ${0.6 * glowIntensity})`);
-  depthLayers.push(`0 0 ${item.fontSize * 0.3 * glowIntensity}px rgba(255, 200, 50, ${0.4 * glowIntensity})`);
-
+}> = ({ item, x, z, scale, opacity, glowIntensity, depth3d, zPercent = 1, textStyle }) => {
+  // 深度驱动的辉光：远处弱光，近处足光（金是材质不是灯泡）
   const styles = generateTextStyle(item.fontSize, {
-    color: textStyle?.color ?? "#ffd700",
+    color: textStyle?.color ?? "#FFD76A",
     effect: (textStyle?.effect as "gold3d" | "glow" | "shadow" | "none") ?? "gold3d",
-    effectIntensity: textStyle?.effectIntensity ?? glowIntensity,
+    effectIntensity: (textStyle?.effectIntensity ?? 0.6) * (0.5 + zPercent * 0.5),
     fontWeight: textStyle?.fontWeight ?? 800,
   });
 
@@ -202,8 +197,9 @@ const TextRingItem: React.FC<{
         whiteSpace: "nowrap",
         letterSpacing: 4,
         transformStyle: "preserve-3d",
+        // 远侧轻微失焦，让"转到身后"有空间感
+        filter: zPercent < 0.45 ? `blur(${((0.45 - zPercent) * 3).toFixed(2)}px)` : undefined,
         ...styles,
-        textShadow: depthLayers.join(", "),
       }}
     >
       {item.content}
@@ -219,7 +215,8 @@ const ImageRingItem: React.FC<{
   scale: number;
   opacity: number;
   glowIntensity: number;
-}> = ({ item, x, z, scale, opacity, glowIntensity }) => {
+  zPercent?: number;
+}> = ({ item, x, z, scale, opacity, glowIntensity, zPercent = 1 }) => {
   return (
     <div
       style={{
@@ -228,7 +225,10 @@ const ImageRingItem: React.FC<{
         opacity,
         width: item.size,
         height: item.size,
-        filter: `drop-shadow(0 0 ${item.size * 0.2 * glowIntensity}px rgba(255, 215, 0, ${0.5 * glowIntensity}))`,
+        filter: [
+          `drop-shadow(0 0 ${item.size * 0.12 * glowIntensity * (0.3 + zPercent * 0.7)}px rgba(255, 215, 0, ${0.35 * glowIntensity}))`,
+          zPercent < 0.45 ? `blur(${((0.45 - zPercent) * 3).toFixed(2)}px)` : '',
+        ].filter(Boolean).join(' '),
       }}
     >
       <Img
@@ -251,7 +251,8 @@ const BlessingRingItem: React.FC<{
   scale: number;
   opacity: number;
   glowIntensity: number;
-}> = ({ item, x, z, scale, opacity, glowIntensity }) => {
+  zPercent?: number;
+}> = ({ item, x, z, scale, opacity, glowIntensity, zPercent = 1 }) => {
   const style = item.blessingStyle ?? {};
 
   return (
@@ -260,17 +261,17 @@ const BlessingRingItem: React.FC<{
         position: "absolute",
         transform: `translateX(${x}px) translateZ(${z}px) scale(${scale})`,
         opacity,
-        filter: `drop-shadow(0 0 ${item.size * 0.2 * glowIntensity}px rgba(255, 215, 0, ${0.5 * glowIntensity}))`,
+        filter: zPercent < 0.45 ? `blur(${((0.45 - zPercent) * 3).toFixed(2)}px)` : undefined,
       }}
     >
       <SingleBlessingSymbol
         type={item.content as BlessingSymbolType}
         size={item.size}
-        primaryColor={style.primaryColor ?? "#FFD700"}
-        secondaryColor={style.secondaryColor ?? "#FFA500"}
+        primaryColor={style.primaryColor ?? "#FFD76A"}
+        secondaryColor={style.secondaryColor ?? "#D4A017"}
         enable3D={style.enable3D ?? true}
         enableGlow={style.enableGlow ?? true}
-        glowIntensity={style.glowIntensity ?? glowIntensity}
+        glowIntensity={(style.glowIntensity ?? glowIntensity) * (0.35 + zPercent * 0.65)}
       />
     </div>
   );
@@ -304,6 +305,10 @@ const VerticalMode: React.FC<{
 }) => {
   const centerX = width / 2;
   const rotationAngle = (frame * rotationSpeed * 0.02) % (Math.PI * 2);
+  // 入场渐入：替代第 0 帧即满速运转的生硬开场
+  const entrance = interpolate(frame, [0, 20], [0, 1], {
+    extrapolateLeft: "clamp", extrapolateRight: "clamp",
+  });
 
   return (
     <div
@@ -319,15 +324,18 @@ const VerticalMode: React.FC<{
       }}
     >
       {items.map((item) => {
-        const zPos = Math.cos(rotationAngle) * ringRadius;
+        // 每行一个相位差，形成螺旋柱而非锁死的木马墙
+        const helixPhase = item.id * 0.55;
+        const itemAngle = rotationAngle + helixPhase;
+        const zPos = Math.cos(itemAngle) * ringRadius;
         const zPercent = (zPos + ringRadius) / (ringRadius * 2);
-        const itemOpacity = (0.3 + zPercent * 0.7) * item.opacity;
+        const itemOpacity = (0.3 + zPercent * 0.7) * item.opacity * entrance;
 
-        const x = Math.sin(rotationAngle) * ringRadius;
-        const z = Math.cos(rotationAngle) * ringRadius;
+        const x = Math.sin(itemAngle) * ringRadius;
+        const z = Math.cos(itemAngle) * ringRadius;
         const scale = 0.8 + zPercent * 0.4;
 
-        const commonProps = { x, z, scale, opacity: itemOpacity, glowIntensity };
+        const commonProps = { x, z, scale, opacity: itemOpacity, glowIntensity, zPercent };
 
         if (item.type === "text") {
           return (
@@ -405,6 +413,10 @@ const PositionsMode: React.FC<{
 }) => {
   const centerX = width / 2;
   const rotationAngle = (frame * rotationSpeed * 0.02) % (Math.PI * 2);
+  // 入场渐入
+  const entrance = interpolate(frame, [0, 20], [0, 1], {
+    extrapolateLeft: "clamp", extrapolateRight: "clamp",
+  });
 
   return (
     <div
@@ -423,12 +435,12 @@ const PositionsMode: React.FC<{
         const currentAngle = item.angle + rotationAngle;
         const z = Math.cos(currentAngle) * ringRadius;
         const zPercent = (z + ringRadius) / (ringRadius * 2);
-        const itemOpacity = (0.3 + zPercent * 0.7) * item.opacity;
+        const itemOpacity = (0.3 + zPercent * 0.7) * item.opacity * entrance;
 
         const x = Math.sin(currentAngle) * ringRadius;
         const scale = 0.8 + zPercent * 0.4;
 
-        const commonProps = { x, z, scale, opacity: itemOpacity, glowIntensity };
+        const commonProps = { x, z, scale, opacity: itemOpacity, glowIntensity, zPercent };
 
         if (item.type === "text") {
           return (

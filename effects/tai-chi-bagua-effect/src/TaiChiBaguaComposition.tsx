@@ -87,20 +87,17 @@ const GoldenSparkle: React.FC<{
   
   const frequency = 15 + (index % 10) * 2;
   const phase = index * 13;
-  const twinkle = interpolate(
-    (frame + phase) % frequency,
-    [0, frequency / 2, frequency],
-    [0, 1, 0],
-    { extrapolateRight: "extend" }
-  );
-  
-  const size = interpolate(twinkle, [0, 1], [1, 4]);
-  const opacity = interpolate(twinkle, [0, 1], [0, 0.9]);
+  // 正弦呼吸替代线性三角波：闪烁是"呼吸"不是 LED 硬切换
+  const twinkle = 0.5 + 0.5 * Math.sin(((frame + phase) / frequency) * Math.PI * 2);
+
+  const size = 1 + twinkle * 3;
+  const opacity = twinkle * 0.85;
 
   return (
     <g>
       <circle cx={x} cy={y} r={size} fill={color} opacity={opacity} />
-      {twinkle > 0.5 && (
+      {/* 十字星芒只在呼吸峰值短暂出现 */}
+      {twinkle > 0.78 && (
         <>
           <line x1={x - size * 3} y1={y} x2={x + size * 3} y2={y} stroke={color} strokeWidth={0.5} opacity={opacity * 0.5} />
           <line x1={x} y1={y - size * 3} x2={x} y2={y + size * 3} stroke={color} strokeWidth={0.5} opacity={opacity * 0.5} />
@@ -160,14 +157,16 @@ const EnergyParticle: React.FC<{
   const baseAngle = (index / total) * 360;
   const angleOffset = interpolate(frame * speed, [0, 360], [0, 360], { extrapolateRight: "extend" });
   const angle = (baseAngle + angleOffset) * (Math.PI / 180);
-  
+
   const radiusBase = 220 + (index % 3) * 60;
-  const radiusWave = interpolate(frame + index * 10, [0, 30, 60], [radiusBase, radiusBase + 30, radiusBase], { extrapolateRight: "extend" });
-  
+  // 半径脉动与明暗呼吸统一用正弦，消除分段线性折角
+  const radiusWave = radiusBase + 15 + 15 * Math.sin(((frame + index * 10) / 60) * Math.PI * 2);
+
   const x = centerX + Math.cos(angle) * radiusWave;
   const y = centerY + Math.sin(angle) * radiusWave;
-  const opacity = interpolate(frame + index * 5, [0, 15, 30], [0.2, 0.6, 0.2], { extrapolateRight: "extend" });
-  const size = interpolate(frame + index * 8, [0, 20, 40], [1.5, 3, 1.5], { extrapolateRight: "extend" });
+  const breathe = 0.5 + 0.5 * Math.sin(((frame + index * 5) / 30) * Math.PI * 2);
+  const opacity = 0.2 + breathe * 0.4;
+  const size = 1.5 + breathe * 1.5;
 
   return <circle cx={x} cy={y} r={size} fill={color} opacity={opacity * 0.5} />;
 };
@@ -298,10 +297,11 @@ export const TaiChiBaguaComposition: React.FC<TaiChiBaguaProps> = ({
   const minBottom = height - verticalMargin - baguaRadius;
   const centerY = interpolate(verticalPosition, [0, 1], [minTop, minBottom]);
 
+  // 欠阻尼弹簧入场：法器落定带一次轻微过冲，"出现"有仪式感
   const entranceProgress = spring({
     frame,
     fps: 30,
-    config: { damping: 100, stiffness: 200, mass: 1 },
+    config: { damping: 14, stiffness: 120, mass: 1 },
   });
 
   const taichiRotation = interpolate(frame, [0, 360 / taichiRotationSpeed], [0, 360], {

@@ -102,7 +102,7 @@ export const TextTornadoComposition: React.FC<TextTornadoProps> = ({
   const defaultTextStyle = {
     color: "#FFD700",
     effect: "gold3d" as const,
-    effectIntensity: 0.9,
+    effectIntensity: 0.55,
     fontWeight: 700,
     ...textStyle,
   };

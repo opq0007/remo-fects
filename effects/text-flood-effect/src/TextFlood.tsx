@@ -13,7 +13,7 @@ import {
   Easing,
   AbsoluteFill,
   random,
-  spring,
+
 } from "remotion";
 import {
   MixedInputItem,
@@ -268,17 +268,20 @@ const FloodParticleRender: React.FC<FloodParticleRenderProps> = ({
   // 计算生命周期进度（0-1）
   const lifeProgress = Math.min(currentFrame / particle.lifeDuration, 1);
 
+  // 缓入缓出推进：扑面而来时加速放大（真实逼近的物理感），
+  // 远处慢、近处快，替代全程匀速
+  const easedLife = Easing.inOut(Easing.cubic)(lifeProgress);
+
   // 根据方向计算深度变化
   // toward: 从远到近（depth: 1 -> 0）
   // away: 从近到远（depth: 0 -> 1）
-  const depthProgress = direction === "toward" 
-    ? interpolate(lifeProgress, [0, 1], [particle.depth, 0])
-    : interpolate(lifeProgress, [0, 1], [particle.depth, 1]);
+  const depthProgress = direction === "toward"
+    ? interpolate(easedLife, [0, 1], [particle.depth, 0])
+    : interpolate(easedLife, [0, 1], [particle.depth, 1]);
 
-  // 计算缩放（近处放大，远处缩小）
-  // 使用指数函数让近处放大更剧烈
+  // 计算缩放（近处放大，远处缩小）；加速度已由 easedLife 承担
   const baseScale = particle.scale ?? 1;
-  const depthScale = Math.pow(1 - depthProgress, 0.7) * 2 + 0.3; // 0.3 - 2.3
+  const depthScale = (1 - depthProgress) * 1.7 + 0.4; // 0.4 - 2.1
   const scale = baseScale * depthScale;
 
   // 计算位置
@@ -286,16 +289,12 @@ const FloodParticleRender: React.FC<FloodParticleRenderProps> = ({
   const waveOffset = Math.sin(
     lifeProgress * Math.PI * 2 * waveConfig.waveFrequency + particle.wavePhase
   ) * waveConfig.waveAmplitude * (1 - depthProgress);
-  
+
   const x = particle.horizontalPos * width + waveOffset;
 
-  // 垂直位置：从远处向近处移动
-  // 远处在画面顶部，近处在画面底部
-  // toward: depthProgress 从高到低，y 从顶部移到底部
-  // away: depthProgress 从低到高，y 从底部移到顶部
-  const y = direction === "toward"
-    ? interpolate(depthProgress, [0, 1], [height + 200, -100])
-    : interpolate(depthProgress, [0, 1], [height + 200, -100]);
+  // 垂直位置：depthProgress 高 = 远 = 画面顶部，低 = 近 = 画面底部
+  // （toward/away 的方向差异已由 depthProgress 的走向体现）
+  const y = interpolate(depthProgress, [0, 1], [height + 200, -100]);
 
   // 计算透明度
   // 远处淡，近处清晰（depthProgress 高 = 远 = 淡，depthProgress 低 = 近 = 清晰）
@@ -322,18 +321,26 @@ const FloodParticleRender: React.FC<FloodParticleRenderProps> = ({
     // 冲击效果：突然放大并模糊
     // depthProgress: 0 -> 0.2，impactProgress: 1 -> 0（越近冲击越强）
     const impactProgress = interpolate(depthProgress, [0, 0.2], [1, 0]);
-    impactScale = interpolate(impactProgress, [0, 1], [1, impactConfig.impactScale]);
+    // 回弹曲线（easeOutBack）：冲击瞬间过冲再回稳，替代线性拉伸
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    const backOut = c3 * Math.pow(impactProgress - 1, 3) + c1 * Math.pow(impactProgress - 1, 2) + 1;
+    impactScale = 1 + (impactConfig.impactScale - 1) * backOut;
     impactBlur = interpolate(impactProgress, [0, 1], [0, impactConfig.impactBlur]);
-    
-    // 震动效果
-    impactShakeX = Math.sin(frame * 0.5) * impactConfig.impactShake * impactProgress;
-    impactShakeY = Math.cos(frame * 0.7) * impactConfig.impactShake * impactProgress;
+
+    // 震动效果：每粒子独立相位，消除全体同频抽搐
+    impactShakeX = Math.sin(frame * 0.5 + particle.wavePhase * 3) * impactConfig.impactShake * impactProgress;
+    impactShakeY = Math.cos(frame * 0.7 + particle.wavePhase * 3) * impactConfig.impactShake * impactProgress;
   }
 
   // 计算动态旋转
   let rotation = particle.rotation ?? 0;
   // 波浪中的旋转
   rotation += Math.sin(lifeProgress * Math.PI * 2 * waveConfig.waveFrequency + particle.wavePhase) * 15;
+
+  // 远处轻微失焦（与冲击模糊共用 filter）
+  const atmosphericBlur = depthProgress * 0.8;
+  const blurValue = Math.max(impactBlur, atmosphericBlur);
 
   // 构建样式
   const containerStyle: React.CSSProperties = {
@@ -342,7 +349,7 @@ const FloodParticleRender: React.FC<FloodParticleRenderProps> = ({
     top: y + impactShakeY,
     transform: `translate(-50%, -50%) rotate(${rotation}deg) scale(${scale * impactScale})`,
     opacity,
-    filter: impactBlur > 0 ? `blur(${impactBlur}px)` : undefined,
+    filter: blurValue > 0.1 ? `blur(${blurValue.toFixed(2)}px)` : undefined,
     zIndex: Math.floor((1 - depthProgress) * 100),
     pointerEvents: "none",
   };

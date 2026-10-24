@@ -116,21 +116,22 @@ const KaleidoscopeItemComponent = React.memo<{
     { extrapolateRight: "extend" as const, extrapolateLeft: "clamp" as const }
   );
   
-  // 应用全局旋转 + 元素自身旋转
-  const currentAngle = item.angle + globalRotation + item.rotationOffset * progress * 0.5;
+  // 应用全局旋转 + 环速差（内环快、外环慢，替代刚体整体转动）+ 元素自身旋转
+  const ringRotation = globalRotation * (1.3 - item.layer * 0.15);
+  const currentAngle = item.angle + ringRotation + item.rotationOffset * progress * 0.5;
   
   // 转换为笛卡尔坐标
   const x = centerX + Math.cos(currentAngle) * currentRadius;
   const y = centerY + Math.sin(currentAngle) * currentRadius;
   
-  // 元素出现时的淡入效果
+  // 元素出现时的淡入效果（缓出，替代匀速渐显）
   const fadeIn = interpolate(
     elementFrame,
     [0, 15],
     [0, 1],
-    { extrapolateRight: "extend" as const, extrapolateLeft: "clamp" as const }
+    { extrapolateRight: "extend" as const, extrapolateLeft: "clamp" as const, easing: Easing.out(Easing.cubic) }
   );
-  
+
   // 元素离开时的淡出效果（接近终点时）
   const fadeOut = interpolate(
     progress,
@@ -138,8 +139,16 @@ const KaleidoscopeItemComponent = React.memo<{
     [1, 0],
     { extrapolateRight: "clamp" as const, extrapolateLeft: "extend" as const }
   );
-  
-  const opacity = fadeIn * fadeOut;
+
+  // 距离衰减：飞得越远越淡越虚（近大远小的空气感）
+  const distanceFade = interpolate(
+    currentRadius,
+    [Math.max(width, height) * 0.25, Math.max(width, height) * 0.5],
+    [1, 0.55],
+    { extrapolateRight: "clamp" as const, extrapolateLeft: "extend" as const }
+  );
+
+  const opacity = fadeIn * fadeOut * distanceFade;
   
   // 根据距离计算缩放（远的稍小，近的稍大）
   const distanceScale = interpolate(currentRadius, [0, Math.max(width, height) * 0.5], [1.2, 0.7], { extrapolateRight: "clamp" as const, extrapolateLeft: "extend" as const });
@@ -150,13 +159,12 @@ const KaleidoscopeItemComponent = React.memo<{
   // 计算旋转角度（文字自身旋转，增加动感）
   const textRotation = interpolate(progress, [0, 1], [0, item.rotationOffset * 60]);
   
-  // 发光效果
-  const adjustedGlow = glowIntensity * 0.8;
+  // 发光效果：两层（内紧外松），强度整体收敛
+  const adjustedGlow = glowIntensity * 0.55;
   const textShadow = enableGlow
     ? `
-        0 0 ${8 * adjustedGlow}px ${item.glowColor},
-        0 0 ${16 * adjustedGlow}px ${item.glowColor},
-        0 0 ${32 * adjustedGlow}px ${item.glowColor}
+        0 0 ${6 * adjustedGlow}px ${item.glowColor},
+        0 0 ${16 * adjustedGlow}px ${item.glowColor}
       `
     : 'none';
   
@@ -199,6 +207,8 @@ const KaleidoscopeItemComponent = React.memo<{
         color: item.color,
         textShadow,
         opacity,
+        // 远处轻微失焦
+        filter: distanceFade < 0.8 ? `blur(${((0.8 - distanceFade) * 4).toFixed(2)}px)` : undefined,
         whiteSpace: "nowrap",
         fontFamily: "'Microsoft YaHei', 'PingFang SC', sans-serif",
         willChange: "transform, opacity",

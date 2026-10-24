@@ -128,18 +128,21 @@ const BorderBreakEffect: React.FC<{
 }> = ({ active, progress, color }) => {
   if (!active) return null;
 
+  // 种子化随机：渲染可复现；幂律尺寸 + 有机分布，替代"等距排排站"
   const shards = React.useMemo(() => {
+    const rand = (n: number) => {
+      const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+      return x - Math.floor(x);
+    };
     const result = [];
     for (let i = 0; i < 20; i++) {
-      const side = i % 4;
-      const pos = (Math.floor(i / 4) / 5) * 100;
       result.push({
-        side,
-        pos,
-        size: 10 + Math.random() * 30,
-        angle: Math.random() * 360,
-        speed: 2 + Math.random() * 5,
-        rotationSpeed: (Math.random() - 0.5) * 20,
+        side: rand(i * 5 + 1) * 4 | 0,
+        pos: 4 + rand(i * 7 + 2) * 92,
+        size: 8 + Math.pow(rand(i * 11 + 3), 2) * 34,
+        angle: rand(i * 13 + 4) * 360,
+        speed: 2 + rand(i * 17 + 5) * 5,
+        rotationSpeed: (rand(i * 19 + 6) - 0.5) * 20,
       });
     }
     return result;
@@ -171,7 +174,7 @@ const BorderBreakEffect: React.FC<{
               backgroundColor: color,
               transform: `rotate(${shard.angle + rotation}deg)`,
               opacity: Math.max(0, 1 - progress),
-              boxShadow: `0 0 10px ${color}`,
+              boxShadow: `0 0 6px ${color}`,
             }}
           />
         );
@@ -206,8 +209,8 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
   fontWeight = 900,
   textColor = "#ffd700",
   glowColor = "#ffaa00",
-  secondaryGlowColor = "#ff6600",
-  glowIntensity = 1.5,
+  secondaryGlowColor = "#7EC8FF",
+  glowIntensity = 0.8,
   bevelDepth = 3,
   imageSize,
   blessingSize,
@@ -430,19 +433,6 @@ export const TextBreakthroughComposition: React.FC<TextBreakthroughCompositionPr
           />
         );
       })}
-
-      {isAnyBreakingThrough && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            transform: `translate(${Math.sin(frame * 1.5) * shakeIntensity * 0.3}px, ${Math.cos(frame * 1.8) * shakeIntensity * 0.3}px)`,
-          }}
-        />
-      )}
     </BaseComposition>
   );
 };

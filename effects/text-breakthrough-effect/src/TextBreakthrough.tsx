@@ -527,7 +527,8 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
 
     if (contentType === "text" && text) {
       const scaledFontSize = fontSize * scale;
-      const dynamicGlowIntensity = glowIntensity * (1 + (1 - perspective.scale) * 2);
+      // 距离越远辉光越强（大气感），但整体收敛：金属渐变本体才是主角
+      const dynamicGlowIntensity = glowIntensity * (1 + (1 - perspective.scale) * 1.2);
       const textOpacity = startZ > endZ
         ? interpolate(currentZ, [endZ, startZ], [1, 0.3], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
         : interpolate(currentZ, [startZ, endZ], [0.3, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -543,15 +544,13 @@ export const TextBreakthrough: React.FC<TextBreakthroughProps> = ({
             whiteSpace: "nowrap",
             letterSpacing: `${4 * scale}px`,
             textShadow: `
-              0 0 ${10 * dynamicGlowIntensity}px ${glowColor},
-              0 0 ${20 * dynamicGlowIntensity}px ${glowColor},
-              0 0 ${40 * dynamicGlowIntensity}px ${secondaryGlowColor},
-              0 0 ${80 * dynamicGlowIntensity}px ${secondaryGlowColor},
+              0 0 ${12 * dynamicGlowIntensity}px ${glowColor},
+              0 0 ${32 * dynamicGlowIntensity}px ${secondaryGlowColor},
               ${bevelDepth * scale}px ${bevelDepth * scale}px 0 rgba(180, 130, 50, 0.8),
               ${bevelDepth * 2 * scale}px ${bevelDepth * 2 * scale}px 0 rgba(140, 100, 30, 0.6),
               ${bevelDepth * 3 * scale}px ${bevelDepth * 3 * scale}px 0 rgba(100, 70, 20, 0.4)
             `,
-            filter: `blur(${Math.max(0, currentZ / 500)}px) drop-shadow(0 0 ${10 * dynamicGlowIntensity}px ${glowColor})`,
+            filter: `blur(${Math.max(0, currentZ / 500)}px) drop-shadow(0 0 ${6 * dynamicGlowIntensity}px ${glowColor})`,
           }}
         >
           <span

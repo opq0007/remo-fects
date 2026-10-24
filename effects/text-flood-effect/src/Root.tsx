@@ -64,7 +64,7 @@ export const RemotionRoot: React.FC = () => {
               impactShake: 15,
             },
             textStyle: {
-              color: "#00d4ff",
+              color: "#5BC9E8",
               effect: "glow",
               effectIntensity: 1.2,
               fontWeight: 900,
@@ -88,7 +88,7 @@ export const RemotionRoot: React.FC = () => {
               enabled: true,
               text: "© Remo-Fects",
               fontSize: 24,
-              color: "#00d4ff",
+              color: "#5BC9E8",
               opacity: 0.4,
               speed: 1,
               intensity: 0.8,

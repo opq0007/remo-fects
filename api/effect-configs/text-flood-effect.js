@@ -23,9 +23,9 @@ const config = {
   path: path.join(__dirname, '../../effects/text-flood-effect')
 };
 
-const FLOOD_TEXT_STYLE = { color: '#00d4ff', effect: 'glow', effectIntensity: 1.2, fontWeight: 900 };
-const FLOOD_IMAGE_STYLE = { glow: true, glowColor: '#00d4ff', glowIntensity: 0.8, shadow: true };
-const FLOOD_BLESSING_STYLE = { ...DEFAULT_BLESSING_STYLE, glowIntensity: 1.2 };
+const FLOOD_TEXT_STYLE = { color: '#5BC9E8', effect: 'glow', effectIntensity: 0.7, fontWeight: 800 };
+const FLOOD_IMAGE_STYLE = { glow: true, glowColor: '#5BC9E8', glowIntensity: 0.5, shadow: true };
+const FLOOD_BLESSING_STYLE = { ...DEFAULT_BLESSING_STYLE, glowIntensity: 0.7 };
 
 const params = {
   // 混合输入

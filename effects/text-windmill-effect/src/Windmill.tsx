@@ -90,14 +90,16 @@ export const Windmill: React.FC<WindmillProps> = ({
   const centerX = width / 2;
   const centerY = height / 2 + height * centerOffsetY;
   
-  // 计算当前旋转角度
+  // 计算当前旋转角度：基础匀速 + 低频阵风摆动（风车有风才有生命）
   const direction = rotationDirection === "clockwise" ? 1 : -1;
-  const currentRotation = interpolate(
+  const baseRotation = interpolate(
     frame,
     [0, 24 / rotationSpeed],
     [0, Math.PI * 2 * direction],
     { extrapolateRight: "extend" as const }
   );
+  const gustSway = Math.sin(frame * 0.045) * 0.3 + Math.sin(frame * 0.013) * 0.18;
+  const currentRotation = baseRotation + gustSway * direction;
   
   // 生成叶片配置
   const bladeConfigs = useMemo(() => {
@@ -134,14 +136,15 @@ export const Windmill: React.FC<WindmillProps> = ({
   }, [bladesData, colors, glowColor, fontSize, appearDuration, bladeLengthRatio, enableRandomBladeLength]);
   
   return (
-    <AbsoluteFill style={{ perspective: `${perspective}px` }}>
+    // 透视统一由 calculate3DPosition 的手工投影承担（与深度透明度联动），
+    // 不再叠加 CSS perspective，避免双重透视
+    <AbsoluteFill>
       {/* 风车主体 */}
       <div
         style={{
           position: "absolute",
           width: "100%",
           height: "100%",
-          transformStyle: "preserve-3d",
         }}
       >
         {/* 中心轴装饰 */}
@@ -156,12 +159,12 @@ export const Windmill: React.FC<WindmillProps> = ({
             borderRadius: "50%",
             background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
             boxShadow: enableGlow
-              ? `0 0 ${20 * glowIntensity}px ${glowColor}, 0 0 ${40 * glowIntensity}px ${glowColor}`
+              ? `0 0 ${18 * glowIntensity}px ${glowColor}`
               : "none",
             opacity: 0.8,
           }}
         />
-        
+
         {/* 叶片 */}
         {bladeConfigs.map((config) => (
           <WindmillBlade
@@ -180,7 +183,7 @@ export const Windmill: React.FC<WindmillProps> = ({
             blessingStyle={blessingStyle}
           />
         ))}
-        
+
         {/* 中心点装饰 */}
         <div
           style={{
@@ -193,7 +196,7 @@ export const Windmill: React.FC<WindmillProps> = ({
             borderRadius: "50%",
             background: `linear-gradient(135deg, ${colors[0]} 0%, ${glowColor} 100%)`,
             boxShadow: enableGlow
-              ? `0 0 ${15 * glowIntensity}px ${glowColor}, inset 0 0 ${10 * glowIntensity}px rgba(255,255,255,0.5)`
+              ? `0 0 ${12 * glowIntensity}px ${glowColor}, inset 0 0 ${8 * glowIntensity}px rgba(255,255,255,0.5)`
               : "none",
           }}
         />

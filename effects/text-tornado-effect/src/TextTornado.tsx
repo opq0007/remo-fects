@@ -225,12 +225,14 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
 
     if (entranceProgress <= 0) return null;
 
-    // 当前高度（向上飘动）
+    // 当前高度（向上飘动）：每粒子独立上升速度 + 缓入加速，
+    // 替代全员同速线性齐步走
+    const liftFactor = 0.7 + ((particle.id * 37) % 100) / 100 * 0.6;
     const heightOffset = interpolate(
       frame,
       [0, fps * 10],
-      [0, liftSpeed * height * 0.5],
-      { extrapolateRight: "clamp" }
+      [0, liftSpeed * liftFactor * height * 0.5],
+      { extrapolateRight: "clamp", easing: Easing.in(Easing.quad) }
     );
     const currentHeightRatio = Math.min(1, particle.heightRatio + heightOffset / height);
 
@@ -241,15 +243,22 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
     const spiralAngle = particle.initialAngle + tornadoRotation * particle.rotationMultiplier * swirlIntensity;
     const particleRadius = particle.initialRadius * (currentRadius / baseRadius);
 
+    // 景深激活：sin(spiralAngle) 为前后轴，前侧更大更清晰，后侧缩小失焦
+    const depthZ = Math.sin(spiralAngle);
+    const depthScale = 1 + depthZ * 0.22;
+    const depthOpacity = 0.72 + (depthZ * 0.5 + 0.5) * 0.28;
+    const depthBlur = Math.max(0, (0.5 - depthZ * 0.5)) * 1.2;
+    const depthFilter = depthBlur > 0.08 ? `blur(${depthBlur.toFixed(2)}px)` : undefined;
+
     // 计算位置
     const x = centerX + Math.cos(spiralAngle) * particleRadius * entranceProgress;
     const y = centerY + (currentHeightRatio - 0.5) * height * funnelHeight;
 
     // 透明度
-    const opacity = particle.opacity * entranceProgress * (1 - currentHeightRatio * 0.3);
+    const opacity = particle.opacity * entranceProgress * (1 - currentHeightRatio * 0.3) * depthOpacity;
 
-    // 粒子自身旋转
-    const selfRotation = spiralAngle * 30;
+    // 粒子自身旋转：正弦回摆，替代单调同向累计翻滚
+    const selfRotation = Math.sin(spiralAngle) * 14;
 
     // 根据类型渲染
     if (particle.type === "text") {
@@ -262,7 +271,8 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
             position: "absolute",
             left: x,
             top: y,
-            transform: `translate(-50%, -50%) rotate(${selfRotation}deg) scale(${currentScale})`,
+            transform: `translate(-50%, -50%) rotate(${selfRotation}deg) scale(${currentScale * depthScale})`,
+            filter: depthFilter,
             opacity,
             whiteSpace: "nowrap",
             ...textStyles,
@@ -281,7 +291,8 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
             position: "absolute",
             left: x,
             top: y,
-            transform: `translate(-50%, -50%) rotate(${selfRotation}deg) scale(${currentScale})`,
+            transform: `translate(-50%, -50%) rotate(${selfRotation}deg) scale(${currentScale * depthScale})`,
+            filter: depthFilter,
             opacity,
             width: particle.size,
             height: particle.size,
@@ -307,7 +318,8 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
             position: "absolute",
             left: x,
             top: y,
-            transform: `translate(-50%, -50%) rotate(${selfRotation}deg) scale(${currentScale})`,
+            transform: `translate(-50%, -50%) rotate(${selfRotation}deg) scale(${currentScale * depthScale})`,
+            filter: depthFilter,
             opacity,
           }}
         >
@@ -334,7 +346,6 @@ export const TextTornado: React.FC<TextTornadoProps> = ({
         height,
         position: "relative",
         overflow: "hidden",
-        perspective: "1000px",
       }}
     >
       {/* 龙卷风主体 */}

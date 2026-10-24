@@ -135,7 +135,7 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
 }) => {
   // 默认文字样式
   const defaultTextStyle = {
-    color: "#00d4ff",
+    color: "#5BC9E8",
     effect: "glow" as const,
     effectIntensity: 1,
     fontWeight: 800,
@@ -146,7 +146,7 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
   // 默认图片样式
   const defaultImageStyle = {
     glow: true,
-    glowColor: "#00d4ff",
+    glowColor: "#5BC9E8",
     glowIntensity: 0.8,
     shadow: true,
     shadowBlur: 20,
@@ -155,8 +155,8 @@ export const TextFloodComposition: React.FC<TextFloodCompositionProps> = ({
 
   // 使用公共函数合并祝福图案样式
   const mergedBlessingStyle = mergeBlessingStyle({
-    primaryColor: "#00d4ff",
-    secondaryColor: "#0088cc",
+    primaryColor: "#5BC9E8",
+    secondaryColor: "#1A7FA8",
     enable3D: true,
     enableGlow: true,
     glowIntensity: 1.2,

@@ -40,7 +40,7 @@ export const RemotionRoot: React.FC = () => {
           // 嵌套参数
           background: {
             type: "color",
-            color: "#FFFFFF",
+            color: "#F5EFDF",
           },
           overlay: {
             color: "#000000",

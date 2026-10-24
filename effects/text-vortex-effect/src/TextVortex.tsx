@@ -10,6 +10,7 @@ import {
 import { SingleBlessingSymbol, getImageSrc } from "../../shared/components";
 import { BlessingSymbolType } from "../../shared/schemas";
 import { generateTextStyle } from "../../shared/utils";
+import { createSeededRandomGenerator, DEFAULT_BLESSING_TYPES as SHARED_BLESSING_TYPES } from "../../shared/utils";
 
 /**
  * 内容类型
@@ -113,14 +114,9 @@ export interface TextVortexProps {
 }
 
 /**
- * 伪随机数生成器
+ * 伪随机数生成器：复用 shared 的线性同余实现，保证全项目行为一致
  */
-function seededRandom(seed: number): () => number {
-  return () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
-}
+const seededRandom = createSeededRandomGenerator;
 
 /**
  * 文字旋涡组件
@@ -177,7 +173,7 @@ export const TextVortex: React.FC<TextVortexProps> = ({
   const random = useMemo(() => seededRandom(seed), [seed]);
 
   // 默认祝福图案类型
-  const DEFAULT_BLESSING_TYPES: BlessingSymbolType[] = ["goldCoin", "moneyBag", "luckyBag", "redPacket", "star", "heart", "balloon"];
+  const DEFAULT_BLESSING_TYPES = SHARED_BLESSING_TYPES;
   const effectiveBlessingTypes = blessingTypes.length > 0 ? blessingTypes : DEFAULT_BLESSING_TYPES;
 
   // 判断可用内容
@@ -467,7 +463,8 @@ export const TextVortex: React.FC<TextVortexProps> = ({
               width: "100%",
               height: "100%",
               objectFit: "contain",
-              filter: `drop-shadow(0 0 ${finalSize * 0.15}px rgba(255, 215, 0, 0.6))`,
+              // 辉光随透视缩放衰减：远处的图片不再无条件满强度发光
+              filter: `drop-shadow(0 0 ${(finalSize * 0.12 * Math.min(1, perspectiveScale - 0.5)).toFixed(1)}px rgba(255, 215, 0, 0.45))`,
             }}
           />
         </div>
@@ -600,6 +597,12 @@ export const TextVortex: React.FC<TextVortexProps> = ({
     );
   };
 
+  // 第二幕：扩散结束后（expansionProgress 到 1）相机缓慢推进 + 呼吸脉动，
+  // 替代无限匀速自转的"待机画面"
+  const secondAct = Math.max(0, expansionProgress - 0.95) / 0.05;
+  const cameraPush = 1 + secondAct * Math.min(1, Math.max(0, (frame - expansionDuration * fps) / (fps * 6))) * 0.12;
+  const breathPulse = 1 + secondAct * 0.02 * Math.sin(frame * 0.06);
+
   return (
     <div
       style={{
@@ -607,7 +610,8 @@ export const TextVortex: React.FC<TextVortexProps> = ({
         height,
         position: "relative",
         overflow: "hidden",
-        perspective: depth3D ? `${perspective}px` : undefined,
+        // 透视统一由手工 perspectiveScale 承担（与深度透明度/排序联动），
+        // 不再叠加 CSS perspective，避免双重透视量纲冲突
       }}
     >
       {/* 外围光晕 */}
@@ -619,22 +623,22 @@ export const TextVortex: React.FC<TextVortexProps> = ({
           transform: "translate(-50%, -50%)",
           width: maxRadius * 2.5,
           height: maxRadius * 2.5,
-          background: `radial-gradient(circle, 
-            rgba(255, 180, 50, ${0.1 + expansionProgress * 0.1}) 0%, 
-            rgba(255, 100, 0, ${0.05 + expansionProgress * 0.05}) 30%, 
+          background: `radial-gradient(circle,
+            rgba(255, 180, 50, ${0.1 + expansionProgress * 0.1}) 0%,
+            rgba(255, 100, 0, ${0.05 + expansionProgress * 0.05}) 30%,
             transparent 60%)`,
           filter: "blur(40px)",
           pointerEvents: "none",
         }}
       />
-      
-      {/* 旋涡主体 */}
+
+      {/* 旋涡主体（第二幕整体缩放作用于主体，不动光晕） */}
       <div
         style={{
           position: "absolute",
           width: "100%",
           height: "100%",
-          transformStyle: depth3D ? "preserve-3d" : undefined,
+          transform: `scale(${(cameraPush * breathPulse).toFixed(4)})`,
         }}
       >
         {particles.map(renderParticle)}

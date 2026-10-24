@@ -32,6 +32,8 @@ export {
 
 export {
   generateTextStyle,
+  TEXT_EFFECT_PRESETS,
+  FONT_FAMILY,
   type TextStyleConfig,
 } from "./textStyle";
 
@@ -74,4 +76,11 @@ export {
   getContrastColor,
   blendColors,
   randomColor,
+  shadeColor,
+  generateAtmosphere,
+  GOLD_SCALE,
+  DEEP_BACKGROUNDS,
+  EFFECT_PALETTES,
+  getEffectPalette,
+  type EffectPalette,
 } from "./colors";

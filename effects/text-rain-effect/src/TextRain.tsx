@@ -3,7 +3,6 @@ import {
   useCurrentFrame,
   useVideoConfig,
   interpolate,
-  Easing,
   AbsoluteFill,
   random,
   staticFile,
@@ -13,6 +12,9 @@ import {
   BlessingSymbol,
   BlessingSymbolType,
   getImageSrc,
+  TEXT_EFFECT_PRESETS as SHARED_PRESETS,
+  GOLD_SCALE,
+  FONT_FAMILY,
 } from "../../shared/index";
 
 // ==================== 文字样式类型定义 ====================
@@ -111,6 +113,7 @@ interface TextRainDrop {
   textDirection: TextDirection;  // 文字排列方向
   textWidth: number;             // 文字宽度
   textHeight: number;            // 文字高度
+  depth: number;                 // 景深系数（0 远 - 1 近）：近=大=快=清晰
 }
 
 // 图片雨滴属性
@@ -128,6 +131,7 @@ interface ImageRainDrop {
   height: number;
   opacity: number;
   rotation: number;
+  depth: number;
   // 图片特有动画
   swingPhase: number;
   spinDirection: number;
@@ -149,6 +153,7 @@ interface BlessingRainDrop {
   opacity: number;
   rotation: number;
   scale: number;
+  depth: number;
   // 祝福图案特有样式
   primaryColor: string;
   secondaryColor: string;
@@ -210,71 +215,37 @@ const generateGradientCSS = (gradient: GradientConfig): string => {
   return type === "linear" ? `linear-gradient(${angle}deg, ${colorStops})` : `radial-gradient(circle, ${colorStops})`;
 };
 
+// 文字特效预设：主体复用 shared 统一预设（鎏金 2.0），
+// 仅保留本特效独有的 "3d" 挤出实现
 const EFFECT_PRESETS: Record<TextEffectType, (fontSize: number, intensity: number) => React.CSSProperties> = {
-  none: () => ({}),
-  shadow: (fontSize, intensity) => ({
-    textShadow: `${fontSize * 0.05 * intensity}px ${fontSize * 0.05 * intensity}px ${fontSize * 0.15 * intensity}px rgba(0,0,0,${0.5 * intensity})`,
-  }),
+  ...(SHARED_PRESETS as Record<string, (fontSize: number, intensity: number) => React.CSSProperties>),
   "3d": (fontSize, intensity) => {
     const layers: string[] = [];
-    const depth = Math.floor(fontSize * 0.15 * intensity);
+    const depth = Math.min(5, Math.floor(fontSize * 0.08 * intensity));
     for (let i = 1; i <= depth; i++) {
-      layers.push(`${i}px ${i}px 0 rgba(0,0,0,${0.15 - i * 0.01})`);
+      layers.push(`${i}px ${i}px 0 rgba(20, 14, 4, ${Math.max(0.12, 0.34 - i * 0.05)})`);
     }
     return { textShadow: layers.join(", ") };
   },
-  gold3d: (fontSize, intensity) => {
-    const depth = Math.floor(fontSize * 0.12 * intensity);
-    const layers: string[] = [];
-    for (let i = 1; i <= depth; i++) {
-      const alpha = Math.max(0.1, 0.4 - i * 0.03);
-      layers.push(`${i}px ${i}px 0 rgba(80, 40, 0, ${alpha * intensity})`);
-    }
-    layers.push(`-${fontSize * 0.02}px -${fontSize * 0.02}px ${fontSize * 0.08}px rgba(255, 215, 0, ${0.6 * intensity})`);
-    layers.push(`0 0 ${fontSize * 0.15}px rgba(255, 200, 50, ${0.4 * intensity})`);
-    layers.push(`0 0 ${fontSize * 0.05}px rgba(255, 255, 200, ${0.3 * intensity})`);
-    return { textShadow: layers.join(", ") };
-  },
-  emboss: (fontSize, intensity) => ({
-    textShadow: `-${fontSize * 0.03}px -${fontSize * 0.03}px 0 rgba(255,255,255,${0.7 * intensity}), ${fontSize * 0.03}px ${fontSize * 0.03}px 0 rgba(0,0,0,${0.5 * intensity}), 0 0 ${fontSize * 0.1}px rgba(0,0,0,${0.2 * intensity})`,
-  }),
-  neon: (fontSize, intensity) => ({
-    textShadow: `0 0 ${fontSize * 0.1 * intensity}px currentColor, 0 0 ${fontSize * 0.2 * intensity}px currentColor, 0 0 ${fontSize * 0.4 * intensity}px currentColor, 0 0 ${fontSize * 0.6 * intensity}px rgba(255,0,255,${0.5 * intensity})`,
-  }),
-  metallic: (fontSize, intensity) => ({
-    textShadow: `0 ${fontSize * 0.02}px ${fontSize * 0.05}px rgba(0,0,0,${0.8 * intensity}), 0 ${fontSize * 0.05}px ${fontSize * 0.1}px rgba(0,0,0,${0.5 * intensity})`,
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-  }),
-  retro: (fontSize, intensity) => ({
-    textShadow: `${fontSize * 0.04}px ${fontSize * 0.04}px 0 rgba(0,0,0,${0.8 * intensity}), ${fontSize * 0.08}px ${fontSize * 0.08}px 0 rgba(0,0,0,${0.4 * intensity}), 0 0 ${fontSize * 0.05}px rgba(139,69,19,${0.3 * intensity})`,
-  }),
-  glow: (fontSize, intensity) => ({
-    textShadow: `0 0 ${fontSize * 0.1 * intensity}px rgba(255,255,255,${0.8 * intensity}), 0 0 ${fontSize * 0.2 * intensity}px rgba(255,255,255,${0.5 * intensity}), 0 0 ${fontSize * 0.4 * intensity}px currentColor`,
-  }),
-  outline: (fontSize, intensity) => ({
-    WebkitTextStroke: `${fontSize * 0.02 * intensity}px rgba(0,0,0,${0.8 * intensity})`,
-    textShadow: `0 0 ${fontSize * 0.05 * intensity}px rgba(0,0,0,${0.3 * intensity})`,
-  }),
 };
 
 const generateTextStyle = (fontSize: number, style: TextStyleConfig): React.CSSProperties => {
-  const intensity = style.effectIntensity ?? 0.8;
+  const intensity = style.effectIntensity ?? 0.6;
   const effect = style.effect ?? "gold3d";
-  
+
   const baseStyle: React.CSSProperties = {
     fontSize: fontSize,  // 关键：设置字体大小
-    fontFamily: style.fontFamily ?? "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
+    fontFamily: style.fontFamily ?? FONT_FAMILY,
     fontWeight: style.fontWeight ?? 700,
     letterSpacing: style.letterSpacing ?? 2,
   };
-  
+
   if (style.gradient) {
     baseStyle.background = generateGradientCSS(style.gradient);
     baseStyle.WebkitBackgroundClip = "text";
     baseStyle.WebkitTextFillColor = "transparent";
   } else {
-    baseStyle.color = style.color ?? "#ffd700";
+    baseStyle.color = style.color ?? GOLD_SCALE.bright;
   }
   
   const effectStyle = EFFECT_PRESETS[effect](fontSize, intensity);
@@ -311,8 +282,8 @@ const generateImageStyle = (
   // 发光效果
   if (style.glow) {
     const glowColor = style.glowColor ?? "#ffd700";
-    const glowIntensity = style.glowIntensity ?? 0.8;
-    styles.filter = `drop-shadow(0 0 ${width * 0.15 * glowIntensity}px ${glowColor})`;
+    const glowIntensity = style.glowIntensity ?? 0.5;
+    styles.filter = `drop-shadow(0 0 ${width * 0.08 * glowIntensity}px ${glowColor})`;
   }
   
   // 阴影效果
@@ -523,6 +494,7 @@ const generateNonOverlappingDrops = (
         textDirection,
         textWidth: itemWidth,
         textHeight: itemHeight,
+        depth: fontSizeDelta > 0 ? (fontSize - fontSizeRange[0]) / fontSizeDelta : 1,
       });
     } else if (dropType === "image" && hasImages) {
       // 【修复】使用独立计数器确保图片按顺序轮询
@@ -538,6 +510,7 @@ const generateNonOverlappingDrops = (
         type: "image",
         id: i, imageSrc, x: 0, lane: 0, startY: 0, endY: 0,
         delay: 0, duration: 0, width: itemSize, height: itemSize, opacity, rotation,
+        depth: imageSizeDelta > 0 ? (itemSize - imageSizeRange[0]) / imageSizeDelta : 1,
         swingPhase: random(`swing-${seedValue}`) * Math.PI * 2,
         spinDirection: random(`spin-${seedValue}`) > 0.5 ? 1 : -1,
       });
@@ -570,11 +543,12 @@ const generateNonOverlappingDrops = (
         opacity,
         rotation,
         scale: 1,
+        depth: imageSizeDelta > 0 ? (itemSize - imageSizeRange[0]) / imageSizeDelta : 1,
         primaryColor: blessingStyle.primaryColor ?? "#FFD700",
         secondaryColor: blessingStyle.secondaryColor ?? "#FFA500",
         enable3D: blessingStyle.enable3D ?? true,
         enableGlow: blessingStyle.enableGlow ?? true,
-        glowIntensity: blessingStyle.glowIntensity ?? 1,
+        glowIntensity: blessingStyle.glowIntensity ?? 0.7,
         animated: blessingStyle.animated ?? false,
         animationDelay: random(`animDelay-${seedValue}`) * 30,
       });
@@ -584,22 +558,15 @@ const generateNonOverlappingDrops = (
     
     // 计算碰撞和位置
     const lastDrop = drops[drops.length - 1];
-    
-    // 【优化】使用 Fisher-Yates 洗牌算法的简化版，减少随机调用
-    const shuffledLanes: number[] = [];
-    const availableLanes = Array.from({ length: laneCount }, (_, idx) => idx);
-    for (let j = laneCount - 1; j >= 0; j--) {
-      const randIdx = Math.floor(random(`lane-${seedValue}-${j}`) * (j + 1));
-      shuffledLanes.push(availableLanes[randIdx]);
-      availableLanes[randIdx] = availableLanes[j];
-    }
-    
-    let selectedLane = -1;
-    let bestDelay = 0;
-    let bestDuration = 0;
-    
+
+    // 【景深联动】近处（depth→1）的雨滴下落更快，远处更慢
+    const depthAdjustedDuration = Math.max(
+      Math.floor(fpsValue * 1.5),
+      Math.round(fpsValue * 3 * (1.28 - lastDrop.depth * 0.48) + random(`duration-${seedValue}`) * fpsValue * 2 * (1.28 - lastDrop.depth * 0.48))
+    );
+
     // 【优化】使用预计算的 fps 值
-    const baseDuration = Math.floor(fpsValue * 3 + random(`duration-${seedValue}`) * fpsValue * 2);
+    const baseDuration = depthAdjustedDuration;
     const baseDelay = Math.floor(random(`delay-${seedValue}`) * durationInFrames * 0.9);
     const fallDistance = height + itemHeight * 2;
     const fallPixelsPerFrame = fallDistance / baseDuration;
@@ -608,10 +575,23 @@ const generateNonOverlappingDrops = (
     const collisionStartY = fallDirection === "up" 
       ? height + itemHeight + random(`startY-${seedValue}`) * itemHeight
       : -itemHeight - random(`startY-${seedValue}`) * itemHeight;
-    const collisionEndY = fallDirection === "up" 
-      ? -itemHeight 
+    const collisionEndY = fallDirection === "up"
+      ? -itemHeight
       : height + itemHeight;
-    
+
+    // 【优化】使用 Fisher-Yates 洗牌算法的简化版，减少随机调用
+    const shuffledLanes: number[] = [];
+    const availableLanes = Array.from({ length: laneCount }, (_, idx) => idx);
+    for (let j = laneCount - 1; j >= 0; j--) {
+      const randIdx = Math.floor(random(`lane-${seedValue}-${j}`) * (j + 1));
+      shuffledLanes.push(availableLanes[randIdx]);
+      availableLanes[randIdx] = availableLanes[j];
+    }
+
+    let selectedLane = -1;
+    let bestDelay = 0;
+    let bestDuration = 0;
+
     for (const lane of shuffledLanes) {
       let hasCollision = false;
       for (const occupied of laneOccupancy[lane]) {
@@ -693,13 +673,15 @@ const TextRainDropItem: React.FC<{
     extrapolateRight: "clamp",
   });
 
-  const easedProgress = Easing.out(Easing.quad)(progress);
+  // 雨滴近似终端速度：接近匀速并带轻微重力加速
+  const easedProgress = progress * (0.86 + 0.14 * progress);
   const y = interpolate(easedProgress, [0, 1], [drop.startY, drop.endY]);
 
   const fadeInDuration = drop.duration * 0.1;
   const fadeOutStart = drop.duration * 0.85;
-  
-  let opacity = drop.opacity;
+
+  // 景深：远处雨滴更暗
+  let opacity = drop.opacity * (0.62 + drop.depth * 0.38);
   if (currentFrame < fadeInDuration) {
     opacity *= interpolate(currentFrame, [0, fadeInDuration], [0, 1], { extrapolateRight: "clamp" });
   } else if (currentFrame > fadeOutStart) {
@@ -712,9 +694,12 @@ const TextRainDropItem: React.FC<{
 
   // 根据文字方向决定布局
   const isVertical = drop.textDirection === "vertical";
-  
+
   // 竖排文字时禁用旋转，保持笔直落下
   const effectiveRotation = isVertical ? 0 : drop.rotation;
+
+  // 景深：远处雨滴轻微失焦
+  const depthBlur = (1 - drop.depth) * 1.3;
 
   return (
     <div
@@ -724,6 +709,7 @@ const TextRainDropItem: React.FC<{
         top: y,
         transform: `translateX(-50%) rotate(${effectiveRotation}deg)`,
         opacity,
+        filter: depthBlur > 0.05 ? `blur(${depthBlur.toFixed(2)}px)` : undefined,
         // 【修复】垂直文字使用 writingMode 实现竖排，不需要额外的 flex 布局
         // writingMode 和 flex 组合会导致渲染不稳定，文字可能先水平后垂直
         whiteSpace: isVertical ? "nowrap" : "nowrap",
@@ -752,13 +738,14 @@ const ImageRainDropItem: React.FC<{
     extrapolateRight: "clamp",
   });
 
-  const easedProgress = Easing.out(Easing.quad)(progress);
+  // 与文字雨滴一致：近匀速 + 轻微重力加速
+  const easedProgress = progress * (0.86 + 0.14 * progress);
   const y = interpolate(easedProgress, [0, 1], [drop.startY, drop.endY]);
 
   const fadeInDuration = drop.duration * 0.1;
   const fadeOutStart = drop.duration * 0.85;
-  
-  let opacity = drop.opacity;
+
+  let opacity = drop.opacity * (0.62 + drop.depth * 0.38);
   if (currentFrame < fadeInDuration) {
     opacity *= interpolate(currentFrame, [0, fadeInDuration], [0, 1], { extrapolateRight: "clamp" });
   } else if (currentFrame > fadeOutStart) {
@@ -788,6 +775,9 @@ const ImageRainDropItem: React.FC<{
     drop.width, drop.height, imageStyle, currentFrame, drop.duration, drop.swingPhase, drop.spinDirection
   );
 
+  // 景深：远处图片轻微失焦（与 imgStyles.filter 分层，避免相互覆盖）
+  const depthBlur = (1 - drop.depth) * 1.3;
+
   return (
     <div
       style={{
@@ -796,6 +786,7 @@ const ImageRainDropItem: React.FC<{
         top: y,
         transform: `translateX(-50%) rotate(${dynamicRotation}deg)`,
         opacity,
+        filter: depthBlur > 0.05 ? `blur(${depthBlur.toFixed(2)}px)` : undefined,
         pointerEvents: "none",
       }}
     >
@@ -816,13 +807,14 @@ const BlessingRainDropItem: React.FC<{
     extrapolateRight: "clamp",
   });
 
-  const easedProgress = Easing.out(Easing.quad)(progress);
+  // 与文字/图片雨滴一致：近匀速 + 轻微重力加速
+  const easedProgress = progress * (0.86 + 0.14 * progress);
   const y = interpolate(easedProgress, [0, 1], [drop.startY, drop.endY]);
 
   const fadeInDuration = drop.duration * 0.1;
   const fadeOutStart = drop.duration * 0.85;
-  
-  let opacity = drop.opacity;
+
+  let opacity = drop.opacity * (0.62 + drop.depth * 0.38);
   if (currentFrame < fadeInDuration) {
     opacity *= interpolate(currentFrame, [0, fadeInDuration], [0, 1], { extrapolateRight: "clamp" });
   } else if (currentFrame > fadeOutStart) {
@@ -837,6 +829,9 @@ const BlessingRainDropItem: React.FC<{
     dynamicRotation += currentFrame * 0.5;
   }
 
+  // 景深：远处祝福图案轻微失焦
+  const depthBlur = (1 - drop.depth) * 1.3;
+
   return (
     <div
       style={{
@@ -845,6 +840,7 @@ const BlessingRainDropItem: React.FC<{
         top: y,
         transform: `translateX(-50%) rotate(${dynamicRotation}deg) scale(${drop.scale})`,
         opacity,
+        filter: depthBlur > 0.05 ? `blur(${depthBlur.toFixed(2)}px)` : undefined,
         pointerEvents: "none",
         width: drop.width,
         height: drop.height,

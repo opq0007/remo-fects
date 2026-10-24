@@ -63,14 +63,10 @@ export type TextKaleidoscopeCompositionProps = z.infer<typeof TextKaleidoscopeCo
 // ==================== 默认颜色配置 ====================
 
 const DEFAULT_COLORS = [
-  "#FFD700", // 金色
-  "#FF6B6B", // 珊瑚红
-  "#4ECDC4", // 青绿
-  "#45B7D1", // 天蓝
-  "#96CEB4", // 薄荷绿
-  "#FFEAA7", // 淡金
-  "#DDA0DD", // 梅红
-  "#98D8C8", // 水绿
+  "#FFD76A", // 亮金（主）
+  "#FF8FA3", // 玫瑰粉（辅）
+  "#7EC8FF", // 天蓝（冷呼吸）
+  "#FFF3C4", // 淡金高光
 ];
 
 // ==================== 内容项目类型 ====================

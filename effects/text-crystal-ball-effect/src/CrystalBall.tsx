@@ -6,6 +6,7 @@ import {
   AbsoluteFill,
   Img,
   random,
+  spring,
 } from "remotion";
 import {
   SingleBlessingSymbol,
@@ -133,16 +134,20 @@ const TextSphereItem: React.FC<{
 }> = ({ item, x, y, z, scale, opacity, textStyle, glowIntensity }) => {
   const rotateY = Math.atan2(x, z) * (180 / Math.PI);
   const styles = generateTextStyle(item.fontSize ?? item.size, {
-    color: textStyle?.color ?? "#ffd700",
-    effect: (textStyle?.effect as "gold3d" | "glow" | "shadow" | "none") ?? "gold3d",
-    effectIntensity: textStyle?.effectIntensity ?? glowIntensity,
+    color: textStyle?.color ?? "#EAF2FF",
+    effect: (textStyle?.effect as "gold3d" | "glow" | "shadow" | "none") ?? "glow",
+    effectIntensity: textStyle?.effectIntensity ?? 0.6,
     fontWeight: textStyle?.fontWeight ?? 800,
   });
+  // 球体远侧轻微失焦（z < 0 为后半球）
+  const farBlur = z < 0 ? Math.min(1.4, (-z / Math.max(1, Math.abs(z) + 200)) * 2.4) : 0;
   return (
     <div style={{
       position: "absolute", left: 0, top: 0,
       transform: `translate3d(${x}px, ${y}px, ${z}px) rotateY(${rotateY}deg) scale(${scale})`,
-      opacity, whiteSpace: "nowrap", backfaceVisibility: "hidden", ...styles,
+      opacity, whiteSpace: "nowrap", backfaceVisibility: "hidden",
+      filter: farBlur > 0.08 ? `blur(${farBlur.toFixed(2)}px)` : undefined,
+      ...styles,
     }}>{item.content}</div>
   );
 };
@@ -158,12 +163,13 @@ const ImageSphereItem: React.FC<{
   glowIntensity: number;
 }> = ({ item, x, y, z, scale, opacity, glowIntensity }) => {
   const rotateY = Math.atan2(x, z) * (180 / Math.PI);
+  const farBlur = z < 0 ? Math.min(1.4, (-z / Math.max(1, Math.abs(z) + 200)) * 2.4) : 0;
   return (
     <div style={{
       position: "absolute", left: 0, top: 0,
       transform: `translate3d(${x}px, ${y}px, ${z}px) rotateY(${rotateY}deg) scale(${scale})`,
       opacity, width: item.size, height: item.size,
-      filter: `drop-shadow(0 0 ${item.size * 0.15 * glowIntensity}px rgba(255, 215, 0, ${0.6 * glowIntensity}))`,
+      filter: `drop-shadow(0 0 ${item.size * 0.12 * glowIntensity}px rgba(156, 209, 245, ${0.45 * glowIntensity}))${farBlur > 0.08 ? ` blur(${farBlur.toFixed(2)}px)` : ''}`,
       backfaceVisibility: "hidden",
     }}>
       <Img src={getImageSrc(item.content)} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
@@ -183,12 +189,13 @@ const BlessingSphereItem: React.FC<{
 }> = ({ item, x, y, z, scale, opacity, glowIntensity }) => {
   const style = item.blessingStyle ?? {};
   const rotateY = Math.atan2(x, z) * (180 / Math.PI);
+  const farBlur = z < 0 ? Math.min(1.4, (-z / Math.max(1, Math.abs(z) + 200)) * 2.4) : 0;
   return (
     <div style={{
       position: "absolute", left: 0, top: 0,
       transform: `translate3d(${x}px, ${y}px, ${z}px) rotateY(${rotateY}deg) scale(${scale})`,
       opacity,
-      filter: `drop-shadow(0 0 ${item.size * 0.15 * glowIntensity}px rgba(255, 215, 0, ${0.6 * glowIntensity}))`,
+      filter: farBlur > 0.08 ? `blur(${farBlur.toFixed(2)}px)` : undefined,
       backfaceVisibility: "hidden",
     }}>
       <SingleBlessingSymbol type={item.content as BlessingSymbolType} size={item.size}
@@ -281,12 +288,17 @@ export const CrystalBall: React.FC<CrystalBallProps> = ({
   textStyle = {}, perspective = 1000, entranceDuration = 30, seed = 42,
 }) => {
   const frame = useCurrentFrame();
-  const { width, height } = useVideoConfig();
+  const { width, height, fps } = useVideoConfig();
   const centerX = width / 2;
   const centerY = interpolate(verticalOffset, [0, 1], [ballRadius + 50, height - ballRadius - 50]);
-  const entranceProg = interpolate(frame, [0, entranceDuration], [0, 1], { extrapolateRight: "clamp" as const, extrapolateLeft: "clamp" as const });
-  const entranceScale = interpolate(entranceProg, [0, 1], [0.5, 1]);
-  const entranceOpacity = interpolate(entranceProg, [0, 0.3, 1], [0, 0.7, 1]);
+  // 欠阻尼弹簧入场：水晶球"落定"带一次轻微过冲，替代线性渐显
+  const entranceSpring = spring({
+    frame,
+    fps,
+    config: { damping: 14, stiffness: 90, mass: 0.9 },
+  });
+  const entranceScale = 0.5 + entranceSpring * 0.5;
+  const entranceOpacity = Math.min(1, entranceSpring * 1.5);
   const zoomScale = zoomEnabled ? interpolate(zoomProgress, [0, 1], [1, 1.8]) : 1;
   const zoomZ = zoomEnabled ? interpolate(zoomProgress, [0, 1], [0, -200]) : 0;
   const rotX = autoRotate ? frame * rotationSpeedX * 0.02 : 0;

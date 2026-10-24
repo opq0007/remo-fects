@@ -89,7 +89,7 @@ function calculate3DPosition(
   centerY: number,
   tiltAngle: number,
   rotateY: number
-): { x: number; y: number; scale: number; opacity: number } {
+): { x: number; y: number; scale: number; opacity: number; blur: number } {
   // 相对于中心点的偏移
   const dx = x - centerX;
   const dy = y - centerY;
@@ -110,12 +110,14 @@ function calculate3DPosition(
   // 透视投影
   const perspective = 1000;
   const scale = perspective / (perspective + z2);
-  
+
   return {
     x: centerX + x2 * scale,
     y: centerY + y1 * scale,
     scale,
     opacity: interpolate(z2, [-500, 0, 500], [0.3, 1, 0.3], { extrapolateRight: "clamp" as const, extrapolateLeft: "clamp" as const }),
+    // 远端轻微失焦
+    blur: z2 > 120 ? Math.min(1.2, (z2 - 120) / 500) : 0,
   };
 }
 
@@ -131,9 +133,10 @@ const ContentItemRenderer: React.FC<{
   glowIntensity: number;
   blessingStyle?: WindmillBladeProps["blessingStyle"];
 }> = ({ item, fontSize, color, glowColor, enableGlow, glowIntensity, blessingStyle }) => {
-  const adjustedGlow = glowIntensity * 0.8;
+  // 发光两层（内紧外松），强度整体收敛
+  const adjustedGlow = glowIntensity * 0.55;
   const textShadow = enableGlow
-    ? `0 0 ${8 * adjustedGlow}px ${glowColor}, 0 0 ${16 * adjustedGlow}px ${glowColor}`
+    ? `0 0 ${6 * adjustedGlow}px ${glowColor}, 0 0 ${16 * adjustedGlow}px ${glowColor}`
     : "none";
 
   if (item.type === "blessing") {
@@ -245,6 +248,7 @@ export const WindmillBlade: React.FC<WindmillBladeProps> = ({
             top: pos3D.y,
             transform: `translate(-50%, -50%) rotate(${itemRotation}deg) scale(${pos3D.scale})`,
             opacity: pos3D.opacity * appearProgress,
+            filter: pos3D.blur > 0.05 ? `blur(${pos3D.blur.toFixed(2)}px)` : undefined,
             willChange: "transform, opacity",
           }}
         >

@@ -110,15 +110,23 @@ export const Firework: React.FC<FireworkProps> = ({
       return x - Math.floor(x);
     };
     
-    // 1. 主要爆炸粒子（火花）
+    // 1. 主要爆炸粒子（火花）：3 个子爆心聚簇 + 幂律速度带，
+    //    打破完美均匀放射的"针垫"感
     const sparkCount = Math.floor(particleCount * 0.6);
+    const clusterCount = 3;
+    const clusterAngles = Array.from({ length: clusterCount }, (_, c) =>
+      seededRandom(c * 97 + 900) * Math.PI * 2
+    );
+    const clusterSpread = [1.9, 1.4, 0.9];
     for (let i = 0; i < sparkCount; i++) {
-      const angle = (i / sparkCount) * Math.PI * 2;
-      const randomSpeed = seededRandom(i * 7 + 1);
+      const cluster = i % clusterCount;
+      const clusterAngle = clusterAngles[cluster];
+      const angle = clusterAngle + (seededRandom(i * 7 + 1) - 0.5) * clusterSpread[cluster];
+      const randomSpeed = seededRandom(i * 11 + 5);
       const randomSize = seededRandom(i * 13 + 2);
       const randomColor = seededRandom(i * 17 + 3);
       const randomDecay = seededRandom(i * 23 + 4);
-      const speed = 3 + randomSpeed * 4;
+      const speed = 2.5 + Math.pow(randomSpeed, 1.6) * 5;
       particles.push({
         x: 0,
         y: 0,
@@ -132,15 +140,15 @@ export const Firework: React.FC<FireworkProps> = ({
         decay: 0.015 + randomDecay * 0.01,
       });
     }
-    
-    // 2. 星星粒子（十字星效果）
+
+    // 2. 星星粒子（柔性光点，随机角度散布）
     const starCount = Math.floor(particleCount * 0.25);
     for (let i = 0; i < starCount; i++) {
-      const angle = (i / starCount) * Math.PI * 2;
-      const randomSpeed = seededRandom(i * 31 + 100);
+      const angle = seededRandom(i * 31 + 100) * Math.PI * 2;
+      const randomSpeed = seededRandom(i * 33 + 103);
       const randomSize = seededRandom(i * 37 + 101);
       const randomDecay = seededRandom(i * 41 + 102);
-      const speed = 2 + randomSpeed * 3;
+      const speed = 2 + Math.pow(randomSpeed, 1.3) * 3;
       particles.push({
         x: 0,
         y: 0,
@@ -148,17 +156,17 @@ export const Firework: React.FC<FireworkProps> = ({
         vy: Math.sin(angle) * speed,
         size: 3 + randomSize * 4,
         opacity: 1,
-        color: '#ffffff',
+        color: '#FFF6D8',
         type: 'star',
         life: 1,
         decay: 0.02 + randomDecay * 0.01,
       });
     }
-    
-    // 3. 环形粒子（外圈光环）
+
+    // 3. 环形粒子（外圈光环）：保留环形意象，但加角度抖动
     const ringCount = Math.floor(particleCount * 0.15);
     for (let i = 0; i < ringCount; i++) {
-      const angle = (i / ringCount) * Math.PI * 2;
+      const angle = (i / ringCount) * Math.PI * 2 + (seededRandom(i * 43 + 200) - 0.5) * 0.35;
       const randomSpeed = seededRandom(i * 43 + 200);
       const randomSize = seededRandom(i * 47 + 201);
       const randomDecay = seededRandom(i * 53 + 202);
@@ -213,19 +221,19 @@ export const Firework: React.FC<FireworkProps> = ({
     const size = particle.size * (1 - progress * 0.3);
     
     if (particle.type === 'star') {
+      // 柔光圆点：中心实、边缘羽化，替代旧十字矩形
       return (
         <div
           key={index}
           style={{
             position: "absolute",
-            left: x,
-            top: y,
-            width: size * 4,
-            height: size,
-            backgroundColor: particle.color,
+            left: x - size,
+            top: y - size,
+            width: size * 2,
+            height: size * 2,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${particle.color} 0%, ${particle.color} 35%, transparent 75%)`,
             opacity: opacity,
-            boxShadow: `0 0 ${size * glowIntensity * 2}px ${particle.color}`,
-            filter: "blur(0.3px)",
             zIndex: 5,
           }}
         />
@@ -274,10 +282,12 @@ export const Firework: React.FC<FireworkProps> = ({
   // 渲染爆炸波纹
   const renderedRings = explosionRings.map((ring, index) => {
     if (frame < explodeFrame) return null;
-    
+
     const progress = Math.min(1, (frame - explodeFrame) / 30);
-    const ringRadius = progress * 80 + index * 30;
-    const ringOpacity = Math.max(0, 1 - progress);
+    // 缓出扩散：冲击波应快速展开然后减速消散
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const ringRadius = eased * 80 + index * 30 * (0.5 + eased * 0.5);
+    const ringOpacity = Math.max(0, Math.pow(1 - progress, 1.6));
     
     return (
       <div
@@ -309,11 +319,11 @@ export const Firework: React.FC<FireworkProps> = ({
   const renderContent = () => {
     if (frame < explodeFrame) return null;
 
-    const contentOpacity = Math.max(0, 1 - explosionProgress * 0.8);
+    // 缓出消退：内容在爆炸点停留更久，尾部加速淡出
+    const contentOpacity = Math.max(0, 1 - Math.pow(Math.min(1, explosionProgress * 1.15), 2.2));
 
     if (contentType === "text" && text) {
       return (
-        <>
           <div
             style={{
               position: "absolute",
@@ -323,11 +333,10 @@ export const Firework: React.FC<FireworkProps> = ({
               fontSize: fontSize,
               fontWeight: "bold",
               color: textColor,
+              // 两层发光：内紧外松，让文字本体在爆炸点可读
               textShadow: `
-                0 0 ${20 * glowIntensity}px ${glowColor},
-                0 0 ${40 * glowIntensity}px ${glowColor},
-                0 0 ${60 * glowIntensity}px ${textColor},
-                0 0 ${80 * glowIntensity}px ${textColor}
+                0 0 ${10 * glowIntensity}px ${glowColor},
+                0 0 ${28 * glowIntensity}px ${glowColor}
               `,
               opacity: contentOpacity,
               whiteSpace: "nowrap",
@@ -338,27 +347,6 @@ export const Firework: React.FC<FireworkProps> = ({
           >
             {text}
           </div>
-          {/* 文字外发光环 */}
-          <div
-            style={{
-              position: "absolute",
-              left: targetX,
-              top: targetY,
-              transform: "translate(-50%, -50%)",
-              fontSize: fontSize,
-              fontWeight: "bold",
-              color: "transparent",
-              WebkitTextStroke: `2px ${glowColor}`,
-              opacity: contentOpacity * 0.5,
-              whiteSpace: "nowrap",
-              fontFamily: "PingFang SC, Microsoft YaHei, SimHei, sans-serif",
-              letterSpacing: "4px",
-              zIndex: 9,
-            }}
-          >
-            {text}
-          </div>
-        </>
       );
     }
 

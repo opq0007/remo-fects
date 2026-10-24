@@ -20,7 +20,7 @@ const config = {
   path: path.join(__dirname, '../../effects/text-breakthrough-effect')
 };
 
-const BREAKTHROUGH_BLESSING_STYLE = { ...DEFAULT_BLESSING_STYLE, glowIntensity: 1.5 };
+const BREAKTHROUGH_BLESSING_STYLE = { ...DEFAULT_BLESSING_STYLE, glowIntensity: 0.8 };
 
 const params = {
   // 混合输入
@@ -41,8 +41,8 @@ const params = {
   // 颜色
   textColor: { type: 'string', defaultValue: '#ffd700' },
   glowColor: { type: 'string', defaultValue: '#ffaa00' },
-  secondaryGlowColor: { type: 'string', defaultValue: '#ff6600' },
-  glowIntensity: { type: 'number', defaultValue: 1.5 },
+  secondaryGlowColor: { type: 'string', defaultValue: '#7EC8FF' },
+  glowIntensity: { type: 'number', defaultValue: 0.8 },
   bevelDepth: { type: 'number', defaultValue: 3 },
   
   // 3D

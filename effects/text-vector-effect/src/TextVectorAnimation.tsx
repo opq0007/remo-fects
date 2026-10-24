@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo, useRef, useEffect, useState } from "react";
-import { useCurrentFrame, useVideoConfig, random, Easing, interpolate, spring } from "remotion";
+import { useCurrentFrame, useVideoConfig, random, Easing, interpolate, spring, Img } from "remotion";
 import {
   MixedInputItem,
   MixedItemType,
@@ -17,6 +17,9 @@ import {
   getNextContent,
   getSizeRange,
   createMixedInputItem,
+  SingleBlessingSymbol,
+  getImageSrc,
+  type BlessingSymbolType,
 } from "../../shared/index";
 import { PathPoint, textToFillPoints, normalizePoints } from "./textToPath";
 
@@ -118,12 +121,10 @@ export interface TextVectorAnimationProps {
 // ==================== 默认值 ====================
 
 const DEFAULT_COLORS = [
-  "#FFD700", // 金色
-  "#FF6B6B", // 珊瑚红
-  "#4ECDC4", // 青绿
-  "#45B7D1", // 天蓝
-  "#96CEB4", // 薄荷绿
-  "#FFEAA7", // 淡金
+  "#FFD76A", // 亮金（主）
+  "#FF8FA3", // 玫瑰粉（辅）
+  "#7EC8FF", // 天蓝（冷呼吸）
+  "#FFF3C4", // 淡金高光
 ];
 
 const DEFAULT_BLESSING_TYPES: Array<"goldCoin" | "moneyBag" | "luckyBag" | "redPacket" | "star" | "heart" | "balloon"> = [
@@ -437,9 +438,9 @@ export const TextVectorAnimation: React.FC<TextVectorAnimationProps> = ({
   elementSizeRange,
   elementSpacing = 20,
   // 颜色配置
-  textColor = "#FFD700",
-  glowColor = "#FFD700",
-  glowIntensity = 0.8,
+  textColor = "#FFD76A",
+  glowColor = "#FFC94A",
+  glowIntensity = 0.5,
   colors,
   // 样式配置
   textStyle,
@@ -691,7 +692,8 @@ export const TextVectorAnimation: React.FC<TextVectorAnimationProps> = ({
           top: centerY + animState.y,
           transform: `${transform3D}translate(-50%, -50%) scale(${animState.scale}) rotate(${item.rotation}deg)`,
           opacity: animState.opacity,
-          filter: `drop-shadow(0 0 ${item.width! * 0.3 * glowIntensity * animState.glowOpacity}px ${glowColor})`,
+          // 收敛的柔光：仅照亮边缘，不糊化字形
+          filter: `drop-shadow(0 0 ${item.width! * 0.14 * glowIntensity * animState.glowOpacity}px ${glowColor})`,
           pointerEvents: "none",
         };
         
@@ -722,25 +724,22 @@ export const TextVectorAnimation: React.FC<TextVectorAnimationProps> = ({
             </div>
           );
         } else if (item.type === "image") {
-          const imgSrc = item.content.startsWith("http") || item.content.startsWith("data:")
-            ? item.content
-            : item.content;
-          
+          const imgSrc = item.content;
+
           return (
-            <img
+            <Img
               key={item.id}
-              src={imgSrc}
+              src={getImageSrc(imgSrc)}
               style={{
                 ...style,
                 width: item.width,
                 height: item.height,
                 objectFit: "contain",
               }}
-              alt=""
             />
           );
         } else {
-          // blessing 类型
+          // blessing 类型：使用 shared 祝福图案组件，与其他特效视觉一致
           return (
             <div
               key={item.id}
@@ -748,29 +747,18 @@ export const TextVectorAnimation: React.FC<TextVectorAnimationProps> = ({
                 ...style,
                 width: item.width,
                 height: item.height,
+                filter: undefined,
               }}
             >
-              {/* 祝福图案使用简单的 SVG 表示 */}
-              <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%" }}>
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill={item.blessingStyle?.primaryColor || color}
-                  stroke={item.blessingStyle?.secondaryColor || "#FFA500"}
-                  strokeWidth="3"
-                />
-                <text
-                  x="50"
-                  y="55"
-                  textAnchor="middle"
-                  fontSize="24"
-                  fill="#FFF"
-                  fontWeight="bold"
-                >
-                  {item.content === "goldCoin" ? "¥" : item.content === "moneyBag" ? "袋" : item.content === "luckyBag" ? "福" : "包"}
-                </text>
-              </svg>
+              <SingleBlessingSymbol
+                type={item.content as BlessingSymbolType}
+                size={item.width ?? 24}
+                primaryColor={item.blessingStyle?.primaryColor || color}
+                secondaryColor={item.blessingStyle?.secondaryColor || "#D4A017"}
+                enable3D={item.blessingStyle?.enable3D ?? true}
+                enableGlow={item.blessingStyle?.enableGlow ?? true}
+                glowIntensity={item.blessingStyle?.glowIntensity ?? glowIntensity}
+              />
             </div>
           );
         }

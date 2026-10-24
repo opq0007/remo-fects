@@ -137,12 +137,12 @@ export const Bagua: React.FC<BaguaProps> = ({
       // 错开动画延迟
       const delay = staggerAnimation ? positionIndex * 3 : 0;
       
-      // 出现动画（淡入 + 缩放）
+      // 出现动画（缓出淡入 + 缩放）
       const appearProgress = interpolate(
         frame - delay,
         [0, 20],
         [0, 1],
-        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) }
       );
 
       // 脉冲效果
@@ -217,10 +217,10 @@ export const Bagua: React.FC<BaguaProps> = ({
               x={0}
               y={labelOffset}
               textAnchor="middle"
-              fontSize={16}
+              fontSize={26}
               fontWeight="bold"
               fill={labelColor}
-              fontFamily="serif"
+              fontFamily="'Songti SC', 'SimSun', Georgia, serif"
               opacity={0.95 * trigram.appearProgress}
               transform={`rotate(${trigram.angle + 90})`}
             >
