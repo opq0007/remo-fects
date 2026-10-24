@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useVideoConfig } from 'remotion';
 import { z } from 'zod';
-import { 
+import {
   StoryPanel,
   StoryChapterConfig,
   StoryCharacterConfig,
@@ -24,8 +24,8 @@ import {
 import { renderPlusEffects } from '../components/EffectRenderer';
 import { getColorTheme } from '../utils/colors';
 import { mergeChapterConfigs } from '../utils/mergeChapterConfig';
-import { 
-  KidsSubStyle, 
+import {
+  KidsSubStyle,
   ZodiacType,
   PetType,
   HeroType,
@@ -33,14 +33,28 @@ import {
   ScreenOrientation,
   PRIMARY_COLORS,
 } from '../types';
-import { 
-  KidsBirthdaySchema, 
-  getModules, 
-  getDuration,
+import {
+  KidsBirthdaySchema,
   getBlessingSeriesConfig,
+  computeContentPlan,
+  AVAILABLE_PUBLIC_ASSETS,
 } from '../schemas';
 
 export type KidsBirthdayProps = z.infer<typeof KidsBirthdaySchema>;
+
+/**
+ * 规范化后的角色资源：series 决定渲染方式
+ * - 'image'：用 imageSrc 图片渲染
+ * - 'zodiac' | 'pet' | 'hero'：用内置卡通角色渲染（零资源依赖）
+ */
+interface CharacterResource {
+  type: string;
+  name: string;
+  greeting: string;
+  series: 'image' | 'zodiac' | 'pet' | 'hero';
+  imageSrc?: string;
+  videoSrc?: string;
+}
 
 // ==================== 章节内部组件 ====================
 
@@ -49,31 +63,40 @@ const ChapterFContent: React.FC<{
   age?: number;
   subStyle: KidsSubStyle;
   orientation: ScreenOrientation;
-}> = ({ name, age, subStyle, orientation }) => {
+  nameFontSize: number;
+  nameColor?: string;
+  showAge: boolean;
+  blessingText: string;
+  blessingFontSize: number;
+}> = ({ name, age, subStyle, orientation, nameFontSize, nameColor, showAge, blessingText, blessingFontSize }) => {
+  // 名字字号：用户指定值 + 横竖屏适配（横屏按比例缩小）
+  const effectiveNameFontSize = orientation === 'portrait' ? nameFontSize : Math.round(nameFontSize * 0.75);
+
   return (
     <>
       <div style={{ position: 'absolute', top: '10%', width: '100%', zIndex: 20 }}>
         <BouncingName
           name={name}
           age={age}
-          showAge={true}
+          showAge={showAge}
           subStyle={subStyle}
-          fontSize={orientation === 'portrait' ? 90 : 70}
+          fontSize={effectiveNameFontSize}
+          color={nameColor}
         />
       </div>
-      
-      <div style={{ 
-        position: 'absolute', 
-        top: '30%', 
-        width: '100%', 
+
+      <div style={{
+        position: 'absolute',
+        top: '30%',
+        width: '100%',
         zIndex: 15,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center'
       }}>
         <BlessingText
-          text="生日快乐"
-          fontSize={orientation === 'portrait' ? 50 : 40}
+          text={blessingText}
+          fontSize={orientation === 'portrait' ? blessingFontSize : Math.round(blessingFontSize * 0.75)}
           subStyle={subStyle}
         />
       </div>
@@ -108,18 +131,21 @@ const ChapterGContent: React.FC<{
 // ==================== 主组件 ====================
 
 /**
- * 儿童生日祝福视频组合组件 v3.3
- * 
+ * 儿童生日祝福视频组合组件 v4.0
+ *
  * 使用 StoryPanel + StoryChapter 架构，完全配置驱动
- * 使用嵌套参数结构
+ *
+ * 易用性保证：
+ * - 所有对外参数均真实生效（message/blessingText/nameFontSize/nameColor/showAge/dreams…）
+ * - 角色图片缺失时自动回退到内置卡通形象，开箱即渲染
+ * - 视频总时长随照片数量自动伸缩（无照片 74s / 1 张 99s / 2 张以上 124s）
  */
 export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
   const { fps } = useVideoConfig();
-  
+
   const {
     name,
     age,
-    duration = getDuration(),
     subStyle = 'general',
     photos = [],
     dreams = ['astronaut', 'artist', 'racer'],
@@ -132,6 +158,13 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     birthdaySongVolume = 0.6,
     seed,
     chapterList: customChapterList,
+    // 样式参数（v4.0 起全部生效）
+    nameFontSize = 120,
+    nameColor,
+    showAge = true,
+    blessingText = '生日快乐',
+    blessingFontSize = 60,
+    message = '愿你每天开心成长',
     // 简化参数：祝福系列
     blessingSeries = 'journey_to_the_west',
     customCharacterImages,
@@ -142,58 +175,84 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     radialBurst,
     foreground,
   } = props;
-  
+
   const theme = getColorTheme(subStyle);
-  
+
   // 获取祝福系列配置
   const seriesConfig = useMemo(() => getBlessingSeriesConfig(blessingSeries), [blessingSeries]);
-  
-  // 构建角色资源（自定义资源覆盖默认配置）
-  const characterResources = useMemo(() => {
+
+  // 构建角色资源：
+  // 1. 自定义资源优先（显式提供即信任）
+  // 2. 默认资源若不在 public 资产清单中，自动回退到内置卡通形象（不产生 broken image）
+  const characterResources = useMemo<CharacterResource[]>(() => {
     const defaultCharacters = seriesConfig.characters;
-    
-    // 如果提供了自定义图片，覆盖默认配置
+
+    const withFallback: CharacterResource[] = defaultCharacters.map((char) => {
+      const imageAvailable = !!char.imageSrc && AVAILABLE_PUBLIC_ASSETS.has(char.imageSrc);
+      const fallback = char.cartoonFallback;
+      if (!imageAvailable && fallback) {
+        return {
+          type: char.type,
+          name: char.name,
+          greeting: char.greeting,
+          series: fallback.series,
+          imageSrc: undefined,
+          videoSrc: char.videoSrc,
+        };
+      }
+      return {
+        type: char.type,
+        name: char.name,
+        greeting: char.greeting,
+        series: 'image',
+        imageSrc: char.imageSrc,
+        videoSrc: char.videoSrc,
+      };
+    });
+
+    // 自定义图片覆盖（按索引对位，缺省沿用回退结果）
     if (customCharacterImages && customCharacterImages.length > 0) {
-      return defaultCharacters.map((char, index) => ({
+      return withFallback.map((char, index) => ({
         ...char,
+        series: 'image' as const,
         imageSrc: customCharacterImages[index] || char.imageSrc,
         videoSrc: customCharacterVideos?.[index] || char.videoSrc,
       }));
     }
-    
-    return defaultCharacters;
+
+    return withFallback;
   }, [seriesConfig, customCharacterImages, customCharacterVideos]);
-  
-  // 获取主要角色（用于开场和模块A）
+
+  // 获取主要角色（用于开场和收尾模块）
   const mainCharacter = characterResources[0];
-  
+
   // 构建面板级嵌套参数配置
   const panelBackground: NestedBackgroundProps = {
     type: 'gradient',
     gradient: theme.gradient,
     color: theme.background,
   };
-  
+
   const panelOverlay: NestedOverlayProps = {
     opacity: 0.1,
   };
-  
+
   const panelAudio: NestedAudioProps = {
     enabled: musicEnabled,
     source: `${musicTrack}.mp3`,
     volume: 0.5,
     loop: true,
   };
-  
+
   // 构建章节配置
   const chapters = useMemo((): StoryChapterConfig[] => {
-    const modules = getModules();
+    const plan = computeContentPlan(photos.length, fps);
     const chapterList: StoryChapterConfig[] = [];
-    
+
     // 模块 0：倒计时开场
     chapterList.push({
       id: '0_countdown',
-      durationInFrames: 4 * fps,
+      durationInFrames: plan.countdown,
       background: {
         type: 'gradient',
         gradient: 'linear-gradient(180deg, #0a0a20 0%, #1a1a3e 50%, #2a2a5e 100%)',
@@ -217,7 +276,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           strokeColor: theme.primary,
           strokeWidth: 6,
           glowColor: theme.primary,
-          glowIntensity: 1.5,
+          glowIntensity: 1.2,
         },
         finalText: {
           enabled: true,
@@ -243,57 +302,64 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         starCount: 100,
       },
     });
-    
+
     // 模块 A：魔法开场
-    if (modules.includes('A')) {
-      chapterList.push({
-        id: 'A_magicOpening',
-        durationInFrames: 2 * fps,
-        background: {
-          type: 'color',
-          color: '#0a0a20',
+    chapterList.push({
+      id: 'A_magicOpening',
+      durationInFrames: plan.opening,
+      background: {
+        type: 'color',
+        color: '#0a0a20',
+      },
+      magicEffects: {
+        blackScreen: {
+          enabled: true,
+          durationInFrames: 24,
+          startFrame: 0,
         },
-        magicEffects: {
-          // particles: {
-          //   enabled: true,
-          //   particleCount: 80,
-          //   color: PRIMARY_COLORS.violet,
-          //   durationInFrames: 48,
-          // },
-          blackScreen: {
-            enabled: true,
-            durationInFrames: 24,
-            startFrame: 0,
-          },
+      },
+      character: mainCharacter.series === 'image' ? {
+        series: 'image',
+        type: mainCharacter.type as ZodiacType | PetType | HeroType,
+        size: 500,
+        animate: true,
+        imageSrc: mainCharacter.imageSrc!,
+        entrance: {
+          enabled: true,
+          direction: 'bottom',
+          delay: 20,
+          distance: 100,
+          springConfig: { damping: 12, stiffness: 80 },
+          verticalPosition: 0.3,
+          horizontalPosition: 0.5,
         },
-        character: {
-          series: "image",
-          type: mainCharacter?.type as ZodiacType | PetType | HeroType | undefined,
-          size: 500,
-          animate: true,
-          imageSrc: mainCharacter?.imageSrc || "pic/孙悟空.png",
-          entrance: {
-            enabled: true,
-            direction: 'bottom',
-            delay: 20,
-            distance: 100,
-            springConfig: { damping: 12, stiffness: 80 },
-            verticalPosition: 0.3,
-            horizontalPosition: 0.5,
-          },
-          expression: 'happy',
+        expression: 'happy',
+      } : {
+        series: mainCharacter.series,
+        type: mainCharacter.type as ZodiacType | PetType | HeroType,
+        size: 500,
+        animate: true,
+        entrance: {
+          enabled: true,
+          direction: 'bottom',
+          delay: 20,
+          distance: 100,
+          springConfig: { damping: 12, stiffness: 80 },
+          verticalPosition: 0.3,
+          horizontalPosition: 0.5,
         },
-      });
-    }
-    
+        expression: 'happy',
+      },
+    });
+
     // 模块 F：成长庆祝高潮
-    if (modules.includes('F')) {
+    {
       // 获取第一个有视频的角色
-      const videoCharacter = characterResources.find(c => c.videoSrc);
-      
+      const videoCharacter = characterResources.find(c => c.videoSrc && AVAILABLE_PUBLIC_ASSETS.has(c.videoSrc));
+
       chapterList.push({
         id: 'F_growthCelebration',
-        durationInFrames: 10 * fps,
+        durationInFrames: plan.celebration,
         background: {
           type: 'gradient',
           gradient: theme.gradient,
@@ -329,16 +395,21 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
             age={age}
             subStyle={subStyle}
             orientation={orientation}
+            nameFontSize={nameFontSize}
+            nameColor={nameColor}
+            showAge={showAge}
+            blessingText={blessingText}
+            blessingFontSize={blessingFontSize}
           />
         ),
       });
     }
 
-    // 模块 C：照片互动1
-    if (modules.includes('C') && photos.length > 0) {
+    // 模块 C：照片互动 1（有照片才渲染）
+    if (photos.length >= 1) {
       chapterList.push({
         id: 'C_photoInteraction1',
-        durationInFrames: 30 * fps,
+        durationInFrames: plan.photo1,
         background: {
           type: 'gradient',
           gradient: theme.gradient,
@@ -350,14 +421,14 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           {
             effectType: 'textFirework',
             contentType: 'mixed',
-            words: ['生日快乐', 'Happy Birthday', '快乐成长'],
+            words: [blessingText, 'Happy Birthday', '快乐成长'],
             images: [],
             imageWeight: 0.3,
             blessingTypes: ['goldCoin', 'redPacket'],
             fontSize: 60,
-            colors: ['#FFD700', '#FF6B6B'],
-            glowColor: '#FFD700',
-            glowIntensity: 1.2,
+            colors: [theme.primary, theme.secondary],
+            glowColor: theme.primary,
+            glowIntensity: 0.9,
             x: 0.5,
             y: 0.4,
             scale: 1,
@@ -373,9 +444,9 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
             imageWeight: 0.3,
             blessingTypes: ['goldCoin', 'star', 'redPacket'],
             fontSize: 60,
-            colors: ['#FFD700', '#FF6B6B'],
-            glowColor: '#FFD700',
-            glowIntensity: 0.8,
+            colors: [theme.primary, theme.secondary],
+            glowColor: theme.primary,
+            glowIntensity: 0.6,
             x: 0.5,
             y: 0.5,
             scale: 1,
@@ -384,15 +455,15 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
             seed: 54321,
           },
         ],
-        children: <PhotoFromMagicCircle photo={photos[0 % photos.length]} visible={true} orientation={orientation} />,
+        children: <PhotoFromMagicCircle photo={photos[0]} visible={true} orientation={orientation} />,
       });
     }
-    
-    // 模块 D：照片互动2
-    if (modules.includes('D') && photos.length > 0) {
-      // 构建透明视频配置（使用系列角色视频）
-      const transparentVideoConfigs = characterResources
-        .filter(c => c.videoSrc)
+
+    // 模块 D：照片互动 2（需要 2 张及以上照片，避免同一张重复出现）
+    if (photos.length >= 2) {
+      // 构建透明视频配置（使用系列角色视频，仅使用确实存在的资源）
+      const availableVideos = characterResources.filter(c => c.videoSrc && AVAILABLE_PUBLIC_ASSETS.has(c.videoSrc));
+      const transparentVideoConfigs = availableVideos
         .slice(0, 5)
         .map((char, index) => ({
           src: char.videoSrc!,
@@ -404,10 +475,10 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           y: 0.7,
           flipX: index % 2 === 0,
         }));
-      
+
       chapterList.push({
         id: 'D_photoInteraction2',
-        durationInFrames: 30 * fps,
+        durationInFrames: plan.photo2,
         background: {
           type: 'gradient',
           gradient: theme.gradient,
@@ -415,20 +486,20 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         overlay: {
           opacity: 0.05,
         },
-        children: <PhotoFromMagicCircle targetY={0.3}  photo={photos[1 % photos.length]} visible={true} orientation={orientation} />,
+        children: <PhotoFromMagicCircle targetY={0.3} photo={photos[1]} visible={true} orientation={orientation} />,
         floatingElements: {
           enabled: true,
           type: 'hearts',
           count: 15,
           startFrame: 30,
-          color: '#FF6B6B',
+          color: theme.secondary,
         },
         transparentVideos: transparentVideoConfigs.length > 0 ? transparentVideoConfigs : undefined,
       });
     }
-    
+
     // 模块 G：生日歌互动
-    if (modules.includes('G')) {
+    {
       // 构建庆祝角色（使用系列角色）
       const celebrationCharacters: StoryCharacterConfig[] = characterResources.slice(0, 4).map((char, index) => {
         const positions = [
@@ -439,11 +510,12 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         ];
         const greetings = ['生日快乐！', '天天开心！', '健康成长！', '万事如意！'];
         const bubbleColors = ['#FFD76A', '#FF8FA3', '#7EC8FF', '#B892FF'];
-        
+        const isImage = char.series === 'image' && !!char.imageSrc;
+
         return {
           type: char.type as ZodiacType | PetType | HeroType,
-          series: 'image' as const,
-          imageSrc: char.imageSrc,
+          series: (isImage ? 'image' : char.series) as 'image' | 'zodiac' | 'pet' | 'hero',
+          imageSrc: isImage ? char.imageSrc : undefined,
           size: orientation === 'portrait' ? 120 : 100,
           animate: true,
           entrance: {
@@ -470,10 +542,10 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           ],
         };
       });
-      
+
       chapterList.push({
         id: 'G_birthdaySong',
-        durationInFrames: 35 * fps,
+        durationInFrames: plan.birthdaySong,
         background: {
           type: 'gradient',
           gradient: theme.gradient,
@@ -504,75 +576,160 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
             birthdaySongVolume={birthdaySongVolume}
             photos={photos}
             subStyle={subStyle}
-            durationInFrames={35 * fps}
+            durationInFrames={plan.birthdaySong}
             orientation={orientation}
           />
         ),
       });
     }
-    
+
     // 模块 H：未来祝福
-    if (modules.includes('H')) {
-      chapterList.push({
-        id: 'H_futureBlessing',
-        durationInFrames: 10 * fps,
-        background: {
-          type: 'gradient',
-          gradient: 'linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 50%, #2a2a6e 100%)',
-        },
-        character: {
-          type: mainCharacter?.type as ZodiacType | PetType | HeroType | undefined,
-          series: 'image',
-          imageSrc: mainCharacter?.imageSrc || "pic/孙悟空.png",            
-          size: orientation === 'portrait' ? 500 : 450,
-          animate: true,
-          entrance: {
-            enabled: true,
-            direction: 'top',
-            delay: 0,
-            distance: 400,
-            verticalPosition: 0.2,
-            horizontalPosition: 0.5,
-          },
-          expression: 'happy',
-        },
-        subtitles: [
-          {
-            text: mainCharacter?.greeting || '未来的一年，我会一直守护你。',
-            startFrame: 24,
-            durationInFrames: 180,
-            position: 'bottom',
-            fontSize: 28,
-            color: '#FFFFFF',
-            backgroundColor: PRIMARY_COLORS.violet,
-            backgroundOpacity: 0.8,
-          },
-        ],
-        magicEffects: {
-          shootingStar: {
-            enabled: true,
-            startX: 0.9,
-            startY: 0.1,
-            endX: 0.3,
-            endY: 0.5,
-            durationInFrames: 40,
-          },
-        },
-        starFieldBackground: {
+    chapterList.push({
+      id: 'H_futureBlessing',
+      durationInFrames: plan.futureBlessing,
+      background: {
+        type: 'gradient',
+        gradient: 'linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 50%, #2a2a6e 100%)',
+      },
+      character: mainCharacter.series === 'image' ? {
+        type: mainCharacter.type as ZodiacType | PetType | HeroType,
+        series: 'image',
+        imageSrc: mainCharacter.imageSrc!,
+        size: orientation === 'portrait' ? 500 : 450,
+        animate: true,
+        entrance: {
           enabled: true,
-          starCount: 150,
+          direction: 'top',
+          delay: 0,
+          distance: 400,
+          verticalPosition: 0.2,
+          horizontalPosition: 0.5,
         },
-      });
-    }
-    
+        expression: 'happy',
+      } : {
+        type: mainCharacter.type as ZodiacType | PetType | HeroType,
+        series: mainCharacter.series,
+        size: orientation === 'portrait' ? 500 : 450,
+        animate: true,
+        entrance: {
+          enabled: true,
+          direction: 'top',
+          delay: 0,
+          distance: 400,
+          verticalPosition: 0.2,
+          horizontalPosition: 0.5,
+        },
+        expression: 'happy',
+      },
+      subtitles: [
+        {
+          text: mainCharacter.greeting || '未来的一年，我会一直守护你。',
+          startFrame: 24,
+          durationInFrames: 180,
+          position: 'bottom',
+          fontSize: 28,
+          color: '#FFFFFF',
+          backgroundColor: PRIMARY_COLORS.violet,
+          backgroundOpacity: 0.8,
+        },
+      ],
+      magicEffects: {
+        shootingStar: {
+          enabled: true,
+          startX: 0.9,
+          startY: 0.1,
+          endX: 0.3,
+          endY: 0.5,
+          durationInFrames: 40,
+        },
+      },
+      starFieldBackground: {
+        enabled: true,
+        starCount: 150,
+      },
+    });
+
+    // 模块 I：梦想种子（dreams 参数在此生效）
+    chapterList.push({
+      id: 'I_dreamSeeds',
+      durationInFrames: plan.dreams,
+      background: {
+        type: 'gradient',
+        gradient: theme.gradient,
+      },
+      floatingElements: {
+        enabled: true,
+        type: 'stars',
+        count: 12,
+        startFrame: 20,
+        color: theme.primary,
+      },
+      children: (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <DreamBubblesScene dreams={dreams} visible={true} showText={true} />
+        </div>
+      ),
+    });
+
+    // 模块 J：温暖收尾（message 参数在此生效）
+    chapterList.push({
+      id: 'J_warmClosing',
+      durationInFrames: plan.closing,
+      background: {
+        type: 'gradient',
+        gradient: 'linear-gradient(180deg, #1a1030 0%, #2a1a4e 60%, #3a2a6e 100%)',
+      },
+      confetti: {
+        enabled: true,
+        level: confettiLevel === 'low' ? 'low' : 'medium',
+        primaryColor: theme.primary,
+        secondaryColor: theme.secondary,
+      },
+      starFieldBackground: {
+        enabled: true,
+        starCount: 80,
+      },
+      children: (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 24,
+          padding: '0 48px',
+          textAlign: 'center',
+        }}>
+          <BouncingName
+            name={name}
+            showAge={false}
+            subStyle={subStyle}
+            fontSize={orientation === 'portrait' ? 72 : 56}
+            color={nameColor}
+          />
+          <div style={{
+            fontSize: orientation === 'portrait' ? 36 : 30,
+            fontWeight: 600,
+            color: '#FFFFFF',
+            textShadow: `0 2px 12px rgba(0,0,0,0.4), 0 0 ${20}px ${theme.primary}55`,
+            lineHeight: 1.5,
+            letterSpacing: 2,
+          }}>
+            {message}
+          </div>
+        </div>
+      ),
+    });
+
     return mergeChapterConfigs(chapterList, customChapterList as StoryChapterConfig[] | undefined);
   }, [
-    fps, photos, dreams, name, age, subStyle, orientation, 
-    confettiLevel, theme,
+    fps, photos, dreams, name, age, subStyle, orientation,
+    confettiLevel, theme, nameFontSize, nameColor, showAge, blessingText, blessingFontSize, message,
     birthdaySongSource, birthdaySongVolume, customChapterList,
-    characterResources, blessingSeries, mainCharacter,
+    characterResources, mainCharacter,
   ]);
-  
+
   return (
     <StoryPanel
       chapters={chapters}

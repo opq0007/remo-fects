@@ -81,7 +81,7 @@ export const KidsBirthdaySchema = CompleteCompositionSchema.extend({
   name: z.string().min(1).max(10).meta({ description: '主角名字' }),
   age: z.number().min(1).max(18).optional().meta({ description: '年龄' }),
   photos: z.array(PhotoDataSchema).max(5).default([]).meta({
-    description: '照片列表（最多5张）'
+    description: '照片列表（最多5张）。视频时长随照片数量自动伸缩：无照片74s / 1张99s / 2张及以上124s'
   }),
   orientation: ScreenOrientationSchema.default('portrait').meta({
     description: '屏幕方向'
@@ -101,11 +101,13 @@ export const KidsBirthdaySchema = CompleteCompositionSchema.extend({
   }),
   
   // ========== 基本信息 ==========
-  message: z.string().max(100).default('愿你每天开心成长').meta({ description: '祝福语' }),
+  message: z.string().max(100).default('愿你每天开心成长').meta({ description: '祝福语（显示在片尾收尾模块）' }),
   
-  // ========== 视频配置（固定 124 秒：4秒倒计时 + 120秒正片） ==========
-  duration: z.number().default(120).meta({ 
-    description: '视频时长(秒)，固定为 124 秒（4秒倒计时 + 120秒正片）' 
+  // ========== 视频配置 ==========
+  // duration 是期望输出时长；实际内容时长由照片数量决定（无照片74s/1张99s/2张及以上124s），
+  // 渲染端按 min(duration, 内容时长) 截断：传短了输出短片，传大了输出完整视频
+  duration: z.number().min(10).max(124).default(124).meta({
+    description: '期望输出时长(秒)，上限124。实际按照片数量伸缩后截断'
   }),
   fps: z.number().default(24),
   width: z.number().default(720),
@@ -135,10 +137,7 @@ export const KidsBirthdaySchema = CompleteCompositionSchema.extend({
   
   // ========== 粒子效果 ==========
   confettiLevel: z.enum(['low', 'medium', 'high']).default('high'),
-  
-  // ========== 动画速度 ==========
-  animationSpeed: z.enum(['slow', 'normal', 'fast']).default('normal'),
-  
+
   // ========== 音频 ==========
   musicEnabled: z.boolean().default(true).meta({ description: '是否启用背景音乐' }),
   musicTrack: z.string().default('kids_party_01').meta({ description: '音乐轨道' }),
@@ -182,7 +181,53 @@ export const BirthdayBlessingSchema = z.discriminatedUnion('audience', [
 
 export type BirthdayBlessingProps = z.infer<typeof BirthdayBlessingSchema>;
 
-// ==================== 辅助函数 ====================
+// ==================== 常量与辅助函数 ====================
+
+/**
+ * public 目录实际存在的资源清单
+ * 角色图片/视频若不在此清单中，渲染时自动回退到内置卡通形象，
+ * 避免默认配置产生 broken image。往 public 添加文件后同步更新此清单。
+ */
+export const AVAILABLE_PUBLIC_ASSETS = new Set<string>([
+  '孙悟空.mp4',
+  '熊猫.png',
+  'birthday_audio.mp3',
+  'countDown_clock.mp3',
+  'countDown_common.mp3',
+  'countDown_game.mp3',
+  'JoyfulChildren.mp3',
+]);
+
+/**
+ * 模块时长规划（帧）
+ * 按照片数量计算实际内容时长，供 composition 与 calculateMetadata 使用
+ * - 倒计时 4s + 开场 A 2s + 庆祝 F 10s + 生日歌 G 35s + 未来祝福 H 10s + 梦想 I 10s + 收尾 J 3s = 74s
+ * - 照片互动 C（1张照片起）+25s → 99s
+ * - 照片互动 D（2张照片起）+25s → 124s
+ */
+export const computeContentPlan = (photoCount: number, fps: number) => {
+  const photo1 = photoCount >= 1 ? 25 * fps : 0;
+  const photo2 = photoCount >= 2 ? 25 * fps : 0;
+  return {
+    countdown: 4 * fps,
+    opening: 2 * fps,
+    photo1,
+    photo2,
+    celebration: 10 * fps,
+    birthdaySong: 35 * fps,
+    futureBlessing: 10 * fps,
+    dreams: 10 * fps,
+    closing: 3 * fps,
+    totalFrames: (74 + photo1 / fps + photo2 / fps) * fps,
+  };
+};
+
+/**
+ * 根据照片数量计算实际内容总时长（秒）
+ */
+export const computeContentDuration = (photoCount: number): number => {
+  return 74 + (photoCount >= 1 ? 25 : 0) + (photoCount >= 2 ? 25 : 0);
+};
 
 /**
  * 获取 120s 版本的模块列表（固定）
@@ -217,32 +262,51 @@ export const getCharacterTypes = (series: 'zodiac' | 'pet' | 'hero' | 'image'): 
 };
 
 /**
+ * 卡通回退形象：角色图片缺失时用内置卡通角色顶替（与祝福角色气质对位）
+ */
+interface CartoonFallback {
+  series: 'zodiac' | 'pet' | 'hero';
+  type: string;
+}
+
+/**
  * 获取祝福系列配置
+ * imageSrc 均相对于 public 目录；缺失的资源在渲染时自动回退到 cartoonFallback
  */
 export const getBlessingSeriesConfig = (series: 'journey_to_the_west' | 'zodiac' | 'fairy_tale' | 'custom') => {
-  const configs: Record<string, { name: string; characters: { type: string; imageSrc: string; videoSrc?: string; name: string; greeting: string }[] }> = {
+  const configs: Record<string, {
+    name: string;
+    characters: {
+      type: string;
+      imageSrc?: string;
+      videoSrc?: string;
+      name: string;
+      greeting: string;
+      cartoonFallback?: CartoonFallback;
+    }[];
+  }> = {
     journey_to_the_west: {
       name: '西游记系列',
       characters: [
-        { type: 'sun_wukong', imageSrc: 'pic/孙悟空.png', videoSrc: '孙悟空.mp4', name: '孙悟空', greeting: '俺老孙来也！祝你生日快乐！' },
-        { type: 'tang_seng', imageSrc: 'pic/唐僧.png', videoSrc: '唐僧.mp4', name: '唐僧', greeting: '阿弥陀佛，祝你健康成长！' },
-        { type: 'zhu_bajie', imageSrc: 'pic/猪八戒.png', videoSrc: '猪八戒.mp4', name: '猪八戒', greeting: '嘿嘿，生日快乐！' },
-        { type: 'sha_wujing', imageSrc: 'pic/沙和尚.png', videoSrc: '沙和尚.mp4', name: '沙和尚', greeting: '祝你天天开心！' },
-        { type: 'white_dragon_horse', imageSrc: 'pic/白龙马.png', videoSrc: '白龙马.mp4', name: '白龙马', greeting: '祝你一马当先！' },
+        { type: 'sun_wukong', imageSrc: 'pic/孙悟空.png', videoSrc: '孙悟空.mp4', name: '孙悟空', greeting: '俺老孙来也！祝你生日快乐！', cartoonFallback: { series: 'zodiac', type: 'monkey' } },
+        { type: 'tang_seng', imageSrc: 'pic/唐僧.png', videoSrc: '唐僧.mp4', name: '唐僧', greeting: '阿弥陀佛，祝你健康成长！', cartoonFallback: { series: 'hero', type: 'wizard' } },
+        { type: 'zhu_bajie', imageSrc: 'pic/猪八戒.png', videoSrc: '猪八戒.mp4', name: '猪八戒', greeting: '嘿嘿，生日快乐！', cartoonFallback: { series: 'zodiac', type: 'pig' } },
+        { type: 'sha_wujing', imageSrc: 'pic/沙和尚.png', videoSrc: '沙和尚.mp4', name: '沙和尚', greeting: '祝你天天开心！', cartoonFallback: { series: 'hero', type: 'knight' } },
+        { type: 'white_dragon_horse', imageSrc: 'pic/白龙马.png', videoSrc: '白龙马.mp4', name: '白龙马', greeting: '祝你一马当先！', cartoonFallback: { series: 'zodiac', type: 'horse' } },
       ],
     },
     zodiac: {
       name: '生肖守护神系列',
       characters: [
-        { type: 'tiger', imageSrc: 'pic/小老虎.png', name: '小老虎', greeting: '嗷呜～祝你生日快乐！' },
-        { type: 'rabbit', imageSrc: 'pic/小兔子.png', name: '小兔子', greeting: '蹦蹦跳～祝你快乐成长！' },
-        { type: 'dragon', imageSrc: 'pic/小龙龙.png', name: '小龙龙', greeting: '吼～祝你心想事成！' },
+        { type: 'tiger', imageSrc: 'pic/小老虎.png', name: '小老虎', greeting: '嗷呜～祝你生日快乐！', cartoonFallback: { series: 'zodiac', type: 'tiger' } },
+        { type: 'rabbit', imageSrc: 'pic/小兔子.png', name: '小兔子', greeting: '蹦蹦跳～祝你快乐成长！', cartoonFallback: { series: 'zodiac', type: 'rabbit' } },
+        { type: 'dragon', imageSrc: 'pic/小龙龙.png', name: '小龙龙', greeting: '吼～祝你心想事成！', cartoonFallback: { series: 'zodiac', type: 'dragon' } },
       ],
     },
     fairy_tale: {
       name: '童话系列',
       characters: [
-        { type: 'mickey', imageSrc: 'pic/米奇.png', name: '米奇', greeting: '祝你生日快乐！' },
+        { type: 'mickey', imageSrc: 'pic/米奇.png', name: '米奇', greeting: '祝你生日快乐！', cartoonFallback: { series: 'zodiac', type: 'rat' } },
       ],
     },
     custom: {

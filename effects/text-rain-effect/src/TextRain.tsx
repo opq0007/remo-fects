@@ -217,9 +217,9 @@ const generateGradientCSS = (gradient: GradientConfig): string => {
 
 // 文字特效预设：主体复用 shared 统一预设（鎏金 2.0），
 // 仅保留本特效独有的 "3d" 挤出实现
-const EFFECT_PRESETS: Record<TextEffectType, (fontSize: number, intensity: number) => React.CSSProperties> = {
-  ...(SHARED_PRESETS as Record<string, (fontSize: number, intensity: number) => React.CSSProperties>),
-  "3d": (fontSize, intensity) => {
+const EFFECT_PRESETS = {
+  ...SHARED_PRESETS,
+  "3d": (fontSize: number, intensity: number): React.CSSProperties => {
     const layers: string[] = [];
     const depth = Math.min(5, Math.floor(fontSize * 0.08 * intensity));
     for (let i = 1; i <= depth; i++) {
@@ -227,7 +227,7 @@ const EFFECT_PRESETS: Record<TextEffectType, (fontSize: number, intensity: numbe
     }
     return { textShadow: layers.join(", ") };
   },
-};
+} as unknown as Record<TextEffectType, (fontSize: number, intensity: number) => React.CSSProperties>;
 
 const generateTextStyle = (fontSize: number, style: TextStyleConfig): React.CSSProperties => {
   const intensity = style.effectIntensity ?? 0.6;

@@ -1,15 +1,31 @@
 /**
- * 儿童生日祝福特效配置 v6.0
- * 
+ * 儿童生日祝福特效配置 v7.0
+ *
  * 更新说明：
- * - 视频时长固定为 124 秒（4秒倒计时 + 120秒正片）
- * - 移除 characterSeries、characterType、characterImageSrc（被 blessingSeries 替代）
- * - 新增 blessingSeries 祝福系列参数（西游记/生肖/童话/自定义）
- * - 新增 customCharacterImages、customCharacterVideos 自定义角色资源
- * - 简化参数结构：只需 name + blessingSeries 即可生成视频
+ * - 视频总时长随照片数量自动伸缩（无照片74s / 1张99s / 2张及以上124s）
+ * - duration 为期望输出时长，渲染时按 min(duration, 内容时长) 截断，真正生效
+ * - 角色图片缺失时自动回退内置卡通形象（无需准备 pic/ 资源即可渲染）
+ * - musicTrack 默认值对齐实际资源（JoyfulChildren.mp3）
+ * - 移除从未生效的 animationSpeed 参数
  */
 
 const path = require('path');
+
+// public 目录实际存在的资源清单（与 project/src/schemas/index.ts 保持同步）
+const AVAILABLE_PUBLIC_ASSETS = new Set([
+  '孙悟空.mp4',
+  '熊猫.png',
+  'birthday_audio.mp3',
+  'countDown_clock.mp3',
+  'countDown_common.mp3',
+  'countDown_game.mp3',
+  'JoyfulChildren.mp3',
+]);
+
+// 根据照片数量计算实际内容总时长（秒），与前端 computeContentDuration 保持一致
+function computeContentDuration(photoCount) {
+  return 74 + (photoCount >= 1 ? 25 : 0) + (photoCount >= 2 ? 25 : 0);
+}
 
 // 特效基础信息
 const config = {
@@ -40,11 +56,11 @@ const params = {
     description: '祝福语（最多100字）'
   },
   
-  // ========== 视频配置（固定 124 秒） ==========
+  // ========== 视频配置 ==========
   duration: {
     type: 'number',
     defaultValue: 124,
-    description: '视频时长(秒)，固定为 124 秒（4秒倒计时 + 120秒正片）'
+    description: '期望输出时长(秒)，上限124。实际内容时长随照片数量伸缩（无照片74s/1张99s/2张及以上124s），渲染时自动截断'
   },
   fps: {
     type: 'number',
@@ -92,7 +108,7 @@ const params = {
   photos: {
     type: 'array',
     defaultValue: [],
-    description: '照片列表（最多5张，每张包含 src 字段）'
+    description: '照片列表（最多5张，每张包含 src 字段，src 相对于 public 目录）。时长随数量伸缩'
   },
   
   // ========== 梦想泡泡 ==========
@@ -152,13 +168,8 @@ const params = {
     description: '彩带粒子密度：low | medium | high'
   },
   
-  // ========== 动画速度 ==========
-  animationSpeed: {
-    type: 'string',
-    defaultValue: 'normal',
-    description: '动画速度：slow | normal | fast'
-  },
-  
+  // ========== 动画速度（已移除：该参数历史上从未生效，为避免"传了没反应"不再接受） ==========
+
   // ========== 音频 ==========
   musicEnabled: {
     type: 'boolean',
@@ -167,8 +178,8 @@ const params = {
   },
   musicTrack: {
     type: 'string',
-    defaultValue: 'kids_party_01',
-    description: '背景音乐曲目'
+    defaultValue: 'JoyfulChildren',
+    description: '背景音乐曲目（public 目录下的 mp3 文件名，不含扩展名）'
   },
   birthdaySongSource: {
     type: 'string',
@@ -289,7 +300,7 @@ function validate(params) {
  */
 function buildRenderParams(reqParams, commonParams) {
   const orientation = reqParams.orientation || params.orientation.defaultValue;
-  
+
   const result = { ...commonParams };
 
   // 处理特效特有参数
@@ -300,10 +311,13 @@ function buildRenderParams(reqParams, commonParams) {
       result[name] = typeof def.defaultValue === 'function' ? def.defaultValue() : def.defaultValue;
     }
   }
-  
-  // 固定时长为 124 秒
-  result.duration = 124;
-  
+
+  // duration 诚实化：实际内容时长由照片数量决定，
+  // 按 min(期望时长, 内容时长) 截断输出——传短了出短片，传大了出完整视频
+  const photoCount = Array.isArray(result.photos) ? result.photos.length : 0;
+  const contentSeconds = computeContentDuration(photoCount);
+  result.duration = Math.min(Math.max(result.duration ?? 124, 10), contentSeconds);
+
   // 支持嵌套参数（背景、音频等）
   if (reqParams.background) result.background = reqParams.background;
   if (reqParams.audio) result.audio = reqParams.audio;
@@ -312,7 +326,7 @@ function buildRenderParams(reqParams, commonParams) {
   if (reqParams.watermark) result.watermark = reqParams.watermark;
   if (reqParams.radialBurst) result.radialBurst = reqParams.radialBurst;
   if (reqParams.foreground) result.foreground = reqParams.foreground;
-  
+
   // 动态设置 Composition ID 和尺寸
   result._compositionId = getCompositionId(orientation);
   if (orientation === 'landscape') {
@@ -322,7 +336,7 @@ function buildRenderParams(reqParams, commonParams) {
     result.width = 720;
     result.height = 1280;
   }
-  
+
   return result;
 }
 
@@ -376,62 +390,10 @@ function getPresets() {
   };
 }
 
-// 获取祝福系列选项
-function getBlessingSeriesOptions() {
-  return {
-    journey_to_the_west: {
-      name: '西游记系列',
-      description: '孙悟空师徒五人为你庆祝生日',
-      characters: [
-        { type: 'sun_wukong', name: '孙悟空', greeting: '俺老孙来也！祝你生日快乐！' },
-        { type: 'tang_seng', name: '唐僧', greeting: '阿弥陀佛，祝你健康成长！' },
-        { type: 'zhu_bajie', name: '猪八戒', greeting: '嘿嘿，生日快乐！' },
-        { type: 'sha_wujing', name: '沙和尚', greeting: '祝你天天开心！' },
-        { type: 'white_dragon_horse', name: '白龙马', greeting: '祝你一马当先！' }
-      ]
-    },
-    zodiac: {
-      name: '生肖守护神系列',
-      description: '12生肖守护神，选择对应的生肖角色',
-      characters: [
-        { type: 'tiger', name: '小老虎', greeting: '嗷呜～祝你生日快乐！' },
-        { type: 'rabbit', name: '小兔子', greeting: '蹦蹦跳～祝你快乐成长！' },
-        { type: 'dragon', name: '小龙龙', greeting: '吼～祝你心想事成！' }
-      ]
-    },
-    fairy_tale: {
-      name: '童话系列',
-      description: '经典童话角色，适合喜欢童话的小朋友',
-      characters: [
-        { type: 'mickey', name: '米奇', greeting: '祝你生日快乐！' }
-      ]
-    },
-    custom: {
-      name: '自定义系列',
-      description: '使用自定义角色图片和视频',
-      characters: []
-    }
-  };
-}
-
-// 获取模块列表
-function getModules() {
-  return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-}
-
-// 获取视频时长
-function getDuration() {
-  return 124;
-}
-
 module.exports = {
   config,
   params,
   validate,
   buildRenderParams,
-  getPresets,
-  getBlessingSeriesOptions,
-  getBlessingSeriesConfig,
-  getModules,
-  getDuration
+  getPresets
 };

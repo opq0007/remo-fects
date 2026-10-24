@@ -8,54 +8,40 @@
 
 ### 模块化分镜系统
 
-视频由 10 个模块（A-J）按时间顺序组成，每个模块是一个独立的 React 组件：
+视频由章节化模块组成，实际实现的模块如下（B、E 尚未实现，0 为倒计时）：
 
 ```
-模块时间线（120秒完整版）：
-├── A: 魔法开场 (0-2s) ────────────────┐
-├── B: 角色入场 (2-12s) ───────────────┤
-├── C: 照片互动1 (12-25s) ─────────────┤ 可裁剪
-├── D: 照片互动2 (25-38s) ─────────────┤ 可裁剪
-├── E: 照片互动3 (38-50s) ─────────────┤ 可裁剪
-├── F: 成长庆祝 (50-60s) ──────────────┤ 60秒版本截止
-├── G: 生日歌 (60-90s) ────────────────┤
-├── H: 未来祝福 (90-105s) ─────────────┤ 可裁剪
-├── I: 梦想种子 (105-115s) ────────────┤ 可裁剪
-└── J: 温暖收尾 (115-120s) ────────────┘
+章节顺序（push 顺序即播放顺序）：
+├── 0: 倒计时 (4s)
+├── A: 魔法开场 (2s)
+├── F: 成长庆祝 (10s)      ← 名字弹跳 + 祝福语 + 绿幕视频
+├── C: 照片互动1 (25s)     ← 需 ≥1 张照片
+├── D: 照片互动2 (25s)     ← 需 ≥2 张照片
+├── G: 生日歌 (35s)
+├── H: 未来祝福 (10s)
+├── I: 梦想种子 (10s)      ← dreams 参数
+└── J: 温暖收尾 (3s)       ← message 参数
 ```
 
-**重要：模块与视频版本的对应关系**
+**重要：视频总时长随照片数量自动伸缩**
 
-| 版本 | 模块列表 | 说明 |
-|------|----------|------|
-| 60s | A, B, C, D, E, F | 模块 F 结束时刚好 60 秒 |
-| 90s | A, B, C, D, E, F, G, H | 模块 H 结束时刚好 90 秒 |
-| 120s | A, B, C, D, E, F, G, H, I, J | 完整版 |
+| 照片数 | 总时长 | 说明 |
+|--------|--------|------|
+| 0 张 | 74 秒 | C、D 跳过 |
+| 1 张 | 99 秒 | 仅 C |
+| 2 张及以上 | 124 秒 | C + D |
 
-**注意：** 修改 `getModulesByVersion` 函数时，确保返回的模块不会超出视频总时长。
+**修改模块时长时必须同步更新 `schemas/index.ts` 的 `computeContentPlan`（前端唯一事实来源），以及 `api/effect-configs/kids-birthday-effect.js` 中的 `computeContentDuration` 副本（API 按 min(duration, 内容时长) 截断输出）。** 两处公式不一致会导致 Studio 预览与 API 渲染时长对不上。
 
-### 角色系统
+### 角色系统（v4.0：祝福系列 + 卡通回退）
 
-三大角色系列，每个角色有独立的配色和问候语：
+角色由 `blessingSeries` 决定（西游记/生肖/童话/自定义），系列配置在 `schemas/index.ts` 的 `getBlessingSeriesConfig`：
 
-```typescript
-// 生肖守护神（12种）
-characterSeries: 'zodiac'
-characterType: 'tiger' | 'rabbit' | 'dragon' | ...
+- 每个角色带 `imageSrc` / `videoSrc`（相对 public 目录）和 `cartoonFallback`（内置卡通形象）
+- **资源回退**：`imageSrc` 不在 `AVAILABLE_PUBLIC_ASSETS` 清单中时，自动用 `cartoonFallback` 的卡通角色渲染（series 改为 zodiac/pet/hero），视频无 broken 图片
+- 自定义资源：`customCharacterImages` / `customCharacterVideos` 按索引覆盖
 
-// 萌宠精灵（6种）
-characterSeries: 'pet'
-characterType: 'bunny' | 'kitten' | 'puppy' | ...
-
-// 勇气超人（5种）
-characterSeries: 'hero'
-characterType: 'astronaut' | 'superhero' | ...
-```
-
-角色配置在 `types/index.ts` 中定义：
-- `ZODIAC_CHARACTERS` - 生肖角色
-- `PET_CHARACTERS` - 萌宠角色
-- `HERO_CHARACTERS` - 超人角色
+往 public 添加角色图片后，需同步更新 `AVAILABLE_PUBLIC_ASSETS` 清单。
 
 ### 颜色系统
 
