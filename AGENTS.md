@@ -20,7 +20,7 @@
 - **Node.js**：>=18.0.0
 - **Express 4**：API 服务器
 - **TypeScript 5**：类型安全
-- **Zod**：数据验证
+- **Zod 4**（^4.3.6）：数据验证（注意与 Zod 3 的 API 差异）
 
 ## 项目结构
 
@@ -56,7 +56,12 @@ remo-fects/
 │   │   │   ├── Character.tsx         # 角色系统（生肖/萌宠/超人）🆕
 │   │   │   ├── MagicEffects.tsx      # 魔法效果集合 🆕
 │   │   │   ├── ConfettiBurst.tsx     # 彩带粒子爆炸 🆕
-│   │   │   └── CartoonElements.tsx   # 卡通元素 🆕
+│   │   │   ├── CartoonElements.tsx   # 卡通元素
+│   │   ├── Countdown.tsx         # 倒计时组件
+│   │   ├── Subtitle.tsx          # 字幕组件
+│   │   ├── StoryChapter.tsx      # 故事章节组件
+│   │   ├── StoryPanel.tsx        # 故事面板组件
+│   │   └── TransparentVideo.tsx  # 透明视频组件 🆕
 │   │   ├── schemas/                  # 公共 Schema 定义
 │   │   ├── types/                    # 类型定义
 │   │   │   ├── common.ts             # 通用类型
@@ -103,6 +108,13 @@ remo-fects/
 ### 概述
 
 公共组件库提供了可在多个特效项目中复用的组件、类型和工具函数，避免重复开发。
+
+**导入路径约定（相对路径，不走包名）：**
+
+- 从 `effects/<特效>/src/` 导入：`import { ... } from "../../shared/index";`
+- 从 `project/src/` 导入：`import { ... } from "../../effects/shared";`
+
+注意：`shared/package.json` 的 `main` 指向 `dist/index.js`，但实际代码均通过上述相对路径直接引用源码（`dist` 通常未构建），不要按包名 `shared` 导入。
 
 ### 组件列表
 
@@ -254,6 +266,8 @@ import {
 
 项目采用**配置驱动**方式管理特效参数，新增特效只需添加配置文件，无需修改 `render.js` 和 `server.js`。
 
+配置注册表为 `api/effect-configs/index.js`。其中 `kids-birthday-effect` 指向 `project/` 工作区（compositionId 为 `KidsBirthday`）；修改儿童生日项目前，先阅读 `project/AGENTS.md`（含分镜模块时间线与版本裁剪规则）。
+
 ### 配置文件结构
 
 ```javascript
@@ -295,7 +309,9 @@ module.exports = { config, params, validate, buildRenderParams };
 
 ### 公共参数
 
-所有特效共享以下公共参数（由 `common-params.js` 统一处理）：
+所有特效共享以下公共参数（由 `common-params.js` 统一处理），采用**嵌套参数格式**（请求时传嵌套对象，如 `"background": {"type": "gradient", "color": "#1a1a2e"}`）：
+
+**基础参数（顶层）：**
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -303,12 +319,21 @@ module.exports = { config, params, validate, buildRenderParams };
 | height | number | 1280 | 视频高度 |
 | fps | number | 24 | 帧率 |
 | duration | number | 10 | 视频时长（秒） |
-| backgroundType | string | 'color' | 背景类型 |
-| backgroundColor | string | '#1a1a2e' | 背景颜色 |
-| overlayColor | string | '#000000' | 遮罩颜色 |
-| overlayOpacity | number | 0.2 | 遮罩透明度 |
-| audioEnabled | boolean | false | 是否启用音频 |
 | seed | number | 随机 | 随机种子 |
+
+**嵌套参数组（NESTED_PARAMS）：** 未传的组使用组件内置默认值（默认均不启用）
+
+| 参数组 | 关键字段 | 说明 |
+|--------|----------|------|
+| background | type ('color'\|'gradient'\|'image'\|'video'), color, gradient, source, videoLoop, videoMuted | 背景配置 |
+| overlay | color, opacity | 遮罩配置 |
+| audio | enabled, source, volume, loop | 音频配置 |
+| watermark | enabled, text, fontSize, color, opacity, velocityX/Y 等 | 水印配置 |
+| marquee | enabled, foreground/background (texts, fontSize, color...), direction, speed 等 | 走马灯配置 |
+| radialBurst | enabled, effectType, color, count, rotationSpeed 等 | 中心发散粒子配置 |
+| foreground | enabled, type ('image'\|'video'), source, animationType, zIndex 等 | 前景配置 |
+
+完整字段定义见 `api/effect-configs/common-params.js` 中的 `NESTED_PARAMS`。
 
 ## 构建和运行
 
@@ -373,7 +398,17 @@ Content-Type: application/json
 }
 ```
 
-**合并模式：** sequence（顺序拼接）、overlay（叠加混合）、transition（带转场拼接）
+**合并模式：** sequence（顺序拼接）、overlay（叠加混合）、transition（带转场拼接，支持 fade/fadeblack/fadewipe/slideleft/slideright/slideup/slidedown 等转场类型）
+
+### 4. 其他接口
+
+- `GET /api/projects/:projectId/params` - 获取特效参数定义
+- `GET /api/jobs/:jobId` - 查询渲染任务状态（渲染为异步任务）
+- `GET /api/download/:jobId` - 下载渲染结果
+- `GET /api/jobs` - 列出所有任务
+- `POST /api/effects/register` - 运行时动态注册特效配置
+
+**文件上传：** `/api/render` 和 `/api/compose` 通过 multipart 表单的 `background` 字段上传背景文件（multer 处理，存入 `api/uploads/`）。
 
 ## 添加新特效项目
 
@@ -454,10 +489,17 @@ export const YourComposition: React.FC<YourCompositionProps> = ({
 
 ```bash
 npm install              # 安装依赖
-npm run api              # 启动 API 服务
+npm run api              # 启动 API 服务（http://localhost:3001）
+npm run dev:text-rain    # 开发文字雨特效（根目录仅此一个 dev 脚本）
+npm run start --workspace=effects/<特效名>   # 开发其他特效（remotion studio）
+npm run dev:kids-birthday --workspace=project  # 儿童生日项目 studio（端口 3101）
+npm run type-check --workspace=shared  # shared 组件库类型检查（tsc --noEmit）
 npm run chrome:all       # 下载并链接 Chrome
+npm run chrome:verify    # 验证 Chrome 安装
 npm run clean:all        # 清理所有 node_modules
 ```
+
+**渲染注意：** 通过 Remotion CLI 直接渲染时需要加 `--chromium-flags="--headless=new"`（各特效 package.json 的 `render`/`build` 脚本已包含）。API 渲染为异步任务，返回 jobId 后通过 `/api/jobs/:jobId` 轮询状态。
 
 ## 故障排查
 
@@ -467,5 +509,5 @@ npm run clean:all        # 清理所有 node_modules
 
 ## 联系方式
 
-- 项目地址：https://github.com/opq007/remo-fects
+- 项目地址：https://github.com/opq0007/remo-fects
 - 问题反馈：提交 GitHub Issue
