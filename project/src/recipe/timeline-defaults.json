@@ -1,0 +1,15 @@
+{
+  "fpsDefault": 24,
+  "defaultTransitionFrames": 12,
+  "musicTrack": "JoyfulChildren",
+  "birthdaySongVolume": 0.6,
+  "slots": [
+    { "id": "0_countdown", "seconds": 4, "requiresPhotos": false },
+    { "id": "A_magicOpening", "seconds": 2, "requiresPhotos": false },
+    { "id": "F_growthCelebration", "seconds": 10, "requiresPhotos": false },
+    { "id": "C_photoInteraction1", "seconds": 30, "requiresPhotos": true },
+    { "id": "D_photoInteraction2", "seconds": 30, "requiresPhotos": true },
+    { "id": "G_birthdaySong", "seconds": 35, "requiresPhotos": false },
+    { "id": "H_futureBlessing", "seconds": 10, "requiresPhotos": false }
+  ]
+}

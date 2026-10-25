@@ -97,14 +97,21 @@ app.get('/api/projects/:projectId/params', (req, res) => {
   const config = getEffectConfig(projectId);
   const projectInfo = getProjectInfo(projectId);
 
-  res.json({
+  const base = {
     id: projectId,
     name: projectInfo.name,
     compositionId: projectInfo.compositionId,
     params: config.params || {},
     presets: config.getPresets ? config.getPresets() : {},
-    description: config.config.description || ''
-  });
+    description: config.config.description || '',
+  };
+
+  // 支持 L0 精简参数元数据（如 kids-birthday getParamMeta）
+  if (typeof config.getParamMeta === 'function') {
+    return res.json({ ...base, ...config.getParamMeta() });
+  }
+
+  res.json(base);
 });
 
 // ============================================================

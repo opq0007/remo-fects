@@ -43,5 +43,8 @@ next-env.d.ts
 # dist
 */*/dist
 */dist
+.codegraph/
+.sisyphus/
+
 
 project/public
