@@ -163,7 +163,8 @@ function hasPhotos(photos) {
 function estimateDuration(user) {
   const fps = user.fps && user.fps > 0 ? user.fps : timelineDefaults.fpsDefault;
   const withPhotos = hasPhotos(user.photos);
-  const active = timelineDefaults.slots.filter((s) => !s.requiresPhotos || withPhotos);
+  const photoCount = Array.isArray(user.photos) ? user.photos.length : 0;
+  const active = timelineDefaults.slots.filter((s) => (s.minPhotos ?? 0) <= photoCount);
   const durationSeconds = active.reduce((sum, s) => sum + s.seconds, 0);
   return {
     durationSeconds,

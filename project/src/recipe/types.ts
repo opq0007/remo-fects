@@ -30,6 +30,10 @@ export interface SeriesCharacter {
   videoSrc?: string;
   name: string;
   greeting: string;
+  /** 图片缺失时的卡通回退形象 */
+  cartoonFallback?: { series: 'zodiac' | 'pet' | 'hero'; type: string };
+  /** 用户显式提供的自定义资源，不做可用性回退 */
+  isCustomAsset?: boolean;
 }
 
 export interface BlessingSeriesPack {
@@ -48,6 +52,10 @@ export interface KidsBirthdayUserInput {
   preset?: KidsPresetId;
   orientation?: ScreenOrientation;
   message?: string;
+  /** 梦想职业列表（最多5个），显示在 I 梦想种子章节 */
+  dreams?: string[];
+  /** 名字颜色（可选，默认跟随主题） */
+  nameColor?: string;
   musicEnabled?: boolean;
   birthdaySongSource?: string;
   customCharacterImages?: string[];
@@ -66,6 +74,8 @@ export interface ResolvedKidsBirthdayInput {
   preset: KidsPresetId;
   orientation: ScreenOrientation;
   message: string;
+  dreams: string[];
+  nameColor?: string;
   musicEnabled: boolean;
   birthdaySongSource?: string;
   birthdaySongVolume: number;
@@ -86,6 +96,8 @@ export interface ChapterContext {
   name: string;
   age?: number;
   message: string;
+  dreams: string[];
+  nameColor?: string;
   orientation: ScreenOrientation;
   photos: PhotoData[];
   series: BlessingSeriesPack;
@@ -105,6 +117,9 @@ export type ChapterFactory = (ctx: ChapterContext) => StoryChapterConfig;
 export interface TimelineSlot {
   id: string;
   factory: string;
+  /** 激活该章节所需的最少照片数（0 = 始终激活） */
+  minPhotos?: number;
+  /** @deprecated 请使用 minPhotos */
   requiresPhotos?: boolean;
   seconds: number;
 }

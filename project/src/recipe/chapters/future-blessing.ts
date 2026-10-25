@@ -1,36 +1,30 @@
 import { PRIMARY_COLORS } from '../../types';
 import type { ChapterFactory } from '../types';
+import { leadCharacterConfig } from './character-config';
 
 export const buildFutureBlessingChapter: ChapterFactory = (ctx) => {
   const { fps, orientation, mainCharacter } = ctx;
   return {
     id: 'H_futureBlessing',
-    durationInFrames: 10 * fps,
+    durationInFrames: 8 * fps,
+    transition: { type: 'slideRight', durationInFrames: 14 },
     background: {
       type: 'gradient',
-      gradient: 'linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 50%, #2a2a6e 100%)',
+      gradient: 'linear-gradient(180deg, #3A2E6E 0%, #4A3F8C 55%, #5D4FA8 100%)',
     },
-    character: {
-      type: mainCharacter?.type as never,
-      series: 'image',
-      imageSrc: mainCharacter?.imageSrc || 'pic/孙悟空.png',
+    character: leadCharacterConfig(mainCharacter, {
       size: orientation === 'portrait' ? 500 : 450,
-      animate: true,
-      entrance: {
-        enabled: true,
-        direction: 'top',
-        delay: 0,
-        distance: 400,
-        verticalPosition: 0.2,
-        horizontalPosition: 0.5,
-      },
-      expression: 'happy',
-    },
+      direction: 'top',
+      delay: 0,
+      distance: 400,
+      verticalPosition: 0.2,
+      horizontalPosition: 0.5,
+    }),
     subtitles: [
       {
         text: mainCharacter?.greeting || '未来的一年，我会一直守护你。',
         startFrame: 24,
-        durationInFrames: 180,
+        durationInFrames: 150,
         position: 'bottom',
         fontSize: 28,
         color: '#FFFFFF',

@@ -181,3 +181,28 @@ export const HERO_CHARACTERS: Record<HeroType, CharacterConfig> = {
   wizard: { series: 'hero', type: 'wizard', name: '魔法小巫师', greeting: '魔法～', primaryColor: '#B892FF', secondaryColor: '#FFD76A', accentColor: '#FF8FA3' },
   pirate: { series: 'hero', type: 'pirate', name: '冒险小海盗', greeting: '冒险～', primaryColor: '#2F4F4F', secondaryColor: '#FFD76A', accentColor: '#FF4500' },
 };
+
+// ==================== 梦想泡泡 ====================
+
+export type DreamJob = 'astronaut' | 'artist' | 'racer' | 'doctor' | 'teacher'
+  | 'scientist' | 'musician' | 'athlete' | 'chef' | 'pilot';
+
+export interface DreamConfig {
+  type: DreamJob;
+  name: string;
+  icon: string;
+  color: string;
+}
+
+export const DREAM_JOBS: Record<DreamJob, DreamConfig> = {
+  astronaut: { type: 'astronaut', name: '宇航员', icon: '🚀', color: '#7EC8FF' },
+  artist: { type: 'artist', name: '画家', icon: '🎨', color: '#FF8FA3' },
+  racer: { type: 'racer', name: '赛车手', icon: '🏎️', color: '#FFD76A' },
+  doctor: { type: 'doctor', name: '医生', icon: '👨‍⚕️', color: '#82E6C5' },
+  teacher: { type: 'teacher', name: '老师', icon: '📚', color: '#B892FF' },
+  scientist: { type: 'scientist', name: '科学家', icon: '🔬', color: '#7EC8FF' },
+  musician: { type: 'musician', name: '音乐家', icon: '🎵', color: '#FF8FA3' },
+  athlete: { type: 'athlete', name: '运动员', icon: '⚽', color: '#82E6C5' },
+  chef: { type: 'chef', name: '厨师', icon: '👨‍🍳', color: '#FFD76A' },
+  pilot: { type: 'pilot', name: '飞行员', icon: '✈️', color: '#B892FF' }
+};

@@ -6,6 +6,8 @@ import { buildPhotoInteraction1Chapter } from './photo-interaction-1';
 import { buildPhotoInteraction2Chapter } from './photo-interaction-2';
 import { buildBirthdaySongChapter } from './birthday-song';
 import { buildFutureBlessingChapter } from './future-blessing';
+import { buildDreamSeedsChapter } from './dream-seeds';
+import { buildWarmClosingChapter } from './warm-closing';
 
 export const CHAPTER_FACTORIES: Record<string, ChapterFactory> = {
   countdown: buildCountdownChapter,
@@ -15,6 +17,8 @@ export const CHAPTER_FACTORIES: Record<string, ChapterFactory> = {
   'photo-interaction-2': buildPhotoInteraction2Chapter,
   'birthday-song': buildBirthdaySongChapter,
   'future-blessing': buildFutureBlessingChapter,
+  'dream-seeds': buildDreamSeedsChapter,
+  'warm-closing': buildWarmClosingChapter,
 };
 
 export function getChapterFactory(key: string): ChapterFactory {
@@ -26,6 +30,8 @@ export function getChapterFactory(key: string): ChapterFactory {
 }
 
 export {
+  buildDreamSeedsChapter,
+  buildWarmClosingChapter,
   buildCountdownChapter,
   buildMagicOpeningChapter,
   buildGrowthCelebrationChapter,

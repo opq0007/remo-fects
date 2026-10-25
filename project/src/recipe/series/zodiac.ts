@@ -6,9 +6,9 @@ export const zodiacSeries: BlessingSeriesPack = {
   primaryColor: '#FFD76A',
   secondaryColor: '#B892FF',
   characters: [
-    { type: 'tiger', imageSrc: 'pic/小老虎.png', name: '小老虎', greeting: '嗷呜～祝你生日快乐！' },
-    { type: 'rabbit', imageSrc: 'pic/小兔子.png', name: '小兔子', greeting: '蹦蹦跳～祝你快乐成长！' },
-    { type: 'dragon', imageSrc: 'pic/小龙龙.png', name: '小龙龙', greeting: '吼～祝你心想事成！' },
+    { type: 'tiger', imageSrc: 'pic/小老虎.png', name: '小老虎', greeting: '嗷呜～祝你生日快乐！', cartoonFallback: { series: 'zodiac', type: 'tiger' } },
+    { type: 'rabbit', imageSrc: 'pic/小兔子.png', name: '小兔子', greeting: '蹦蹦跳～祝你快乐成长！', cartoonFallback: { series: 'zodiac', type: 'rabbit' } },
+    { type: 'dragon', imageSrc: 'pic/小龙龙.png', name: '小龙龙', greeting: '吼～祝你心想事成！', cartoonFallback: { series: 'zodiac', type: 'dragon' } },
     { type: 'snake', imageSrc: 'pic/小蛇蛇.png', name: '小蛇蛇', greeting: '祝你天天开心！' },
     { type: 'horse', imageSrc: 'pic/小马驹.png', name: '小马驹', greeting: '祝你前程似锦！' },
     { type: 'goat', imageSrc: 'pic/小山羊.png', name: '小山羊', greeting: '祝你喜气洋洋！' },

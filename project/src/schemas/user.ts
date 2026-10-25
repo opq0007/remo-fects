@@ -37,6 +37,11 @@ export const KidsBirthdayUserSchema = z.object({
   preset: KidsPresetSchema.optional(),
   orientation: ScreenOrientationSchema.optional(),
   message: z.string().max(100).optional(),
+  /** 梦想职业列表（最多5个），显示在 I 梦想种子章节 */
+  dreams: z.array(z.enum(['astronaut', 'artist', 'racer', 'doctor', 'teacher',
+    'scientist', 'musician', 'athlete', 'chef', 'pilot'])).max(5).optional(),
+  /** 名字颜色（可选，默认跟随主题） */
+  nameColor: z.string().optional(),
   musicEnabled: z.boolean().optional(),
   birthdaySongSource: z.string().optional(),
   customCharacterImages: z.array(z.string()).optional(),

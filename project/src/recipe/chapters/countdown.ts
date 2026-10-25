@@ -5,9 +5,10 @@ export const buildCountdownChapter: ChapterFactory = (ctx) => {
   return {
     id: '0_countdown',
     durationInFrames: 4 * fps,
+    transition: { type: 'slideUp', durationInFrames: 14 },
     background: {
       type: 'gradient',
-      gradient: 'linear-gradient(180deg, #0a0a20 0%, #1a1a3e 50%, #2a2a5e 100%)',
+      gradient: 'linear-gradient(180deg, #2B2650 0%, #453B7A 55%, #5D50A8 100%)',
     },
     countdown: {
       enabled: true,
@@ -28,7 +29,7 @@ export const buildCountdownChapter: ChapterFactory = (ctx) => {
         strokeColor: theme.primary,
         strokeWidth: 6,
         glowColor: theme.primary,
-        glowIntensity: 1.5,
+        glowIntensity: 0.8,
       },
       finalText: {
         enabled: true,

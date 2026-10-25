@@ -13,12 +13,14 @@ const FACTORY_BY_SLOT_ID: Record<string, string> = {
   D_photoInteraction2: 'photo-interaction-2',
   G_birthdaySong: 'birthday-song',
   H_futureBlessing: 'future-blessing',
+  I_dreamSeeds: 'dream-seeds',
+  J_warmClosing: 'warm-closing',
 };
 
 export const CLASSIC_TEMPLATE_SLOTS: TimelineSlot[] = timelineDefaults.slots.map((slot) => ({
   id: slot.id,
   seconds: slot.seconds,
-  requiresPhotos: slot.requiresPhotos,
+  minPhotos: slot.minPhotos ?? 0,
   factory: FACTORY_BY_SLOT_ID[slot.id],
 }));
 

@@ -19,9 +19,9 @@ export interface DurationEstimate {
  */
 export function estimateDurationFromUser(user: KidsBirthdayUserInput): DurationEstimate {
   const resolved = resolveUserInput(user);
-  const hasPhotos = resolved.photos.length > 0;
+  const photoCount = resolved.photos.length;
   const activeSlots = timelineDefaults.slots.filter(
-    (slot) => !slot.requiresPhotos || hasPhotos
+    (slot) => (slot.minPhotos ?? 0) <= photoCount
   );
   const durationSeconds = activeSlots.reduce((sum, slot) => sum + slot.seconds, 0);
   const durationInFrames = Math.round(durationSeconds * resolved.fps);
@@ -39,7 +39,7 @@ export function estimateDurationFromUser(user: KidsBirthdayUserInput): DurationE
 /** 无照片 classic 总秒数（倒计时+正片） */
 export function getNoPhotoDurationSeconds(): number {
   return timelineDefaults.slots
-    .filter((s) => !s.requiresPhotos)
+    .filter((s) => (s.minPhotos ?? 0) === 0)
     .reduce((sum, s) => sum + s.seconds, 0);
 }
 

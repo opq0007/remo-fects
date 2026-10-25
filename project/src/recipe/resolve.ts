@@ -61,6 +61,8 @@ export function resolveUserInput(user: KidsBirthdayUserInput): ResolvedKidsBirth
     preset: presetId,
     orientation,
     message: user.message?.trim() || '愿你每天开心成长',
+    dreams: (user.dreams && user.dreams.length > 0 ? user.dreams : ['astronaut', 'artist', 'racer']).slice(0, 5),
+    nameColor: user.nameColor,
     musicEnabled: user.musicEnabled ?? true,
     birthdaySongSource: user.birthdaySongSource,
     birthdaySongVolume: timelineDefaults.birthdaySongVolume,

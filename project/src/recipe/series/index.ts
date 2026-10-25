@@ -1,4 +1,5 @@
 import type { BlessingSeriesId, BlessingSeriesPack, SeriesCharacter } from '../types';
+import { isAssetAvailable } from '../asset-fallback';
 import { journeyToTheWestSeries } from './journey-to-the-west';
 import { zodiacSeries } from './zodiac';
 import { fairyTaleSeries } from './fairy-tale';
@@ -40,12 +41,15 @@ export function resolveCharacterResources(
         videoSrc: customVideos?.[index],
         name: `角色${index + 1}`,
         greeting: '祝你生日快乐！',
+        // 用户显式提供的资源，不做可用性回退
+        isCustomAsset: true,
       }));
     }
     return defaults.map((char, index) => ({
       ...char,
       imageSrc: customImages[index] || char.imageSrc,
       videoSrc: customVideos?.[index] || char.videoSrc,
+      isCustomAsset: true,
     }));
   }
 
@@ -56,6 +60,8 @@ export function resolveCharacterResources(
     }));
   }
 
+  // 默认资源：图片缺失时由 leadCharacterConfig 按 cartoonFallback 渲染卡通形象，
+  // 视频缺失的绿幕配置同样需要过滤（在章节工厂内按 isAssetAvailable 过滤）
   return defaults;
 }
 

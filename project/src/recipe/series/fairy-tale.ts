@@ -6,8 +6,8 @@ export const fairyTaleSeries: BlessingSeriesPack = {
   primaryColor: '#FF8FA3',
   secondaryColor: '#B892FF',
   characters: [
-    { type: 'cinderella', imageSrc: 'pic/灰姑娘.png', name: '灰姑娘', greeting: '祝你梦想成真！' },
-    { type: 'snow_white', imageSrc: 'pic/白雪公主.png', name: '白雪公主', greeting: '祝你永远快乐！' },
+    { type: 'cinderella', imageSrc: 'pic/灰姑娘.png', name: '灰姑娘', greeting: '祝你梦想成真！', cartoonFallback: { series: 'pet', type: 'bunny' } },
+    { type: 'snow_white', imageSrc: 'pic/白雪公主.png', name: '白雪公主', greeting: '祝你永远快乐！', cartoonFallback: { series: 'pet', type: 'kitten' } },
     { type: 'mickey', imageSrc: 'pic/米奇.png', name: '米奇', greeting: '祝你生日快乐！' },
   ],
 };

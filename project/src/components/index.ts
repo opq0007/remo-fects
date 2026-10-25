@@ -22,3 +22,5 @@ export {
 } from './BirthdaySong';
 
 export { renderPlusEffects } from './EffectRenderer';
+export { DreamBubblesScene } from './DreamBubbles';
+export type { DreamJob } from '../types';

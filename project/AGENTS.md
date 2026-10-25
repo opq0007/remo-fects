@@ -31,16 +31,22 @@ L2 StoryChapterConfig[] → StoryPanel → Remotion
 | id | 条件 | 默认秒数 |
 |----|------|----------|
 | `0_countdown` | 始终 | 4 |
-| `A_magicOpening` | 始终 | 2 |
+| `A_magicOpening` | 始终 | 4 |
+| `C_photoInteraction1` | photos≥1 | 25 |
+| `D_photoInteraction2` | photos≥2 | 25 |
 | `F_growthCelebration` | 始终 | 10 |
-| `C_photoInteraction1` | photos≥1 | 30 |
-| `D_photoInteraction2` | photos≥1 | 30 |
 | `G_birthdaySong` | 始终 | 35 |
-| `H_futureBlessing` | 始终 | 10 |
+| `H_futureBlessing` | 始终 | 8 |
+| `I_dreamSeeds` | 始终 | 10 |
+| `J_warmClosing` | 始终 | 3 |
 
-无照片 ≈ 61s；有照片 ≈ 121s（@24fps）。秒数真相：`recipe/timeline-defaults.json`（API 镜像：`api/effect-configs/kids-birthday-timeline.json`）。
+章节按自然叙事弧排列（回忆铺垫 → 高潮庆祝 → 仪式许愿 → 温暖收束），每章节有专属转场（slideUp 揭幕 / slideLeft·Right 翻页 / crossfade 溶解 / fade 长淡出），陪伴角色（`companionConfig`）在 C/D/I 用台词串场。
 
-**已删除的假能力：** 模块 B/E/I/J、`dreams`、固定 124s 唯一真相、`chapterList`（改为 `chapterOverrides`）。
+时长：无照片 74s / 1 张 99s / 2 张及以上 124s。秒数真相：`recipe/timeline-defaults.json`（API 镜像：`api/effect-configs/kids-birthday-timeline.json`）。
+
+**角色资源回退：** 系列默认图片若不在 `recipe/asset-fallback.ts` 的 `AVAILABLE_PUBLIC_ASSETS` 清单中，`leadCharacterConfig` 自动按 `cartoonFallback` 渲染内置卡通形象（孙悟空→猴、猪八戒→猪等），零资源开箱渲染。往 public 添加文件后同步更新清单。
+
+**已删除的假能力：** 模块 B/E、固定 124s 唯一真相、`chapterList`（改为 `chapterOverrides`）。I/J 章节与 `dreams` 已恢复为真实实现（DreamBubblesScene / message 署名）。
 
 ## L0 用户参数
 

@@ -30,6 +30,8 @@ function buildChapterContext(user: KidsBirthdayUserInput): {
     name: resolved.name,
     age: resolved.age,
     message: resolved.message,
+    dreams: resolved.dreams,
+    nameColor: resolved.nameColor,
     orientation: resolved.orientation,
     photos: resolved.photos,
     series,
@@ -59,9 +61,9 @@ export function compileKidsBirthdayTimeline(
     fps: fpsOverride ?? user.fps,
   };
   const { ctx, resolved } = buildChapterContext(input);
-  const hasPhotos = resolved.photos.length > 0;
+  const photoCount = resolved.photos.length;
   const slots = getTemplateSlots('classic').filter(
-    (slot) => !slot.requiresPhotos || hasPhotos
+    (slot) => (slot.minPhotos ?? 0) <= photoCount
   );
 
   const built: StoryChapterConfig[] = [];
