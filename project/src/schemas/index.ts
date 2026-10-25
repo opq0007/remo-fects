@@ -201,21 +201,21 @@ export const AVAILABLE_PUBLIC_ASSETS = new Set<string>([
 /**
  * 模块时长规划（帧）
  * 按照片数量计算实际内容时长，供 composition 与 calculateMetadata 使用
- * - 倒计时 4s + 开场 A 2s + 庆祝 F 10s + 生日歌 G 35s + 未来祝福 H 10s + 梦想 I 10s + 收尾 J 3s = 74s
- * - 照片互动 C（1张照片起）+25s → 99s
- * - 照片互动 D（2张照片起）+25s → 124s
+ * 叙事弧：倒计时 → 开场(4s) → 照片回忆C(25s,1张起) → 照片回忆D(25s,2张起)
+ *         → 成长庆祝F(10s) → 生日歌G(35s) → 未来祝福H(8s) → 梦想I(10s) → 收尾J(3s)
+ * 固定部分合计 74s：4+4+10+35+8+10+3
  */
 export const computeContentPlan = (photoCount: number, fps: number) => {
   const photo1 = photoCount >= 1 ? 25 * fps : 0;
   const photo2 = photoCount >= 2 ? 25 * fps : 0;
   return {
     countdown: 4 * fps,
-    opening: 2 * fps,
+    opening: 4 * fps,
     photo1,
     photo2,
     celebration: 10 * fps,
     birthdaySong: 35 * fps,
-    futureBlessing: 10 * fps,
+    futureBlessing: 8 * fps,
     dreams: 10 * fps,
     closing: 3 * fps,
     totalFrames: (74 + photo1 / fps + photo2 / fps) * fps,

@@ -226,6 +226,41 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
   // 获取主要角色（用于开场和收尾模块）
   const mainCharacter = characterResources[0];
 
+  // 陪伴角色：照片/梦想模块的小尺寸主持人，用台词把章节串成连续的故事
+  const buildCompanion = (options: {
+    speech: string;
+    speechStartFrame: number;
+    position: { horizontal: number; vertical: number };
+    size?: number;
+    direction?: 'left' | 'right' | 'bottom';
+  }): StoryCharacterConfig | undefined => {
+    if (!mainCharacter) return undefined;
+    const isImage = mainCharacter.series === 'image' && !!mainCharacter.imageSrc;
+    return {
+      type: mainCharacter.type as ZodiacType | PetType | HeroType,
+      series: (isImage ? 'image' : mainCharacter.series) as 'image' | 'zodiac' | 'pet' | 'hero',
+      imageSrc: isImage ? mainCharacter.imageSrc : undefined,
+      size: options.size ?? (orientation === 'portrait' ? 170 : 140),
+      animate: true,
+      entrance: {
+        enabled: true,
+        direction: options.direction ?? 'bottom',
+        delay: 8,
+        distance: 80,
+        springConfig: { damping: 12, stiffness: 90 },
+        horizontalPosition: options.position.horizontal,
+        verticalPosition: options.position.vertical,
+      },
+      expression: 'happy',
+      speechTimeline: [{
+        text: options.speech,
+        startFrame: options.speechStartFrame,
+        animationType: 'scale' as const,
+        bubbleColor: theme.secondary,
+      }],
+    };
+  };
+
   // 构建面板级嵌套参数配置
   const panelBackground: NestedBackgroundProps = {
     type: 'gradient',
@@ -249,13 +284,14 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
     const plan = computeContentPlan(photos.length, fps);
     const chapterList: StoryChapterConfig[] = [];
 
-    // 模块 0：倒计时开场
+    // 模块 0：倒计时开场（魔法夜空紫罗兰，明亮不压抑）
     chapterList.push({
       id: '0_countdown',
       durationInFrames: plan.countdown,
+      transition: { type: 'slideUp', durationInFrames: 14 },
       background: {
         type: 'gradient',
-        gradient: 'linear-gradient(180deg, #0a0a20 0%, #1a1a3e 50%, #2a2a5e 100%)',
+        gradient: 'linear-gradient(180deg, #2B2650 0%, #453B7A 55%, #5D50A8 100%)',
       },
       countdown: {
         enabled: true,
@@ -276,7 +312,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           strokeColor: theme.primary,
           strokeWidth: 6,
           glowColor: theme.primary,
-          glowIntensity: 1.2,
+          glowIntensity: 0.8,
         },
         finalText: {
           enabled: true,
@@ -303,13 +339,14 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       },
     });
 
-    // 模块 A：魔法开场
+    // 模块 A：魔法开场（4s：让入场弹簧完整落定，角色说开场白引出照片回忆）
     chapterList.push({
       id: 'A_magicOpening',
       durationInFrames: plan.opening,
+      transition: { type: 'slideRight', durationInFrames: 16 },
       background: {
-        type: 'color',
-        color: '#0a0a20',
+        type: 'gradient',
+        gradient: 'linear-gradient(180deg, #2B2650 0%, #453B7A 60%, #5D50A8 100%)',
       },
       magicEffects: {
         blackScreen: {
@@ -334,6 +371,14 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           horizontalPosition: 0.5,
         },
         expression: 'happy',
+        speechTimeline: [
+          {
+            text: `${name}，今天是个特别的日子！`,
+            startFrame: 55,
+            animationType: 'scale' as const,
+            bubbleColor: theme.secondary,
+          },
+        ],
       } : {
         series: mainCharacter.series,
         type: mainCharacter.type as ZodiacType | PetType | HeroType,
@@ -349,67 +394,23 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           horizontalPosition: 0.5,
         },
         expression: 'happy',
+        speechTimeline: [
+          {
+            text: `${name}，今天是个特别的日子！`,
+            startFrame: 55,
+            animationType: 'scale' as const,
+            bubbleColor: theme.secondary,
+          },
+        ],
       },
     });
 
-    // 模块 F：成长庆祝高潮
-    {
-      // 获取第一个有视频的角色
-      const videoCharacter = characterResources.find(c => c.videoSrc && AVAILABLE_PUBLIC_ASSETS.has(c.videoSrc));
-
-      chapterList.push({
-        id: 'F_growthCelebration',
-        durationInFrames: plan.celebration,
-        background: {
-          type: 'gradient',
-          gradient: theme.gradient,
-        },
-        confetti: {
-          enabled: true,
-          level: confettiLevel,
-          primaryColor: theme.primary,
-          secondaryColor: theme.secondary,
-        },
-        magicEffects: {
-          firework: {
-            enabled: true,
-            x: 0.5,
-            y: 0.3,
-            particleCount: 50,
-            color: theme.primary,
-            triggerFrame: 20,
-          },
-        },
-        transparentVideos: videoCharacter?.videoSrc ? [
-          {
-            src: videoCharacter.videoSrc,
-            mode: 'greenScreen',
-            scale: 0.6,
-            x: 0.5,
-            y: 0.7,
-          },
-        ] : undefined,
-        children: (
-          <ChapterFContent
-            name={name}
-            age={age}
-            subStyle={subStyle}
-            orientation={orientation}
-            nameFontSize={nameFontSize}
-            nameColor={nameColor}
-            showAge={showAge}
-            blessingText={blessingText}
-            blessingFontSize={blessingFontSize}
-          />
-        ),
-      });
-    }
-
-    // 模块 C：照片互动 1（有照片才渲染）
+    // 模块 C：照片互动 1（有照片才渲染；角色在右下角当"照片讲解员"）
     if (photos.length >= 1) {
       chapterList.push({
         id: 'C_photoInteraction1',
         durationInFrames: plan.photo1,
+        transition: { type: 'slideLeft', durationInFrames: 16 },
         background: {
           type: 'gradient',
           gradient: theme.gradient,
@@ -417,6 +418,11 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         overlay: {
           opacity: 0.05,
         },
+        character: buildCompanion({
+          speech: '一起看看你的照片吧！',
+          speechStartFrame: 12,
+          position: { horizontal: 0.82, vertical: 0.78 },
+        }),
         plusEffects: [
           {
             effectType: 'textFirework',
@@ -459,7 +465,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       });
     }
 
-    // 模块 D：照片互动 2（需要 2 张及以上照片，避免同一张重复出现）
+    // 模块 D：照片互动 2（需要 2 张及以上照片；角色在左下角继续讲解）
     if (photos.length >= 2) {
       // 构建透明视频配置（使用系列角色视频，仅使用确实存在的资源）
       const availableVideos = characterResources.filter(c => c.videoSrc && AVAILABLE_PUBLIC_ASSETS.has(c.videoSrc));
@@ -479,6 +485,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       chapterList.push({
         id: 'D_photoInteraction2',
         durationInFrames: plan.photo2,
+        transition: { type: 'slideUp', durationInFrames: 14 },
         background: {
           type: 'gradient',
           gradient: theme.gradient,
@@ -486,6 +493,11 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
         overlay: {
           opacity: 0.05,
         },
+        character: buildCompanion({
+          speech: '哇，更多精彩回忆！',
+          speechStartFrame: 15,
+          position: { horizontal: 0.16, vertical: 0.78 },
+        }),
         children: <PhotoFromMagicCircle targetY={0.3} photo={photos[1]} visible={true} orientation={orientation} />,
         floatingElements: {
           enabled: true,
@@ -495,6 +507,60 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
           color: theme.secondary,
         },
         transparentVideos: transparentVideoConfigs.length > 0 ? transparentVideoConfigs : undefined,
+      });
+    }
+
+    // 模块 F：成长庆祝高潮
+    {
+      // 获取第一个有视频的角色
+      const videoCharacter = characterResources.find(c => c.videoSrc && AVAILABLE_PUBLIC_ASSETS.has(c.videoSrc));
+
+      chapterList.push({
+        id: 'F_growthCelebration',
+        durationInFrames: plan.celebration,
+        transition: { type: 'crossfade', durationInFrames: 16 },
+        background: {
+          type: 'gradient',
+          gradient: theme.gradient,
+        },
+        confetti: {
+          enabled: true,
+          level: confettiLevel,
+          primaryColor: theme.primary,
+          secondaryColor: theme.secondary,
+        },
+        magicEffects: {
+          firework: {
+            enabled: true,
+            x: 0.5,
+            y: 0.3,
+            particleCount: 50,
+            color: theme.primary,
+            triggerFrame: 20,
+          },
+        },
+        transparentVideos: videoCharacter?.videoSrc ? [
+          {
+            src: videoCharacter.videoSrc,
+            mode: 'greenScreen',
+            scale: 0.6,
+            x: 0.5,
+            y: 0.7,
+          },
+        ] : undefined,
+        children: (
+          <ChapterFContent
+            name={name}
+            age={age}
+            subStyle={subStyle}
+            orientation={orientation}
+            nameFontSize={nameFontSize}
+            nameColor={nameColor}
+            showAge={showAge}
+            blessingText={blessingText}
+            blessingFontSize={blessingFontSize}
+          />
+        ),
       });
     }
 
@@ -546,6 +612,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       chapterList.push({
         id: 'G_birthdaySong',
         durationInFrames: plan.birthdaySong,
+        transition: { type: 'fade', durationInFrames: 18 },
         background: {
           type: 'gradient',
           gradient: theme.gradient,
@@ -565,7 +632,7 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
             y: 0.15,
             particleCount: 40,
             color: theme.primary,
-            triggerFrame: 400,
+            triggerFrame: 280,
           },
         },
         children: (
@@ -583,13 +650,14 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       });
     }
 
-    // 模块 H：未来祝福
+    // 模块 H：未来祝福（暮光紫，保留星空意象但不再近黑）
     chapterList.push({
       id: 'H_futureBlessing',
       durationInFrames: plan.futureBlessing,
+      transition: { type: 'slideRight', durationInFrames: 14 },
       background: {
         type: 'gradient',
-        gradient: 'linear-gradient(180deg, #0a0a2e 0%, #1a1a4e 50%, #2a2a6e 100%)',
+        gradient: 'linear-gradient(180deg, #3A2E6E 0%, #4A3F8C 55%, #5D4FA8 100%)',
       },
       character: mainCharacter.series === 'image' ? {
         type: mainCharacter.type as ZodiacType | PetType | HeroType,
@@ -649,14 +717,21 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       },
     });
 
-    // 模块 I：梦想种子（dreams 参数在此生效）
+    // 模块 I：梦想种子（dreams 参数在此生效；角色在底部为梦想"盖章"）
     chapterList.push({
       id: 'I_dreamSeeds',
       durationInFrames: plan.dreams,
+      transition: { type: 'crossfade', durationInFrames: 14 },
       background: {
         type: 'gradient',
         gradient: theme.gradient,
       },
+      character: buildCompanion({
+        speech: '未来的你，一定了不起！',
+        speechStartFrame: 60,
+        position: { horizontal: 0.5, vertical: 0.82 },
+        size: orientation === 'portrait' ? 150 : 120,
+      }),
       floatingElements: {
         enabled: true,
         type: 'stars',
@@ -671,13 +746,14 @@ export const KidsBirthdayComposition: React.FC<KidsBirthdayProps> = (props) => {
       ),
     });
 
-    // 模块 J：温暖收尾（message 参数在此生效）
+    // 模块 J：温暖收尾（message 参数在此生效；日落暖光收束全片）
     chapterList.push({
       id: 'J_warmClosing',
       durationInFrames: plan.closing,
+      transition: { type: 'fade', durationInFrames: 20 },
       background: {
         type: 'gradient',
-        gradient: 'linear-gradient(180deg, #1a1030 0%, #2a1a4e 60%, #3a2a6e 100%)',
+        gradient: 'linear-gradient(180deg, #5D4FA8 0%, #9B7ED9 55%, #FFD76A 100%)',
       },
       confetti: {
         enabled: true,
