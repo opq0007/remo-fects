@@ -69,18 +69,36 @@ export function getEffectPalette(effectId: string): EffectPalette {
 }
 
 /**
+ * 解析 hex 颜色 → [r,g,b]；支持 3/6 位 hex，非法输入返回 null
+ */
+const parseHex = (hexColor: string): [number, number, number] | null => {
+  let hex = hexColor.trim();
+  if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+    hex = '#' + hex.slice(1).split('').map(c => c + c).join('');
+  }
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return null;
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+};
+
+/**
  * 颜色明度调整（amount > 0 变亮，< 0 变暗）
+ * 非法颜色原样返回，保证背景渐变不会因 NaN 而失效
  */
 export function shadeColor(hexColor: string, amount: number): string {
-  const channel = (start: number) => {
-    const v = parseInt(hexColor.slice(start, start + 2), 16);
+  const rgb = parseHex(hexColor);
+  if (!rgb) return hexColor;
+  const channel = (v: number) => {
     const adjusted = amount >= 0
       ? v + (255 - v) * amount
       : v * (1 + amount);
     return Math.round(Math.min(255, Math.max(0, adjusted)));
   };
   const toHex = (n: number) => n.toString(16).padStart(2, '0');
-  return `#${toHex(channel(1))}${toHex(channel(3))}${toHex(channel(5))}`;
+  return `#${toHex(channel(rgb[0]))}${toHex(channel(rgb[1]))}${toHex(channel(rgb[2]))}`;
 }
 
 /**
@@ -96,13 +114,12 @@ export function generateAtmosphere(backgroundColor: string): string {
 }
 
 /**
- * 颜色透明度调整
+ * 颜色透明度调整（支持 3/6 位 hex，非法输入返回原样）
  */
 export function colorWithOpacity(hexColor: string, opacity: number): string {
-  const r = parseInt(hexColor.slice(1, 3), 16);
-  const g = parseInt(hexColor.slice(3, 5), 16);
-  const b = parseInt(hexColor.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  const rgb = parseHex(hexColor);
+  if (!rgb) return hexColor;
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${opacity})`;
 }
 
 /**

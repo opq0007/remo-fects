@@ -66,8 +66,8 @@ export const RemotionRoot: React.FC = () => {
             textStyle: {
               color: "#5BC9E8",
               effect: "glow",
-              effectIntensity: 1.2,
-              fontWeight: 900,
+              effectIntensity: 0.7,
+              fontWeight: 800,
             },
             enablePerspective: true,
             perspectiveStrength: 800,

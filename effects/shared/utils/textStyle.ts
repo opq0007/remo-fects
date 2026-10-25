@@ -104,14 +104,15 @@ const EFFECT_PRESETS: Record<string, (fontSize: number, intensity: number) => Re
     textShadow: `0 0 ${fontSize * 0.05 * intensity}px rgba(0,0,0,${0.3 * intensity})`,
   }),
   /**
-   * 主角字：鎏金渐变 + 电影双影（深投影 + 极弱环境光）
-   * 用于每个特效的主祝福语
+   * 主角字：鎏金渐变 + 电影感投影
+   * 注意：渐变填充（transparent fill）下 textShadow 不会被裁剪到字形，
+   * 会形成偏移鬼影——投影必须用 filter: drop-shadow（跟随渐变字形轮廓）
    */
   hero: (fontSize, intensity) => ({
     background: `linear-gradient(180deg, ${GOLD_SCALE.pale} 0%, ${GOLD_SCALE.bright} 45%, ${GOLD_SCALE.mid} 78%, ${GOLD_SCALE.deep} 100%)`,
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
-    textShadow: `0 ${Math.max(2, fontSize * 0.035)}px ${Math.max(3, fontSize * 0.06)}px rgba(30, 18, 2, ${0.55 * intensity}), 0 0 ${fontSize * 0.1}px rgba(255, 201, 74, ${0.18 * intensity})`,
+    filter: `drop-shadow(0 ${Math.max(2, fontSize * 0.035)}px ${Math.max(3, fontSize * 0.06)}px rgba(30, 18, 2, ${0.5 * intensity})) drop-shadow(0 0 ${fontSize * 0.1}px rgba(255, 201, 74, ${0.16 * intensity}))`,
   }),
 };
 
