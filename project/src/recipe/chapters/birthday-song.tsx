@@ -92,6 +92,7 @@ export const buildBirthdaySongChapter: ChapterFactory = (ctx) => {
 
   return {
     id: 'G_birthdaySong',
+    transition: { type: 'fade', durationInFrames: 18 },
     durationInFrames,
     background: {
       type: 'gradient',
@@ -111,7 +112,7 @@ export const buildBirthdaySongChapter: ChapterFactory = (ctx) => {
         y: 0.15,
         particleCount: 40,
         color: theme.primary,
-        triggerFrame: 400,
+        triggerFrame: 280,
       },
     },
     children: (

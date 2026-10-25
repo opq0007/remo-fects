@@ -1,9 +1,10 @@
 import React from 'react';
 import { PhotoFromMagicCircle } from '../../components';
 import type { ChapterFactory } from '../types';
+import { companionConfig } from './character-config';
 
 export const buildPhotoInteraction1Chapter: ChapterFactory = (ctx) => {
-  const { fps, theme, photos, orientation } = ctx;
+  const { fps, theme, photos, orientation, mainCharacter } = ctx;
   const photo = photos[0];
   if (!photo) {
     throw new Error('photo-interaction-1 requires at least one photo');
@@ -11,7 +12,8 @@ export const buildPhotoInteraction1Chapter: ChapterFactory = (ctx) => {
 
   return {
     id: 'C_photoInteraction1',
-    durationInFrames: 30 * fps,
+    durationInFrames: 25 * fps,
+    transition: { type: 'slideLeft', durationInFrames: 16 },
     background: {
       type: 'gradient',
       gradient: theme.gradient,
@@ -19,6 +21,11 @@ export const buildPhotoInteraction1Chapter: ChapterFactory = (ctx) => {
     overlay: {
       opacity: 0.05,
     },
+    character: companionConfig(mainCharacter, theme, {
+      speech: '一起看看你的照片吧！',
+      speechStartFrame: 12,
+      position: { horizontal: 0.82, vertical: 0.78 },
+    }),
     plusEffects: [
       {
         effectType: 'textFirework',
@@ -28,9 +35,9 @@ export const buildPhotoInteraction1Chapter: ChapterFactory = (ctx) => {
         imageWeight: 0.3,
         blessingTypes: ['goldCoin', 'redPacket'],
         fontSize: 60,
-        colors: ['#FFD700', '#FF6B6B'],
-        glowColor: '#FFD700',
-        glowIntensity: 1.2,
+        colors: [theme.primary, theme.secondary],
+        glowColor: theme.primary,
+        glowIntensity: 0.9,
         x: 0.5,
         y: 0.4,
         scale: 1,
@@ -46,9 +53,9 @@ export const buildPhotoInteraction1Chapter: ChapterFactory = (ctx) => {
         imageWeight: 0.3,
         blessingTypes: ['goldCoin', 'star', 'redPacket'],
         fontSize: 60,
-        colors: ['#FFD700', '#FF6B6B'],
-        glowColor: '#FFD700',
-        glowIntensity: 0.8,
+        colors: [theme.primary, theme.secondary],
+        glowColor: theme.primary,
+        glowIntensity: 0.6,
         x: 0.5,
         y: 0.5,
         scale: 1,

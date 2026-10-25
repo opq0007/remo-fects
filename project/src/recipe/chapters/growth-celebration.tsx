@@ -44,6 +44,7 @@ export const buildGrowthCelebrationChapter: ChapterFactory = (ctx) => {
 
   return {
     id: 'F_growthCelebration',
+    transition: { type: 'crossfade', durationInFrames: 16 },
     durationInFrames: 10 * fps,
     background: {
       type: 'gradient',
